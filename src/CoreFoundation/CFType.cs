@@ -2,13 +2,19 @@
 // Copyright 2012 Xamarin
 //
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using MonoMac.Foundation;
 using MonoMac.ObjCRuntime;
+using System.Reflection;
 
 namespace MonoMac.CoreFoundation {
 	public abstract class CFType : INativeObject, IDisposable
 	{
+		static Dictionary<IntPtr, WeakReference> objectMap =
+			new Dictionary<IntPtr, WeakReference> ();
+		static object lockObj = new object ();
+
 		protected CFType ()
 		{
 		}
@@ -21,6 +27,7 @@ namespace MonoMac.CoreFoundation {
 			if (!owns)
 				Retain (handle);
 			Handle = handle;
+			Register ();
 		}
 
 		public IntPtr Handle { get; internal set; }
@@ -39,12 +46,42 @@ namespace MonoMac.CoreFoundation {
 		[DllImport (Constants.CoreFoundationLibrary)]
 		extern static IntPtr CFCopyDescription (IntPtr ptr);
 
+		public static string GetTypeDescription (IntPtr handle)
+		{
+			using (var s = new CFString (CFCopyDescription (handle)))
+				return s.ToString ();
+		}
+
+		protected void Register ()
+		{
+			ThrowIfDisposed ();
+			if (objectMap.ContainsKey (Handle) && objectMap [Handle].IsAlive)
+				throw new Exception ("Managed object already exists for this handle.");
+			lock (lockObj)
+				objectMap [Handle] = new WeakReference (this);
+		}
+
+		protected void Unregister ()
+		{
+			lock (lockObj)
+				objectMap.Remove (Handle);
+		}
+
+		public static T GetCFObject<T> (IntPtr handle) where T : CFType
+		{
+			if (objectMap.ContainsKey (handle) && objectMap [handle].IsAlive)
+				return (T)objectMap [handle].Target;
+			return (T)Activator.CreateInstance (typeof(T),
+			                                    BindingFlags.Instance | BindingFlags.NonPublic,
+			                                    null,
+			                                    new object[] { handle, false },
+			                                    null);
+		}
 
 		public string Description {
 			get {
 				ThrowIfDisposed ();
-				using (var s = new CFString (CFCopyDescription (Handle)))
-					return s.ToString ();
+				return GetTypeDescription (Handle);
 			}
 		}
 
@@ -56,7 +93,8 @@ namespace MonoMac.CoreFoundation {
 
 		protected virtual void Dispose (bool disposing)
 		{
-			if (Handle != IntPtr.Zero){
+			if (Handle != IntPtr.Zero) {
+				Unregister ();
 				Release (Handle);
 				Handle = IntPtr.Zero;
 			}
