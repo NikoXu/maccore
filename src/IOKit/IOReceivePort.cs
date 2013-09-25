@@ -28,6 +28,7 @@ using System;
 using System.Runtime.InteropServices;
 using MonoMac;
 using MonoMac.CoreFoundation;
+using MonoMac.Kernel.Mach;
 using MonoMac.ObjCRuntime;
 
 using kern_return_t = MonoMac.IOKit.IOReturn;
@@ -36,7 +37,7 @@ using uint32_t = System.UInt32;
 
 namespace MonoMac.IOKit
 {
-	public class IOReceivePort : Mach.Port
+	public class IOReceivePort : Port
 	{
 		/// <summary>
 		/// Creates a mach port suitable for receiving IOKit messages of the specified type.

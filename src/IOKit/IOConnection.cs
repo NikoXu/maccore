@@ -29,6 +29,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using MonoMac;
 using MonoMac.CoreFoundation;
+using MonoMac.Kernel.Mach;
 using MonoMac.ObjCRuntime;
 
 using CFStringRef = System.IntPtr;
@@ -95,7 +96,7 @@ namespace MonoMac.IOKit
 		/// <remarks>This is a generic method to pass a mach port send right to be be used by family specific notifications.</remarks>
 		/// <exception cref="ObjectDisposedException">If this instance has already been closed or disposed.</exception>
 		/// <exception cref="IOKitException">If the method call failed.</exception>
-		public void SetNotificationPort (uint type, Mach.Port port, UIntPtr reference = default (UIntPtr))
+		public void SetNotificationPort (uint type, Port port, UIntPtr reference = default (UIntPtr))
 		{
 			ThrowIfDisposed ();
 			var result = IOConnectSetNotificationPort (Handle, type, port.Handle, reference);

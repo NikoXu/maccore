@@ -30,6 +30,7 @@ using System.Runtime.InteropServices;
 using MonoMac;
 using MonoMac.CoreFoundation;
 using MonoMac.Foundation;
+using MonoMac.Kernel.Mach;
 using MonoMac.ObjCRuntime;
 
 using CFDictionaryRef = System.IntPtr;
@@ -41,7 +42,7 @@ using io_registry_entry_t = System.IntPtr;
 using io_string_t = System.String;
 using kern_return_t = MonoMac.IOKit.IOReturn;
 using mach_port_t = System.IntPtr;
-using mach_timespec_t = MonoMac.Mach.TimeSpec;
+using mach_timespec_t = MonoMac.Kernel.Mach.TimeSpec;
 using uint32_t = System.UInt32;
 
 namespace MonoMac.IOKit
@@ -49,7 +50,7 @@ namespace MonoMac.IOKit
 	/// <summary>
 	/// Mach port used to initiate communication with IOKit.
 	/// </summary>
-	public class IOMasterPort : Mach.Port
+	public class IOMasterPort : Port
 	{
 		Lazy<IORegistryEntry> rootEntry;
 
@@ -57,7 +58,7 @@ namespace MonoMac.IOKit
 		/// <remarks>Methods that don't specify an existing object require the IOMasterPort to be passed.
 		/// This constructor obtains that port.</remarks>
 		/// <exception cref="IOKitException">If there was an error creating the port.</exception>
-		public IOMasterPort () : this (Mach.Port.NULL)
+		public IOMasterPort () : this (Port.NULL)
 		{
 			rootEntry = new Lazy<IORegistryEntry> (() => IORegistryEntry.GetRootEntryForPort (Handle));
 		}
@@ -174,7 +175,7 @@ namespace MonoMac.IOKit
 		/// <remarks>Blocks the caller until all IOServices are not busy, see <see cref="BusyState"/>.</remarks>
 		public bool Wait (int seconds, int nanoseconds = 0)
 		{
-			return Wait (new Mach.TimeSpec () { Seconds = (uint)seconds, Nanoseconds = nanoseconds });
+			return Wait (new TimeSpec () { Seconds = (uint)seconds, Nanoseconds = nanoseconds });
 		}
 
 		/// <summary>
@@ -183,7 +184,7 @@ namespace MonoMac.IOKit
 		/// <returns><c>true</c> if the method timed out; otherwise <c>false</c></returns>
 		/// <param name="waitTime">Specifies a maximum time to wait.</param>
 		/// <remarks>Blocks the caller until all IOServices are not busy, see <see cref="BusyState"/>.</remarks>
-		public bool Wait (Mach.TimeSpec waitTime)
+		public bool Wait (TimeSpec waitTime)
 		{
 			return IOService.WaitForPort (Handle, waitTime);
 		}

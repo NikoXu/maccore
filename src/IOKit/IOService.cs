@@ -30,6 +30,7 @@ using System.Runtime.InteropServices;
 using MonoMac;
 using MonoMac.CoreFoundation;
 using MonoMac.Foundation;
+using MonoMac.Kernel.Mach;
 using MonoMac.ObjCRuntime;
 
 using CFDictionaryRef = System.IntPtr;
@@ -43,7 +44,7 @@ using io_object_t = System.IntPtr;
 using io_service_t = System.IntPtr;
 using kern_return_t = MonoMac.IOKit.IOReturn;
 using mach_port_t = System.IntPtr;
-using mach_timespec_t = MonoMac.Mach.TimeSpec;
+using mach_timespec_t = MonoMac.Kernel.Mach.TimeSpec;
 using task_port_t = System.IntPtr;
 using uint32_t = System.UInt32;
 using uint64_t = System.UInt64;
@@ -285,7 +286,7 @@ namespace MonoMac.IOKit
 		/// <exception cref="IOKitException">If the method call failed.</exception>
 		public bool Wait (int seconds, int nanoseconds = 0)
 		{
-			return Wait (new Mach.TimeSpec () { Seconds = (uint)seconds, Nanoseconds = nanoseconds });
+			return Wait (new TimeSpec () { Seconds = (uint)seconds, Nanoseconds = nanoseconds });
 		}
 
 		/// <summary>
@@ -296,7 +297,7 @@ namespace MonoMac.IOKit
 		/// <remarks>Blocks the caller until an IOService is non busy, see <see cref="BusyState"/>.</remarks>
 		/// <exception cref="ObjectDisposedException">If this instance has already been disposed.</exception>
 		/// <exception cref="IOKitException">If the method call failed.</exception>
-		public bool Wait (Mach.TimeSpec waitTime)
+		public bool Wait (TimeSpec waitTime)
 		{
 			ThrowIfDisposed ();
 			var result = IOServiceWaitQuiet (Handle, waitTime);
@@ -316,7 +317,7 @@ namespace MonoMac.IOKit
 		/// <exception cref="IOKitException">If the method call failed.</exception>
 		public static bool WaitAll (int seconds, int nanoseconds = 0)
 		{
-			return WaitAll (new Mach.TimeSpec () { Seconds = (uint)seconds, Nanoseconds = nanoseconds });
+			return WaitAll (new TimeSpec () { Seconds = (uint)seconds, Nanoseconds = nanoseconds });
 		}
 
 		/// <summary>
@@ -326,12 +327,12 @@ namespace MonoMac.IOKit
 		/// <param name="waitTime">Specifies a maximum time to wait.</param>
 		/// <remarks>Blocks the caller until all IOServices are not busy, see <see cref="BusyState"/>.</remarks>
 		/// <exception cref="IOKitException">If the method call failed.</exception>
-		public static bool WaitAll (Mach.TimeSpec waitTime)
+		public static bool WaitAll (TimeSpec waitTime)
 		{
 			return WaitForPort (kIOMasterPortDefault, waitTime);
 		}
 
-		internal static bool WaitForPort (IntPtr masterPort, Mach.TimeSpec waitTime)
+		internal static bool WaitForPort (IntPtr masterPort, TimeSpec waitTime)
 		{
 			var result = IOKitWaitQuiet (masterPort, waitTime);
 			if (result == IOReturn.Timeout)
@@ -351,7 +352,7 @@ namespace MonoMac.IOKit
 		/// are family dependent, the default IOService implementation returns <see cref="ReturnType.Unsupported"/> (throws IOKitException).</remarks>
 		/// <exception cref="ObjectDisposedException">If this instance has already been disposed.</exception>
 		/// <exception cref="IOKitException">If the method call failed.</exception>
-		public IOConnection Open (Mach.Task owningTask, uint type)
+		public IOConnection Open (Task owningTask, uint type)
 		{
 			ThrowIfDisposed ();
 			IntPtr connectionRef;

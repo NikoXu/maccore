@@ -29,6 +29,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using MonoMac;
 using MonoMac.CoreFoundation;
+using MonoMac.Kernel.Mach;
 using MonoMac.ObjCRuntime;
 
 using mach_port_t = System.IntPtr;
@@ -42,7 +43,7 @@ namespace MonoMac.IOKit
 	{
 		static readonly IntPtr kIOMasterPortDefault = IntPtr.Zero;
 
-		Mach.Port machPort;
+		Port machPort;
 		CFRunLoopSource runLoopSource;
 
 		/// <summary>Creates and returns a IONotificationPort object using the default master port
@@ -109,12 +110,12 @@ namespace MonoMac.IOKit
 		/// The caller should not release this Mach.Port. It will be releaed when the IONotificationPort
 		/// object is disposed./remarks>
 		/// <exception cref="ObjectDisposedException">If the object has been disposed (Handle == 0)</exception>
-		public Mach.Port MachPort {
+		public Port MachPort {
 			get {
 				ThrowIfDisposed ();
 				if (machPort == null) {
 					var machPortRef = IONotificationPortGetMachPort (Handle);
-					machPort = new Mach.Port (machPortRef);
+					machPort = new Port (machPortRef);
 				}
 				return machPort;
 			}
@@ -129,7 +130,7 @@ namespace MonoMac.IOKit
 		/// which should call this function to generate the callbacks associated with the notifications arriving on the port.
 		/// </remarks>
 		/// <exception cref="ObjectDisposedException">If the object has been disposed (Handle == 0)</exception>
-		public void DispatchCalloutFromMessage (Mach.MessageHeader messageHeader)
+		public void DispatchCalloutFromMessage (MessageHeader messageHeader)
 		{
 			ThrowIfDisposed ();
 			IODispatchCalloutFromMessage (IntPtr.Zero, messageHeader, Handle);
@@ -237,7 +238,7 @@ namespace MonoMac.IOKit
 		/// which should call this function to generate the callbacks associated with the notifications arriving on the port.
 		/// </remarks>
 		[DllImport (Constants.IOKitLibrary)]
-		extern static void IODispatchCalloutFromMessage(IntPtr unused, Mach.MessageHeader msg, IONotificationPortRef reference);
+		extern static void IODispatchCalloutFromMessage(IntPtr unused, MessageHeader msg, IONotificationPortRef reference);
 
 		/// <summary>
 		/// Sets a dispatch queue to be used to listen for notifications.

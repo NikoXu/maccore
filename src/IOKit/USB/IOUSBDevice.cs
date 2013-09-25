@@ -27,6 +27,7 @@
 using System;
 using System.Runtime.InteropServices;
 using MonoMac.CoreFoundation;
+using MonoMac.Kernel.Mach;
 
 using MonoMac.Foundation;
 using MonoMac.ObjCRuntime;
@@ -46,7 +47,7 @@ namespace MonoMac.IOKit.USB
 		Lazy<IIOCFPlugin<IOUSBDeviceInterface>> deviceInterface;
 
 		Lazy<CFRunLoopSource> deviceAsyncEventSource;
-		Lazy<Mach.Port> deviceAsyncPort;
+		Lazy<Port> deviceAsyncPort;
 
 		internal IOUSBDevice (IntPtr handle, bool owns) : base (handle, owns)
 		{
@@ -80,7 +81,7 @@ namespace MonoMac.IOKit.USB
 					(() =>	pluginInterface.Value.QueryInterface<IOUSBDeviceInterface> ());
 
 			deviceAsyncEventSource = new Lazy<CFRunLoopSource> (CreateAsyncEventSource);
-			deviceAsyncPort = new Lazy<MonoMac.Mach.Port> (CreateAsyncPort);
+			deviceAsyncPort = new Lazy<Port> (CreateAsyncPort);
 		}
 
 		IntPtr DeviceInterfaceRef {
@@ -95,7 +96,7 @@ namespace MonoMac.IOKit.USB
 			get { return deviceAsyncEventSource.Value; }
 		}
 
-		public Mach.Port AsyncPort {
+		public Port AsyncPort {
 			get { return deviceAsyncPort.Value; }
 		}
 
@@ -344,13 +345,13 @@ namespace MonoMac.IOKit.USB
 			return runLoopSource;
 		}
 
-		public Mach.Port CreateAsyncPort ()
+		public Port CreateAsyncPort ()
 		{
 			ThrowIfDisposed ();
 			IntPtr portRef;
 			var result = DeviceInterface.CreateDeviceAsyncPort (DeviceInterfaceRef, out portRef);
 			IOObject.ThrowIfError (result);
-			return new Mach.Port (portRef);
+			return new Port (portRef);
 		}
 
 		public void Open ()

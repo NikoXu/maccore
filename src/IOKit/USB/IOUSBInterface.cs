@@ -29,6 +29,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using MonoMac.CoreFoundation;
+using MonoMac.Kernel.Mach;
 using MonoMac.ObjCRuntime;
 
 using AbsoluteTime = System.UInt64;
@@ -47,7 +48,7 @@ namespace MonoMac.IOKit.USB
 		Lazy<IIOCFPlugin<IOUSBInterfaceInterface>> interfaceInterface;
 
 		Lazy<CFRunLoopSource> interfaceAsyncEventSource;
-		Lazy<Mach.Port> interfaceAsyncPort;
+		Lazy<Port> interfaceAsyncPort;
 		Dictionary<int, Pipe> pipes;
 
 		internal IOUSBInterface (IntPtr handle, bool owns) : base (handle, owns)
@@ -91,7 +92,7 @@ namespace MonoMac.IOKit.USB
 					(() =>	pluginInterface.Value.QueryInterface<IOUSBInterfaceInterface> ());
 
 			interfaceAsyncEventSource = new Lazy<CFRunLoopSource> (CreateAsyncEventSource);
-			interfaceAsyncPort = new Lazy<MonoMac.Mach.Port> (CreateAsyncPort);
+			interfaceAsyncPort = new Lazy<Port> (CreateAsyncPort);
 			pipes = new Dictionary<int, Pipe> ();
 		}
 
@@ -107,7 +108,7 @@ namespace MonoMac.IOKit.USB
 			get { return interfaceAsyncEventSource.Value; }
 		}
 
-		public Mach.Port AsyncPort {
+		public Port AsyncPort {
 			get { return interfaceAsyncPort.Value; }
 		}
 
@@ -307,13 +308,13 @@ namespace MonoMac.IOKit.USB
 			return runLoopSource;
 		}
 
-		public Mach.Port CreateAsyncPort ()
+		public Port CreateAsyncPort ()
 		{
 			ThrowIfDisposed ();
 			IntPtr portRef;
 			var result = InterfaceInterface.CreateInterfaceAsyncPort (InterfaceInterfaceRef, out portRef);
 			IOObject.ThrowIfError (result);
-			return new Mach.Port (portRef);
+			return new Port (portRef);
 		}
 
 		public void Open ()
