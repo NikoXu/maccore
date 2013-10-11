@@ -25,10 +25,11 @@
 // THE SOFTWARE.
 
 using System;
+using MonoMac.IOKit;
 
 namespace MonoMac.IOKit.HID
 {
-	public class IOHIDDeviceEventArgs : IOHIDEventArgs
+	public class IOHIDDeviceEventArgs : IOReturnEventArgs
 	{
 		public IOHIDDeviceEventArgs (IOReturn result, IOHIDDevice device) : base (result)
 		{

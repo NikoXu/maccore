@@ -28,7 +28,7 @@ using System;
 
 namespace MonoMac.IOKit.HID
 {
-	public class IOHIDValueEventArgs : IOHIDEventArgs
+	public class IOHIDValueEventArgs : IOReturnEventArgs
 	{
 		public IOHIDValueEventArgs (IOReturn result, IOHIDValue value) : base (result)
 		{

@@ -571,7 +571,7 @@ namespace MonoMac.IOKit.HID
 			IntPtr                          context);
 		//AVAILABLE_MAC_OS_X_VERSION_10_5_AND_LATER;
 
-		public event EventHandler<IOHIDEventArgs> Removed;
+		public event EventHandler<IOReturnEventArgs> Removed;
 
 		static void RemovedCallback (IntPtr context, IOReturn result, IntPtr senderRef)
 		{
@@ -582,7 +582,7 @@ namespace MonoMac.IOKit.HID
 		void OnRemoved (IOReturn result)
 		{
 			if (Removed != null)
-				Removed (this, new IOHIDEventArgs (result));
+				Removed (this, new IOReturnEventArgs (result));
 		}
 
 		/*! @function   IOHIDDeviceRegisterInputValueCallback

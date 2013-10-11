@@ -1,5 +1,5 @@
 //
-// IOHIDDevice.cs
+// IOReturnEventArgs.cs
 //
 // Author:
 //       David Lechner <david@lechnology.com>
@@ -26,11 +26,11 @@
 
 using System;
 
-namespace MonoMac.IOKit.HID
+namespace MonoMac.IOKit
 {
-	public class IOHIDEventArgs : EventArgs
+	public class IOReturnEventArgs : EventArgs
 	{
-		public IOHIDEventArgs (IOReturn result)
+		public IOReturnEventArgs (IOReturn result)
 		{
 			Result = result;
 		}
