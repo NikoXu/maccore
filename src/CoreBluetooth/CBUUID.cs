@@ -32,7 +32,7 @@ using MonoMac.Foundation;
 
 using CFUUIDRef = System.IntPtr;
 
-namespace monomac
+namespace MonoMac.CoreBluetooth
 {
 	public partial class CBUUID
 	{
