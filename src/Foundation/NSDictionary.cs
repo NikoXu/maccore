@@ -145,6 +145,15 @@ namespace MonoMac.Foundation {
 			return EqualityComparer<NSObject>.Default.Equals (pair.Value, value);
 		}
 
+		public string DescriptionInStringsFileFormat { 
+			get {
+				foreach (var key in Keys)
+					if (!typeof(NSString).IsAssignableFrom (key.GetType ()))
+						throw new InvalidOperationException ("All keys must have type of NSString");
+				return descriptionInStringsFileFormat;
+			}
+		}
+
 		#region ICollection
 		void ICollection.CopyTo (Array array, int arrayIndex)
 		{

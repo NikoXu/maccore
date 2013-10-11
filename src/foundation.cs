@@ -1567,8 +1567,8 @@ namespace MonoMac.Foundation
 		[Export ("allValues")][Autorelease]
 		NSObject [] Values { get; }
 
-		[Export ("descriptionInStringsFileFormat")]
-		string DescriptionInStringsFileFormat { get; }
+		[Export ("descriptionInStringsFileFormat"), Internal]
+		string descriptionInStringsFileFormat { get; }
 
 		[Export ("isEqualToDictionary:")]
 		bool IsEqualToDictionary (NSDictionary other);
