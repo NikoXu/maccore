@@ -23,7 +23,7 @@ namespace macdoc
 			// Default options
 			public Options ()
 			{
-				ImportSamples = true;
+				ImportSamples = false;
 				QuickSummaries = true;
 				CancellationToken = System.Threading.CancellationToken.None;
 			}
@@ -714,6 +714,8 @@ namespace macdoc
 				}
 				appledocpath = FixAppleDocPath (t, appledocpath);
 			}
+			if (context == null)
+				context = new ProcessingContext ();
 			context.CurrentAppleDocPath = appledocpath;
 			
 			return appledocpath;

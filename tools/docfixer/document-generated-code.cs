@@ -37,7 +37,7 @@ class DocumentGeneratedCode {
 #if MONOMAC
 	Type nso = typeof (MonoMac.Foundation.NSObject);
 	const string ns = "MonoMac";
-	const string docBase = "/Developer/Documentation/DocSets/com.apple.adc.documentation.AppleSnowLeopard.CoreReference.docset";
+	const string docBase = "/Users/david/Documents/DocSets/com.apple.adc.documentation.AppleOSX10_8.CoreReference.docset";
 #else
 	Type nso = typeof (MonoTouch.Foundation.NSObject);
 	const string ns = "MonoTouch";

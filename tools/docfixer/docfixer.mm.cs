@@ -12,7 +12,7 @@ public partial class DocGenerator {
 	
 	static string GetMostRecentDocBase ()
 	{
-		return "/Developer/Documentation/DocSets/com.apple.adc.documentation.AppleSnowLeopard.CoreReference.docset/Contents/Resources/Documents/documentation";
+		return "/Users/david/Documents/DocSets/com.apple.adc.documentation.AppleOSX10_8.CoreReference.docset/Contents/Resources/Documents/documentation";
 	}
 
 	public static string GetSelector (object attr)
