@@ -3874,13 +3874,16 @@ public class Generator {
 					
 					print ("{"); indent++;
 					print ("var del = {0};", delName);
-					print ("if (del == null || (!(del is _{0}))){{", dtype.Name);
+					print ("if (del == null) {");
 					print ("\tdel = new _{0} ({1});", dtype.Name, bta.KeepRefUntil == null ? "" : "oref");
 					if (bta.KeepRefUntil != null){
 						print ("\tif (instances == null) instances = new System.Collections.ArrayList ();");
 						print ("\tif (!instances.Contains (this)) instances.Add (this);");
 					}
 					print ("\t{0} = del;", delName);
+					print ("}");
+					print ("if (!(del is _{0})) {{", dtype.Name);
+					print ("\tthrow new InvalidOperationException (\"Cannot use this method when a user-defined delegate has been assigned.\");");
 					print ("}");
 					print ("return (_{0}) del;", dtype.Name);
 					indent--; print ("}\n");
