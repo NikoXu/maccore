@@ -96,6 +96,7 @@ namespace MonoMac.ObjCRuntime {
 
 			if (type.IsByRef) return "^" + ToNative (type.GetElementType ());
 			if (type == typeof (IntPtr)) return "^v";
+			if (type == typeof (UIntPtr)) return "^v";
 			if (type == typeof (byte)) return "c";
 			if (type == typeof (sbyte)) return "c";
 			if (type == typeof (char)) return "c";
