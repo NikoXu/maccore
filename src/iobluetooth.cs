@@ -554,6 +554,13 @@ namespace MonoMac.IOBluetooth
 
 	}
 
+	[Category]
+	[BaseType (typeof(IOBluetoothSDPServiceRecord))]
+	interface HandsFreeSDPServiceRecordAdditions {
+		[Export ("handsFreeSupportedFeatures")]
+		uint16_t GetHandsFreeSupportedFeatures ();
+	}
+
 	[BaseType (typeof (NSObject))]
 	[Model]
 	interface IOBluetoothHandsFreeDelegate {
@@ -768,19 +775,20 @@ namespace MonoMac.IOBluetooth
 //
 //	}
 //
-//	[BaseType (typeof (NSObject))]
+//	[Category]
+//	[BaseType (typeof (IOBluetoothDevice))]
 //	interface HeadsetAdditions {
 //		[Export ("isHeadsetAudioGateway")]
 //		[Obsolete ("Deprecated in OS X 7.0")]
-//		bool IsHeadsetAudioGateway ();
+//		bool GetIsHeadsetAudioGateway ();
 //
 //		[Export ("headsetDeviceServiceRecord")]
 //		[Obsolete ("Deprecated in OS X 7.0")]
-//		IOBluetoothSDPServiceRecord HeadsetDeviceServiceRecord ();
+//		IOBluetoothSDPServiceRecord GetHeadsetDeviceServiceRecord ();
 //
 //		[Export ("isHeadsetDevice")]
 //		[Obsolete ("Deprecated in OS X 7.0")]
-//		bool IsHeadsetDevice ();
+//		bool GetIsHeadsetDevice ();
 //
 //	}
 
@@ -1399,11 +1407,6 @@ namespace MonoMac.IOBluetooth
 
 		[Export ("hasServiceFromArray:")]
 		bool HasService (IOBluetoothSDPUUID[] serviceUuids);
-
-		/* from HandsFreeSDPServiceRecordAdditions */
-
-		[Export ("handsFreeSupportedFeatures")]
-		uint16_t HandsFreeSupportedFeatures { get; }
 	}
 
 	[BaseType (typeof (NSData))]
