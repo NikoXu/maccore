@@ -3584,8 +3584,10 @@ public class Generator {
 						selectorField = selectorField.Substring (0, selectorField.Length - 6 /* Handle */);
 					print ("[CompilerGenerated]");
 					print ("const string {0} = \"{1}\";", selectorField, ea);
-					if (!InlineSelectors)
-						print ("static readonly IntPtr {0} = Selector.GetHandle (\"{1}\");", SelectorField (ea), ea);
+					if (!InlineSelectors) {
+						print ("[CompilerGenerated]");
+						print ("static readonly IntPtr {0} = Selector.GetHandle ({1});", SelectorField (ea), selectorField);
+					}
 				}
 			}
 			print ("");
