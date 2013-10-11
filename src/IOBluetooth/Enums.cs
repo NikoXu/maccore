@@ -387,6 +387,16 @@ namespace MonoMac.IOBluetooth
 		L2CAP                                = 0x0100, 	// 00000100-0000-1000-8000-00805f9b34fb 
 	}
 
+#if !COREBUILD
+	public static class ServiceDiscoveryProtocolExension
+	{
+		public static IOBluetoothSDPUUID ToUUID (this ServiceDiscoveryProtocol value)
+		{
+			return new IOBluetoothSDPUUID ((ushort)value);
+		}
+	}
+#endif
+
 	public enum SDPServiceClasses
 	{
 		ServiceDiscoveryServer                   = 0x1000,	// 00001000-0000-1000-8000-00805f9b34fb
