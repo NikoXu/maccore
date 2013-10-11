@@ -353,5 +353,12 @@ namespace MonoMac.IOKit
 		USBBitstufErr        = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x02,		// 0xe0004002 Pipe stall, bitstuffing
 		USBCRCErr            = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x01,		// 0xe0004001 Pipe stall, bad CRC
 
+
+		/* from IOBluetoothTypes.h */
+
+		IOBluetoothDeviceResetError           = IOKit.sys_iokit | IOKit.sub_iokit_bluetooth | 1,
+		IOBluetoothConnectionAlreadyExists    = IOKit.sys_iokit | IOKit.sub_iokit_bluetooth | 2,
+		IOBluetoothNoHCIController            = IOKit.sys_iokit | IOKit.sub_iokit_bluetooth | 3,
+		IOBluetoothHCIPowerStatesNotSupported = IOKit.sys_iokit | IOKit.sub_iokit_bluetooth | 4,
 	}
 }
