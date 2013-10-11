@@ -1451,94 +1451,12 @@ namespace MonoMac.IOBluetooth
 
 		[Export ("classForPortCoder")]
 		Class ClassForPortCoder { get; }
-
 	}
 
 	[BaseType (typeof (NSObject)), Internal]
 	interface IOBluetoothUserNotification {
 		[Export ("unregister")]
 		void Unregister ();
-
-	}
-
-	[BaseType (typeof (NSObject))]
-	interface NSMutableDictionary {
-		[Static]
-		[Export ("dictionaryWithOBEXHeadersData:headersDataSize:")]
-		NSMutableDictionary CreateDictionaryWithOBEXHeadersData (IntPtr inHeadersData, size_t inDataSize);
-
-		[Static]
-		[Export ("dictionaryWithOBEXHeadersData:")]
-		NSMutableDictionary CreateDictionaryWithOBEXHeadersData (NSData inHeadersData);
-
-		[Export ("getHeaderBytes")]
-		NSMutableData GetHeaderBytes { get; }
-
-		[Bind ("addTargetHeader:length:")]
-		OBEXError AddTargetHeader ([Target]NSMutableDictionary dictionary, IntPtr inHeaderData, uint32_t inHeaderDataLength);
-
-		[Export ("addHTTPHeader:length:")]
-		OBEXError AddHTTPHeader (IntPtr inHeaderData, uint32_t inHeaderDataLength);
-
-		[Export ("addBodyHeader:length:endOfBody:")]
-		OBEXError AddBodyHeader (IntPtr inHeaderData, uint32_t inHeaderDataLength, bool isEndOfBody);
-
-		[Export ("addWhoHeader:length:")]
-		OBEXError AddWhoHeader (IntPtr inHeaderData, uint32_t inHeaderDataLength);
-
-		[Export ("addConnectionIDHeader:length:")]
-		OBEXError AddConnectionIDHeader (IntPtr inHeaderData, uint32_t inHeaderDataLength);
-
-		[Export ("addApplicationParameterHeader:length:")]
-		OBEXError AddApplicationParameterHeader (IntPtr inHeaderData, uint32_t inHeaderDataLength);
-
-		[Export ("addByteSequenceHeader:length:")]
-		OBEXError AddByteSequenceHeader (IntPtr inHeaderData, uint32_t inHeaderDataLength);
-
-		[Export ("addObjectClassHeader:length:")]
-		OBEXError AddObjectClassHeader (IntPtr inHeaderData, uint32_t inHeaderDataLength);
-
-		[Export ("addAuthorizationChallengeHeader:length:")]
-		OBEXError AddAuthorizationChallengeHeader (IntPtr inHeaderData, uint32_t inHeaderDataLength);
-
-		[Export ("addAuthorizationResponseHeader:length:")]
-		OBEXError AddAuthorizationResponseHeader (IntPtr inHeaderData, uint32_t inHeaderDataLength);
-
-		[Export ("addTimeISOHeader:length:")]
-		OBEXError AddTimeISOHeader (IntPtr inHeaderData, uint32_t inHeaderDataLength);
-
-		[Export ("addTypeHeader:")]
-		OBEXError AddTypeHeader (string type);
-
-		[Export ("addLengthHeader:")]
-		OBEXError AddLengthHeader (uint32_t length);
-
-		[Export ("addTime4ByteHeader:")]
-		OBEXError AddTime4ByteHeader (uint32_t time4Byte);
-
-		[Export ("addCountHeader:")]
-		OBEXError AddCountHeader (uint32_t inCount);
-
-		[Export ("addDescriptionHeader:")]
-		OBEXError AddDescriptionHeader (string inDescriptionString);
-
-		[Export ("addNameHeader:")]
-		OBEXError AddNameHeader (string inNameString);
-
-		[Export ("addUserDefinedHeader:length:")]
-		OBEXError AddUserDefinedHeader (IntPtr inHeaderData, uint32_t inHeaderDataLength);
-
-		[Export ("addImageHandleHeader:")]
-		OBEXError AddImageHandleHeader (string type);
-
-		[Export ("addImageDescriptorHeader:length:")]
-		OBEXError AddImageDescriptorHeader (IntPtr inHeaderData, uint32_t inHeaderDataLength);
-
-		[Static]
-		[Export ("withOBEXHeadersData:headersDataSize:")]
-		[Obsolete ("Deprecated in OS X 7.0")]
-		NSMutableDictionary CreateWithOBEXHeadersData (IntPtr inHeadersData, size_t inDataSize);
-
 	}
 
 	[BaseType (typeof (NSObject))]
