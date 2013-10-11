@@ -1461,6 +1461,87 @@ namespace MonoMac.IOBluetooth
 		void Unregister ();
 	}
 
+	[Category]
+	[BaseType (typeof (NSMutableDictionary))]
+	interface NSDictionaryOBEXExtensions {
+		[Static]
+		[Export ("dictionaryWithOBEXHeadersData:headersDataSize:"), Internal]
+		NSMutableDictionary createDictionaryWithOBEXHeadersData (IntPtr inHeadersData, size_t inDataSize);
+
+		[Static]
+		[Export ("dictionaryWithOBEXHeadersData:")]
+		NSMutableDictionary CreateDictionaryWithOBEXHeadersData (NSData inHeadersData);
+
+		[Export ("getHeaderBytes")]
+		NSMutableData GetHeaderBytes ();
+
+		[Export ("addTargetHeader:length:"), Internal]
+		OBEXError addTargetHeader (IntPtr inHeaderData, uint32_t inHeaderDataLength);
+
+		[Export ("addHTTPHeader:length:"), Internal]
+		OBEXError addHTTPHeader (IntPtr inHeaderData, uint32_t inHeaderDataLength);
+
+		[Export ("addBodyHeader:length:endOfBody:"), Internal]
+		OBEXError addBodyHeader (IntPtr inHeaderData, uint32_t inHeaderDataLength, bool isEndOfBody);
+
+		[Export ("addWhoHeader:length:"), Internal]
+		OBEXError addWhoHeader (IntPtr inHeaderData, uint32_t inHeaderDataLength);
+
+		[Export ("addConnectionIDHeader:length:"), Internal]
+		OBEXError addConnectionIDHeader (IntPtr inHeaderData, uint32_t inHeaderDataLength);
+
+		[Export ("addApplicationParameterHeader:length:"), Internal]
+		OBEXError addApplicationParameterHeader (IntPtr inHeaderData, uint32_t inHeaderDataLength);
+
+		[Export ("addByteSequenceHeader:length:"), Internal]
+		OBEXError addByteSequenceHeader (IntPtr inHeaderData, uint32_t inHeaderDataLength);
+
+		[Export ("addObjectClassHeader:length:"), Internal]
+		OBEXError addObjectClassHeader (IntPtr inHeaderData, uint32_t inHeaderDataLength);
+
+		[Export ("addAuthorizationChallengeHeader:length:"), Internal]
+		OBEXError addAuthorizationChallengeHeader (IntPtr inHeaderData, uint32_t inHeaderDataLength);
+
+		[Export ("addAuthorizationResponseHeader:length:"), Internal]
+		OBEXError addAuthorizationResponseHeader (IntPtr inHeaderData, uint32_t inHeaderDataLength);
+
+		[Export ("addTimeISOHeader:length:"), Internal]
+		OBEXError addTimeISOHeader (IntPtr inHeaderData, uint32_t inHeaderDataLength);
+
+		[Export ("addTypeHeader:")]
+		OBEXError AddTypeHeader (string type);
+
+		[Export ("addLengthHeader:")]
+		OBEXError AddLengthHeader (uint32_t length);
+
+		[Export ("addTime4ByteHeader:")]
+		OBEXError AddTime4ByteHeader (uint32_t time4Byte);
+
+		[Export ("addCountHeader:")]
+		OBEXError AddCountHeader (uint32_t inCount);
+
+		[Export ("addDescriptionHeader:")]
+		OBEXError AddDescriptionHeader (string inDescriptionString);
+
+		[Export ("addNameHeader:")]
+		OBEXError AddNameHeader (string inNameString);
+
+		[Export ("addUserDefinedHeader:length:"), Internal]
+		OBEXError addUserDefinedHeader (IntPtr inHeaderData, uint32_t inHeaderDataLength);
+
+		[Export ("addImageHandleHeader:")]
+		OBEXError AddImageHandleHeader (string type);
+
+		[Export ("addImageDescriptorHeader:length:"), Internal]
+		OBEXError addImageDescriptorHeader (IntPtr inHeaderData, uint32_t inHeaderDataLength);
+
+		[Static]
+		[Export ("withOBEXHeadersData:headersDataSize:"), Internal]
+		[Obsolete ("Deprecated in OS X 7.0")]
+		NSMutableDictionary createWithOBEXHeadersData (IntPtr inHeadersData, size_t inDataSize);
+
+	}
+
 	[BaseType (typeof (NSObject))]
 	interface OBEXFileTransferServices {
 	}
