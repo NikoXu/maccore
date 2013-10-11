@@ -316,43 +316,42 @@ namespace MonoMac.IOKit
 		// IOUSBFamily error codes
 		// Note that the '= IOKit.sys_iokit | IOKit.sub_iokit_usb | x' translates to 0xe0004xxx, where xxx is the value in parenthesis as a hex number.
 
-		USBUnknownPipeErr                               = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x61,	// 0xe0004061  Pipe ref not recognized
-		USBTooManyPipesErr                              = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x60,	// 0xe0004060  Too many pipes
-		USBNoAsyncPortErr                               = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x5f,	// 0xe000405f  no async port
-		USBNotEnoughPipesErr                            = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x5e,	// 0xe000405e  not enough pipes in interface
-		USBNotEnoughPowerErr                            = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x5d,	// 0xe000405d  not enough power for selected configuration
-		USBEndpointNotFound                             = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x57,	// 0xe0004057  Endpoint Not found
-		USBConfigNotFound                               = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x56,	// 0xe0004056  Configuration Not found
-		USBTransactionTimeout                           = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x51,	// 0xe0004051  Transaction timed out
-		USBTransactionReturned                          = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x50,	// 0xe0004050  The transaction has been returned to the caller
-		USBPipeStalled                                  = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x4f,	// 0xe000404f  Pipe has stalled, error needs to be cleared
-		USBInterfaceNotFound                            = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x4e,	// 0xe000404e  Interface ref not recognized
-		USBLowLatencyBufferNotPreviouslyAllocated       = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x4d,	// 0xe000404d  Attempted to use user land low latency isoc calls w/out calling PrepareBuffer (on the data buffer, first 
-		USBLowLatencyFrameListNotPreviouslyAllocated    = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x4c,	// 0xe000404c  Attempted to use user land low latency isoc calls w/out calling PrepareBuffer (on the frame list, first
-		USBHighSpeedSplitError                          = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x4b,	// 0xe000404b  Error to hub on high speed bus trying to do split transaction
-		USBSyncRequestOnWLThread                        = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x4a,	// 0xe000404a  A synchronous USB request was made on the workloop thread (from a callback?,.  Only async requests are permitted in that case
-		USBDeviceNotHighSpeed                           = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x49,	// 0xe0004049  Name is deprecated, see below
-		USBDeviceTransferredToCompanion                 = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x49,	// 0xe0004049  The device has been tranferred to another controller for enumeration
-		USBClearPipeStallNotRecursive                   = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x48,	// 0xe0004048  IOUSBPipe::ClearPipeStall should not be called recursively
-		USBDevicePortWasNotSuspended                    = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x47,	// 0xe0004047  Port was not suspended
-		USBEndpointCountExceeded                        = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x46,	// 0xe0004046  The endpoint was not created because the controller cannot support more endpoints
-		USBDeviceCountExceeded                          = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x45,	// 0xe0004045  The device cannot be enumerated because the controller cannot support more devices
-		USBStreamsNotSupported                          = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x44,	// 0xe0004044  The request cannot be completed because the XHCI controller does not support streams
-		USBInvalidSSEndpoint                            = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x43,	// 0xe0004043  An endpoint found in a SuperSpeed device is invalid (usually because there is no Endpoint Companion Descriptor,
+		IOUSBUnknownPipeErr                               = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x61,	// 0xe0004061  Pipe ref not recognized
+		IOUSBTooManyPipesErr                              = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x60,	// 0xe0004060  Too many pipes
+		IOUSBNoAsyncPortErr                               = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x5f,	// 0xe000405f  no async port
+		IOUSBNotEnoughPipesErr                            = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x5e,	// 0xe000405e  not enough pipes in interface
+		IOUSBNotEnoughPowerErr                            = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x5d,	// 0xe000405d  not enough power for selected configuration
+		IOUSBEndpointNotFound                             = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x57,	// 0xe0004057  Endpoint Not found
+		IOUSBConfigNotFound                               = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x56,	// 0xe0004056  Configuration Not found
+		IOUSBTransactionTimeout                           = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x51,	// 0xe0004051  Transaction timed out
+		IOUSBTransactionReturned                          = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x50,	// 0xe0004050  The transaction has been returned to the caller
+		IOUSBPipeStalled                                  = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x4f,	// 0xe000404f  Pipe has stalled, error needs to be cleared
+		IOUSBInterfaceNotFound                            = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x4e,	// 0xe000404e  Interface ref not recognized
+		IOUSBLowLatencyBufferNotPreviouslyAllocated       = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x4d,	// 0xe000404d  Attempted to use user land low latency isoc calls w/out calling PrepareBuffer (on the data buffer, first 
+		IOUSBLowLatencyFrameListNotPreviouslyAllocated    = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x4c,	// 0xe000404c  Attempted to use user land low latency isoc calls w/out calling PrepareBuffer (on the frame list, first
+		IOUSBHighSpeedSplitError                          = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x4b,	// 0xe000404b  Error to hub on high speed bus trying to do split transaction
+		IOUSBSyncRequestOnWLThread                        = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x4a,	// 0xe000404a  A synchronous USB request was made on the workloop thread (from a callback?,.  Only async requests are permitted in that case
+		IOUSBDeviceNotHighSpeed                           = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x49,	// 0xe0004049  Name is deprecated, see below
+		IOUSBDeviceTransferredToCompanion                 = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x49,	// 0xe0004049  The device has been tranferred to another controller for enumeration
+		IOUSBClearPipeStallNotRecursive                   = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x48,	// 0xe0004048  IOUSBPipe::ClearPipeStall should not be called recursively
+		IOUSBDevicePortWasNotSuspended                    = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x47,	// 0xe0004047  Port was not suspended
+		IOUSBEndpointCountExceeded                        = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x46,	// 0xe0004046  The endpoint was not created because the controller cannot support more endpoints
+		IOUSBDeviceCountExceeded                          = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x45,	// 0xe0004045  The device cannot be enumerated because the controller cannot support more devices
+		IOUSBStreamsNotSupported                          = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x44,	// 0xe0004044  The request cannot be completed because the XHCI controller does not support streams
+		IOUSBInvalidSSEndpoint                            = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x43,	// 0xe0004043  An endpoint found in a SuperSpeed device is invalid (usually because there is no Endpoint Companion Descriptor,
 
-		USBLinkErr           = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x10,		// 0xe0004010
-		USBNotSent2Err       = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x0f,		// 0xe000400f Transaction not sent
-		USBNotSent1Err       = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x0e,		// 0xe000400e Transaction not sent
-		USBBufferUnderrunErr = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x0d,		// 0xe000400d Buffer Underrun (Host hardware failure on data out, PCI busy?)
-		USBBufferOverrunErr  = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x0c,		// 0xe000400c Buffer Overrun (Host hardware failure on data out, PCI busy?)
-		USBReserved2Err      = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x0b,		// 0xe000400b Reserved
-		USBReserved1Err      = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x0a,		// 0xe000400a Reserved
-		USBWrongPIDErr       = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x07,		// 0xe0004007 Pipe stall, Bad or wrong PID
-		USBPIDCheckErr       = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x06,		// 0xe0004006 Pipe stall, PID CRC error
-		USBDataToggleErr     = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x03,		// 0xe0004003 Pipe stall, Bad data toggle
-		USBBitstufErr        = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x02,		// 0xe0004002 Pipe stall, bitstuffing
-		USBCRCErr            = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x01,		// 0xe0004001 Pipe stall, bad CRC
-
+		IOUSBLinkErr           = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x10,		// 0xe0004010
+		IOUSBNotSent2Err       = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x0f,		// 0xe000400f Transaction not sent
+		IOUSBNotSent1Err       = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x0e,		// 0xe000400e Transaction not sent
+		IOUSBBufferUnderrunErr = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x0d,		// 0xe000400d Buffer Underrun (Host hardware failure on data out, PCI busy?)
+		IOUSBBufferOverrunErr  = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x0c,		// 0xe000400c Buffer Overrun (Host hardware failure on data out, PCI busy?)
+		IOUSBReserved2Err      = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x0b,		// 0xe000400b Reserved
+		IOUSBReserved1Err      = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x0a,		// 0xe000400a Reserved
+		IOUSBWrongPIDErr       = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x07,		// 0xe0004007 Pipe stall, Bad or wrong PID
+		IOUSBPIDCheckErr       = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x06,		// 0xe0004006 Pipe stall, PID CRC error
+		IOUSBDataToggleErr     = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x03,		// 0xe0004003 Pipe stall, Bad data toggle
+		IOUSBBitstufErr        = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x02,		// 0xe0004002 Pipe stall, bitstuffing
+		IOUSBCRCErr            = IOKit.sys_iokit | IOKit.sub_iokit_usb | 0x01,		// 0xe0004001 Pipe stall, bad CRC
 
 		/* from IOBluetoothTypes.h */
 
