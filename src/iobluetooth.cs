@@ -336,11 +336,11 @@ namespace MonoMac.IOBluetooth
 
 		[Since (6,0)]
 		[Export ("openL2CAPChannelSync:withPSM:withConfiguration:delegate:"), Internal]
-		IOReturn openL2CAPChannelSync (IOBluetoothL2CAPChannel newChannel, BluetoothL2CAPPSM psm, NSDictionary channelConfiguration, NSObject channelDelegate);
+		IOReturn openL2CAPChannelSync (out IOBluetoothL2CAPChannel newChannel, BluetoothL2CAPPSM psm, NSDictionary channelConfiguration, NSObject channelDelegate);
 
 		[Since (6,0)]
 		[Export ("openL2CAPChannelAsync:withPSM:withConfiguration:delegate:"), Internal]
-		IOReturn openL2CAPChannelAsync (IOBluetoothL2CAPChannel newChannel, BluetoothL2CAPPSM psm, NSDictionary channelConfiguration, NSObject channelDelegate);
+		IOReturn openL2CAPChannelAsync (out IOBluetoothL2CAPChannel newChannel, BluetoothL2CAPPSM psm, NSDictionary channelConfiguration, NSObject channelDelegate);
 
 //		[Export ("awakeAfterUsingCoder:")]
 //		NSObject AwakeAfterUsingCoder (NSCoder coder);

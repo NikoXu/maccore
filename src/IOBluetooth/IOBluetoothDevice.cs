@@ -255,41 +255,45 @@ namespace MonoMac.IOBluetooth
 		}
 
 		[Since (6,0)]
-		public void OpenL2CAPChannelSync (IOBluetoothL2CAPChannel newChannel,
-		                                  BluetoothL2CAPPSM psm,
-		                                  NSDictionary channelConfiguration,
-		                                  NSObject channelDelegate)
+		public IOBluetoothL2CAPChannel OpenL2CAPChannel
+			(BluetoothL2CAPPSM psm,
+			 NSDictionary channelConfiguration,
+			 NSObject channelDelegate = null)
 		{
-			var result = openL2CAPChannelSync (newChannel, psm, channelConfiguration, channelDelegate);
+			IOBluetoothL2CAPChannel newChannel;
+			var result = openL2CAPChannelSync (out newChannel, psm, channelConfiguration, channelDelegate);
 			IOObject.ThrowIfError (result);
+			return newChannel;
 		}
 
 		[Since (6,0)]
-		public void OpenL2CAPChannelSync (IOBluetoothL2CAPChannel newChannel,
-		                                  BluetoothL2CAPPSM psm,
-		                                  NSDictionary channelConfiguration,
-		                                  IOBluetoothL2CAPChannelDelegate channelDelegate)
+		public IOBluetoothL2CAPChannel OpenL2CAPChannel
+			(BluetoothL2CAPPSM psm,
+			 NSDictionary channelConfiguration,
+			 IOBluetoothL2CAPChannelDelegate channelDelegate)
 		{
-			OpenL2CAPChannelSync (newChannel, psm, channelConfiguration, channelDelegate);
+			return OpenL2CAPChannel (psm, channelConfiguration, (NSObject)channelDelegate);
 		}
 
 		[Since (6,0)]
-		public void OpenL2CAPChannelAsync (IOBluetoothL2CAPChannel newChannel,
-		                                   BluetoothL2CAPPSM psm,
-		                                   NSDictionary channelConfiguration,
-		                                   NSObject channelDelegate)
+		public IOBluetoothL2CAPChannel OpenL2CAPChannelAsync
+			(BluetoothL2CAPPSM psm,
+			 NSDictionary channelConfiguration,
+			 NSObject channelDelegate = null)
 		{
-			var result = openL2CAPChannelAsync (newChannel, psm, channelConfiguration, channelDelegate);
+			IOBluetoothL2CAPChannel newChannel;
+			var result = openL2CAPChannelAsync (out newChannel, psm, channelConfiguration, channelDelegate);
 			IOObject.ThrowIfError (result);
+			return newChannel;
 		}
 
 		[Since (6,0)]
-		public void OpenL2CAPChannelAsync (IOBluetoothL2CAPChannel newChannel,
-		                                   BluetoothL2CAPPSM psm,
-		                                   NSDictionary channelConfiguration,
-		                                   IOBluetoothL2CAPChannelDelegate channelDelegate)
+		public IOBluetoothL2CAPChannel OpenL2CAPChannelAsync
+			(BluetoothL2CAPPSM psm,
+			 NSDictionary channelConfiguration,
+			 IOBluetoothL2CAPChannelDelegate channelDelegate)
 		{
-			OpenL2CAPChannelAsync (newChannel, psm, channelConfiguration, channelDelegate);
+			return OpenL2CAPChannelAsync (psm, channelConfiguration, (NSObject)channelDelegate);
 		}
 
 		public static event EventHandler<DeviceConnectedEventArgs> DeviceConnected;
