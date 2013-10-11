@@ -26,18 +26,216 @@
 
 using System;
 using System.Runtime.InteropServices;
+using System.Text;
+using MonoMac.Foundation;
+using MonoMac.IOKit;
+using MonoMac.ObjCRuntime;
 
+using BluetoothConnectionHandle = System.UInt16;
+using BluetoothHCILinkQuality = System.Byte;
+using BluetoothHCIRSSIValue = System.SByte;
+using IOItemCount = System.UInt32;
+using OBEXConstants = System.Byte;
+using OBEXFlags = System.Byte;
+using OBEXMaxPacketLength = System.UInt32;
+using OBEXOpCode = System.Byte;
 using OBEXSessionRef = System.IntPtr;
 using size_t = System.UIntPtr;
-using OBEXOpCode = System.Byte;
-using OBEXMaxPacketLength = System.UInt32;
-using OBEXFlags = System.Byte;
-using OBEXConstants = System.Byte;
-using BluetoothHCIRSSIValue = System.SByte;
-using BluetoothHCILinkQuality = System.Byte;
 
 namespace MonoMac.IOBluetooth
 {
+#if !COREBUILD
+	public static class IOBluetooth
+	{
+		public const ushort ConnectionHandleNone = 0xffff;
+
+		public static ushort GetSlotsFromSeconds(this double inSeconds)
+		{
+			return (ushort)(inSeconds / .000625);
+		}
+
+		public static double GetSecondsFromSlots(this ushort inSlots )
+		{
+			return inSlots * .000625;
+		}
+
+		[DllImport (Constants.IOBluetoothLibrary)]
+		extern static IOReturn IOBluetoothNSStringToDeviceAddress (IntPtr inNameString, out BluetoothDeviceAddress outDeviceAddress);
+
+		public static BluetoothDeviceAddress ToDeviceAddress (this NSString nameString)
+		{
+			BluetoothDeviceAddress deviceAddress;
+			var result = IOBluetoothNSStringToDeviceAddress (nameString.Handle, out deviceAddress);
+			IOObject.ThrowIfError (result);
+			return deviceAddress;
+		}
+
+		public static BluetoothDeviceAddress ToDeviceAddress (this string nameString)
+		{
+			using (new NSString (nameString))
+				return nameString.ToDeviceAddress ();
+		}
+
+		[DllImport (Constants.IOBluetoothLibrary)]
+		extern static IntPtr IOBluetoothNSStringFromDeviceAddress ([MarshalAs (UnmanagedType.LPStruct)] BluetoothDeviceAddress deviceAddress);
+
+		public static NSString ToNSString (this BluetoothDeviceAddress deviceAddress)
+		{
+			return (NSString)Runtime.GetNSObject(IOBluetoothNSStringFromDeviceAddress (deviceAddress));
+		}
+
+		[DllImport (Constants.IOBluetoothLibrary)]
+		extern static Boolean IOBluetoothIsFileAppleDesignatedPIMData (NSString inFileName);
+
+		public static bool IsFileAppleDesignatedPIMData (this NSString fileName)
+		{
+			return IOBluetoothIsFileAppleDesignatedPIMData (fileName);
+		}
+
+		[DllImport (Constants.IOBluetoothLibrary, EntryPoint = "IOBluetoothGetUniqueFileNameAndPath")]
+		public extern static NSString GetUniqueFileNameAndPath (NSString name, NSString path);
+
+		public static string GetUniqueFileNameAndPath (string name, string path)
+		{
+			using (var nameString = new NSString(name))
+			using (var pathString = new NSString(path))
+			using (var result = GetUniqueFileNameAndPath (nameString, pathString))
+				return result.ToString ();
+		}
+
+		[DllImport (Constants.IOBluetoothLibrary, EntryPoint = "IOBluetoothLaunchHandsFreeAgent")]
+		public extern static Boolean TryLaunchHandsFreeAgent (NSString deviceAddressString);
+
+		public static bool TryLaunchHandsFreeAgent(string deviceAddressString)
+		{
+			using (var deviceAddress = new NSString (deviceAddressString))
+				return TryLaunchHandsFreeAgent (deviceAddress);
+		}
+
+		// dont' know how to pinvoke variable arguments
+
+//		extern long		IOBluetoothPackData( void *ioBuffer, const char *inFormat, ... );
+//		extern long		IOBluetoothPackDataList( void *ioBuffer, const char *inFormat, va_list inArgs );
+
+//		extern long		IOBluetoothUnpackData( ByteCount inBufferSize, const void *inBuffer, const char *inFormat, ... );
+//		extern long		IOBluetoothUnpackDataList( ByteCount inBufferSize, const void *inBuffer, const char *inFormat, va_list inArgs );
+
+		[DllImport (Constants.IOBluetoothLibrary)]
+		extern static long IOBluetoothNumberOfAvailableHIDDevices ();
+
+		public static long AvailableHIDDevicesCount {
+			get { return IOBluetoothNumberOfAvailableHIDDevices (); }
+		}
+
+		[DllImport (Constants.IOBluetoothLibrary)]
+		extern static long IOBluetoothNumberOfPointingHIDDevices ();
+
+		public static long PointingHIDDevicesCount {
+			get { return IOBluetoothNumberOfPointingHIDDevices (); }
+		}
+
+		[DllImport (Constants.IOBluetoothLibrary)]
+		extern static long IOBluetoothNumberOfKeyboardHIDDevices ();
+
+		public static long KeyboardHIDDevicesCount {
+			get { return IOBluetoothNumberOfKeyboardHIDDevices (); }
+		}
+
+		[DllImport (Constants.IOBluetoothLibrary)]
+		extern static long IOBluetoothNumberOfTabletHIDDevices ();
+
+		public static long TabletHIDDevicesCount {
+			get { return IOBluetoothNumberOfTabletHIDDevices (); }
+		}
+
+		[DllImport (Constants.IOBluetoothLibrary, EntryPoint = "IOBluetoothFindNumberOfRegistryEntriesOfClassName")]
+		public extern static long GetRegistryEntriesCount (string className);
+	}
+#endif
+
+	[StructLayout (LayoutKind.Sequential)]
+	public class IOBluetoothDeviceSearchDeviceAttributes
+	{
+		BluetoothDeviceAddress address;
+		[MarshalAs (UnmanagedType.LPArray, SizeConst = 256)]
+		/*BluetoothDeviceName*/ byte[] name;
+		BluetoothServiceClassMajor serviceClassMajor;
+		BluetoothDeviceClassMajor deviceClassMajor;
+		BluetoothDeviceClassMinor deviceClassMinor;
+
+		public IOBluetoothDeviceSearchDeviceAttributes (
+			BluetoothDeviceAddress address,
+			string name,
+			BluetoothServiceClassMajor serviceClassMajor,
+			BluetoothDeviceClassMajor deviceClassMajor,
+			BluetoothDeviceClassMinor deviceClassMinor)
+		{
+			if (name == null)
+				throw new ArgumentNullException ("name");
+			if (Encoding.UTF8.GetByteCount (name) > 256)
+				throw new ArgumentOutOfRangeException ("name is too long");
+
+			this.address = address;
+			this.name = new byte[256];
+			Encoding.UTF8.GetBytes (name, 0, name.Length, this.name, 0);
+			this.serviceClassMajor = serviceClassMajor;
+			this.deviceClassMajor = deviceClassMajor;
+			this.deviceClassMinor = deviceClassMinor;
+		}
+
+		public BluetoothDeviceAddress Address { get { return address; } }
+
+		public string Name { get { return Encoding.UTF8.GetString (name); } }
+
+		public BluetoothServiceClassMajor ServiceClassMajor {
+			get { return serviceClassMajor; }
+		}
+
+		public BluetoothDeviceClassMajor DeviceClassMajor {
+			get { return deviceClassMajor; }
+		}
+
+		public BluetoothDeviceClassMinor DeviceClassMinor {
+			get { return deviceClassMinor; }
+		}
+	}
+
+	[StructLayout (LayoutKind.Sequential)]
+	public class IOBluetoothDeviceSearchAttributes
+	{
+		IOBluetoothDeviceSearchOptions options;
+		IOItemCount maxResults;
+		IOItemCount deviceAttributeCount;
+		/*IOBluetoothDeviceSearchDeviceAttributes*/ IntPtr attributeList;
+
+		public IOBluetoothDeviceSearchAttributes (
+			IOBluetoothDeviceSearchOptions options = IOBluetoothDeviceSearchOptions.None,
+			uint maxResults = 0,
+			IOBluetoothDeviceSearchDeviceAttributes[] attributes = null)
+		{
+			this.options = options;
+			this.maxResults = maxResults;
+			if (attributes == null) {
+				this.deviceAttributeCount = 0;
+				this.attributeList = IntPtr.Zero;
+			} else {
+				this.deviceAttributeCount = (uint)attributes.Length;
+				int attributeSize = Marshal.SizeOf (typeof(IOBluetoothDeviceSearchDeviceAttributes));
+				var pos = this.attributeList = Marshal.AllocHGlobal (attributeSize * attributes.Length);
+				foreach (var item in attributes) {
+					Marshal.StructureToPtr (item, pos, false);
+					pos += attributeSize;
+				}
+			}
+		}
+
+		~IOBluetoothDeviceSearchAttributes ()
+		{
+			if (attributeList != IntPtr.Zero)
+				Marshal.FreeHGlobal (attributeList);
+		}
+	}
+
 	[StructLayout (LayoutKind.Sequential)]
 	public struct BluetoothClassOfDevice
 	{
@@ -64,7 +262,7 @@ namespace MonoMac.IOBluetooth
 	[StructLayout (LayoutKind.Sequential)]
 	public struct BluetoothDeviceAddress
 	{
-		[MarshalAs (UnmanagedType.LPArray, SizeConst = 6)]
+		[MarshalAs (UnmanagedType.ByValArray, SizeConst = 6)]
 		byte[] data;
 
 		public byte[] Data { get { return data; } }
@@ -77,6 +275,13 @@ namespace MonoMac.IOBluetooth
 				throw new ArgumentException ("Address must be 6 bytes.", "data");
 			this.data = data;
 		}
+#if !COREBUILD
+		public override string ToString ()
+		{
+			using (var nameString = this.ToNSString ())
+				return nameString.ToString ();
+		}
+#endif
 	}
 
 	[StructLayout (LayoutKind.Sequential)]

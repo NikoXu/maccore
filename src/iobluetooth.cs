@@ -65,46 +65,72 @@ using uint8_t = System.Byte;
 
 namespace MonoMac.IOBluetooth
 {
+	[Model]
+	[Since (2,0)]
+	[BaseType (typeof (NSObject))]
+	interface IOBluetoothDeviceAsyncCallbacks {
+		[Export("remoteNameRequestComplete:status:")]
+		void RequestRemoteNameComplete (IOBluetoothDevice device, IOReturn status);
+
+		[Export("connectionComplete:status:")]
+		void ConnectionComplete (IOBluetoothDevice device, IOReturn status);
+
+		[Export("sdpQueryComplete:status:")]
+		void SdpQueryComplete (IOBluetoothDevice device, IOReturn status);
+	}
+
+	[Since (2,0)]
 	[BaseType (typeof (IOBluetoothObject))]
 	interface IOBluetoothDevice {
+		[Since (7,0)]
 		[Export ("classOfDevice")]
 		BluetoothClassOfDevice ClassOfDevice { get; }
 
+		[Since (7,0)]
 		[Export ("serviceClassMajor")]
 		BluetoothServiceClassMajor ServiceClassMajor { get; }
 
+		[Since (7,0)]
 		[Export ("deviceClassMajor")]
 		BluetoothDeviceClassMajor DeviceClassMajor { get; }
 
+		[Since (7,0)]
 		[Export ("deviceClassMinor")]
 		BluetoothDeviceClassMinor DeviceClassMinor { get; }
 
+		[Since (6,0)]
 		[Export ("name")]
 		string Name { get; }
 
+		[Since (6,0)]
 		[Export ("nameOrAddress")]
 		string NameOrAddress { get; }
 
+		[Since (7,0)]
 		[Export ("lastNameUpdate")]
 		NSDate LastNameUpdate { get; }
 
+		[Since (7,0)]
 		[Export ("addressString")]
 		string AddressString { get; }
 
+		[Since (7,0)]
 		[Export ("connectionHandle")]
 		BluetoothConnectionHandle ConnectionHandle { get; }
 
+		[Since (7,0)]
 		[Export ("services")]
 		IOBluetoothSDPServiceRecord[] Services { get; }
 
 		[Static]
-		[Export ("registerForConnectNotifications:selector:")]
-		IOBluetoothUserNotification RegisterForConnectNotifications (NSObject observer, Selector inSelector);
-
-		[Export ("registerForDisconnectNotification:selector:")]
-		IOBluetoothUserNotification RegisterForDisconnectNotification (NSObject observer, Selector inSelector);
+		[Export ("registerForConnectNotifications:selector:"), Internal]
+		IOBluetoothUserNotification registerForConnectNotifications (NSObject observer, Selector inSelector);
+		
+		[Export ("registerForDisconnectNotification:selector:"), Internal]
+		IOBluetoothUserNotification registerForDisconnectNotification (NSObject observer, Selector inSelector);
 
 		[Static]
+		[Since (7,0)]
 		[Export ("deviceWithAddress:")]
 		IOBluetoothDevice GetDeviceWithAddress (BluetoothDeviceAddress address);
 
@@ -114,40 +140,45 @@ namespace MonoMac.IOBluetooth
 //		IOBluetoothDevice WithAddress (BluetoothDeviceAddress address);
 
 		[Static]
+		[Since (7,0)]
 		[Export ("deviceWithAddressString:")]
 		IOBluetoothDevice GetDeviceWithAddress (string address);
 
-		[Static]
-		[Export ("withDeviceRef:")]
-		[Obsolete ("Deprecated in OS X 7.0")]
-		IOBluetoothDevice WithDeviceRef (IOBluetoothDeviceRef deviceRef);
+//		[Static]
+//		[Export ("withDeviceRef:")]
+//		[Obsolete ("Deprecated in OS X 7.0")]
+//		IOBluetoothDevice WithDeviceRef (IOBluetoothDeviceRef deviceRef);
+//
+//		[Export ("getDeviceRef")]
+//		[Obsolete ("Deprecated in OS X 7.0")]
+//		IOBluetoothDeviceRef DeviceRef { get; }
 
-		[Export ("getDeviceRef")]
-		[Obsolete ("Deprecated in OS X 7.0")]
-		IOBluetoothDeviceRef DeviceRef { get; }
+		[Since (2,5)]
+		[Export ("openL2CAPChannelSync:withPSM:delegate:"), Internal]
+		IOReturn openL2CAPChannelSync (out IOBluetoothL2CAPChannel newChannel, BluetoothL2CAPPSM psm, [NullAllowed] NSObject channelDelegate);
 
-		[Export ("openL2CAPChannelSync:withPSM:delegate:")]
-		IOReturn OpenL2CAPChannelSync (IOBluetoothL2CAPChannel newChannel, BluetoothL2CAPPSM psm, NSObject channelDelegate);
+		[Since (2,5)]
+		[Export ("openL2CAPChannelAsync:withPSM:delegate:"), Internal]
+		IOReturn openL2CAPChannelAsync (out IOBluetoothL2CAPChannel newChannel, BluetoothL2CAPPSM psm, [NullAllowed] NSObject channelDelegate);
 
-		[Export ("openL2CAPChannelAsync:withPSM:delegate:")]
-		IOReturn OpenL2CAPChannelAsync (IOBluetoothL2CAPChannel newChannel, BluetoothL2CAPPSM psm, NSObject channelDelegate);
+//		[Export ("openL2CAPChannel:findExisting:newChannel:")]
+//		[Obsolete ("Deprecated in OS X 5.0"), Internal]
+//		IOReturn openL2CAPChannel (BluetoothL2CAPPSM psm, bool findExisting, IOBluetoothL2CAPChannel newChannel);
 
-		[Export ("openL2CAPChannel:findExisting:newChannel:")]
-		[Obsolete ("Deprecated in OS X 5.0")]
-		IOReturn OpenL2CAPChannel (BluetoothL2CAPPSM psm, bool findExisting, IOBluetoothL2CAPChannel newChannel);
+		[Export ("sendL2CAPEchoRequest:length:"), Internal]
+		IOReturn sendL2CAPEchoRequest (IntPtr data, UInt16 length);
 
-		[Export ("sendL2CAPEchoRequest:length:")]
-		IOReturn SendL2CAPEchoRequest (IntPtr data, UInt16 length);
+//		[Export ("openRFCOMMChannel:channel:")]
+//		[Obsolete ("Deprecated in OS X 5.0")]
+//		IOReturn OpenRFCOMMChannel (BluetoothRFCOMMChannelID channelID, IOBluetoothRFCOMMChannel rfcommChannel);
 
-		[Export ("openRFCOMMChannel:channel:")]
-		[Obsolete ("Deprecated in OS X 5.0")]
-		IOReturn OpenRFCOMMChannel (BluetoothRFCOMMChannelID channelID, IOBluetoothRFCOMMChannel rfcommChannel);
+		[Since (2,5)]
+		[Export ("openRFCOMMChannelSync:withChannelID:delegate:"), Internal]
+		IOReturn openRFCOMMChannelSync (out IOBluetoothRFCOMMChannel rfcommChannel, BluetoothRFCOMMChannelID channelID, [NullAllowed] NSObject channelDelegate);
 
-		[Export ("openRFCOMMChannelSync:withChannelID:delegate:")]
-		IOReturn OpenRFCOMMChannelSync (IOBluetoothRFCOMMChannel rfcommChannel, BluetoothRFCOMMChannelID channelID, NSObject channelDelegate);
-
-		[Export ("openRFCOMMChannelAsync:withChannelID:delegate:")]
-		IOReturn OpenRFCOMMChannelAsync (IOBluetoothRFCOMMChannel rfcommChannel, BluetoothRFCOMMChannelID channelID, NSObject channelDelegate);
+		[Since (2,5)]
+		[Export ("openRFCOMMChannelAsync:withChannelID:delegate:"), Internal]
+		IOReturn openRFCOMMChannelAsync (out IOBluetoothRFCOMMChannel rfcommChannel, BluetoothRFCOMMChannelID channelID, [NullAllowed] NSObject channelDelegate);
 
 //		[Export ("getClassOfDevice")]
 //		[Obsolete ("Deprecated in OS X 7.0")]
@@ -177,8 +208,8 @@ namespace MonoMac.IOBluetooth
 //		[Obsolete ("Deprecated in OS X 7.0")]
 //		NSDate GetLastNameUpdate ();
 
-		[Export ("getAddress")]
-		BluetoothDeviceAddress Address { get; }
+		[Export ("getAddress"), Internal]
+		/*BluetoothDeviceAddress*/ IntPtr address { get; }
 
 //		[Export ("getAddressString")]
 //		[Obsolete ("Deprecated in OS X 7.0")]
@@ -199,40 +230,45 @@ namespace MonoMac.IOBluetooth
 		[Export ("getLastInquiryUpdate")]
 		NSDate LastInquiryUpdate { get; }
 
+		[Since (7,0)]
 		[Export ("RSSI")]
 		BluetoothHCIRSSIValue RSSI { get; }
 
+		[Since (7,0)]
 		[Export ("rawRSSI")]
 		BluetoothHCIRSSIValue RawRSSI { get; }
 
 		[Export ("isConnected")]
 		bool IsConnected { get; }
 
-		[Export ("openConnection")]
-		IOReturn OpenConnection ();
+		[Export ("openConnection"), Internal]
+		IOReturn openConnection ();
 
-		[Export ("openConnection:")]
-		IOReturn OpenConnection (NSObject target);
+		[Export ("openConnection:"), Internal]
+		IOReturn openConnection (NSObject target);
 
-		[Export ("openConnection:withPageTimeout:authenticationRequired:")]
-		IOReturn OpenConnection (NSObject target, BluetoothHCIPageTimeout pageTimeoutValue, bool authenticationRequired);
+		[Since (2,7)]
+		[Export ("openConnection:withPageTimeout:authenticationRequired:"), Internal]
+		IOReturn openConnection (NSObject target, BluetoothHCIPageTimeout pageTimeoutValue, bool authenticationRequired);
 
-		[Export ("closeConnection")]
-		IOReturn CloseConnection ();
+		[Export ("closeConnection"), Internal]
+		IOReturn closeConnection ();
 
-		[Export ("remoteNameRequest:")]
-		IOReturn RemoteNameRequest (NSObject target);
+		[Export ("remoteNameRequest:"), Internal]
+		IOReturn remoteNameRequest (NSObject target);
 
-		[Export ("remoteNameRequest:withPageTimeout:")]
-		IOReturn RemoteNameRequest (NSObject target, BluetoothHCIPageTimeout pageTimeoutValue);
+		[Since (2,7)]
+		[Export ("remoteNameRequest:withPageTimeout:"), Internal]
+		IOReturn remoteNameRequest (NSObject target, BluetoothHCIPageTimeout pageTimeoutValue);
 
-		[Export ("requestAuthentication")]
-		IOReturn RequestAuthentication ();
+		[Export ("requestAuthentication"), Internal]
+		IOReturn requestAuthentication ();
 
 //		[Export ("getConnectionHandle")]
 //		[Obsolete ("Deprecated in OS X 7.0")]
 //		BluetoothConnectionHandle GetConnectionHandle ();
 
+		[Since (2,7)]
 		[Export ("isIncoming")]
 		bool IsIncoming { get; }
 
@@ -242,60 +278,72 @@ namespace MonoMac.IOBluetooth
 		[Export ("getEncryptionMode")]
 		BluetoothHCIEncryptionMode EncryptionMode { get; }
 
-		[Export ("performSDPQuery:")]
-		IOReturn PerformSDPQuery (NSObject target);
+		[Export ("performSDPQuery:"), Internal]
+		IOReturn performSDPQuery (NSObject target);
 
-		[Export ("performSDPQuery:uuids:")]
-		IOReturn PerformSDPQuery (NSObject target, IOBluetoothSDPUUID[] uuids);
+		[Since (7,0)]
+		[Export ("performSDPQuery:uuids:"), Internal]
+		IOReturn performSDPQuery (NSObject target, IOBluetoothSDPUUID[] uuids);
 
 //		[Export ("getServices")]
 //		[Obsolete ("Deprecated in OS X 7.0")]
 //		IOBluetoothSDPServiceRecord[] GetServices ();
 
 		[Export ("getLastServicesUpdate")]
-		NSDate GetLastServicesUpdate ();
+		NSDate LastServicesUpdate { get; }
 
 		[Export ("getServiceRecordForUUID:")]
 		IOBluetoothSDPServiceRecord GetServiceRecordForUUID (IOBluetoothSDPUUID sdpUUID);
 
 		[Static]
+		[Since (2,4)]
 		[Export ("favoriteDevices")]
 		IOBluetoothDevice[] FavoriteDevices { get; }
 
+		[Since (2,4)]
 		[Export ("isFavorite")]
 		bool IsFavorite { get; }
 
-		[Export ("addToFavorites")]
-		IOReturn AddToFavorites ();
+		[Since (2,4)]
+		[Export ("addToFavorites"), Internal]
+		IOReturn addToFavorites ();
 
-		[Export ("removeFromFavorites")]
-		IOReturn RemoveFromFavorites ();
+		[Since (2,4)]
+		[Export ("removeFromFavorites"), Internal]
+		IOReturn removeFromFavorites ();
 
 		[Static]
+		[Since (2,4)]
 		[Export ("recentDevices:")]
 		IOBluetoothDevice[] GetRecentDevices (ulong numDevices);
 
+		[Since (2,4)]
 		[Export ("recentAccessDate")]
 		NSDate RecentAccessDate { get; }
 
 		[Static]
+		[Since (2,5)]
 		[Export ("pairedDevices")]
 		IOBluetoothDevice[] PairedDevices { get; }
 
+		[Since (2,5)]
 		[Export ("isPaired")]
 		bool IsPaired { get; }
 
-		[Export ("setSupervisionTimeout:")]
-		IOReturn SetSupervisionTimeout (UInt16 timeout);
+		[Since (6,0)]
+		[Export ("setSupervisionTimeout:"), Internal]
+		IOReturn setSupervisionTimeout (UInt16 timeout);
 
-		[Export ("openL2CAPChannelSync:withPSM:withConfiguration:delegate:")]
-		IOReturn OpenL2CAPChannelSync (IOBluetoothL2CAPChannel newChannel, BluetoothL2CAPPSM psm, NSDictionary channelConfiguration, NSObject channelDelegate);
+		[Since (6,0)]
+		[Export ("openL2CAPChannelSync:withPSM:withConfiguration:delegate:"), Internal]
+		IOReturn openL2CAPChannelSync (IOBluetoothL2CAPChannel newChannel, BluetoothL2CAPPSM psm, NSDictionary channelConfiguration, NSObject channelDelegate);
 
-		[Export ("openL2CAPChannelAsync:withPSM:withConfiguration:delegate:")]
-		IOReturn OpenL2CAPChannelAsync (IOBluetoothL2CAPChannel newChannel, BluetoothL2CAPPSM psm, NSDictionary channelConfiguration, NSObject channelDelegate);
+		[Since (6,0)]
+		[Export ("openL2CAPChannelAsync:withPSM:withConfiguration:delegate:"), Internal]
+		IOReturn openL2CAPChannelAsync (IOBluetoothL2CAPChannel newChannel, BluetoothL2CAPPSM psm, NSDictionary channelConfiguration, NSObject channelDelegate);
 
-		[Export ("awakeAfterUsingCoder:")]
-		NSObject AwakeAfterUsingCoder (NSCoder coder);
+//		[Export ("awakeAfterUsingCoder:")]
+//		NSObject AwakeAfterUsingCoder (NSCoder coder);
 
 		/* from HandsFreeDeviceAdditions */
 
@@ -798,11 +846,11 @@ namespace MonoMac.IOBluetooth
 		BluetoothL2CAPChannelID RemoteChannelID { get; }
 
 		[Static]
-		[Export ("registerForChannelOpenNotifications:selector:")]
+		[Export ("registerForChannelOpenNotifications:selector:"), Internal]
 		IOBluetoothUserNotification RegisterForChannelOpenNotifications (NSObject @object, Selector selector);
 
 		[Static]
-		[Export ("registerForChannelOpenNotifications:selector:withPSM:direction:")]
+		[Export ("registerForChannelOpenNotifications:selector:withPSM:direction:"), Internal]
 		IOBluetoothUserNotification RegisterForChannelOpenNotifications (NSObject @object, Selector selector, BluetoothL2CAPPSM psm, IOBluetoothUserNotificationChannelDirection inDirection);
 
 		[Static]
@@ -855,7 +903,7 @@ namespace MonoMac.IOBluetooth
 		[Export ("isIncoming")]
 		bool IsIncoming { get; }
 
-		[Export ("registerForChannelCloseNotification:selector:")]
+		[Export ("registerForChannelCloseNotification:selector:"), Internal]
 		IOBluetoothUserNotification RegisterForChannelCloseNotifications (NSObject observer, Selector inSelector);
 
 		//Detected properties
@@ -869,14 +917,14 @@ namespace MonoMac.IOBluetooth
 		[Obsolete ("Deprecated in OS X 5.0")]
 		IOReturn Write (IntPtr data, UInt16 length);
 
-		[Static]
-		[Export ("withL2CAPChannelRef:")]
-		[Obsolete ("Deprecated in OS X 7.0")]
-		IOBluetoothL2CAPChannel GetChannelWithL2CAPChannelRef (IOBluetoothL2CAPChannelRef l2capChannelRef);
+//		[Static]
+//		[Export ("withL2CAPChannelRef:")]
+//		[Obsolete ("Deprecated in OS X 7.0")]
+//		IOBluetoothL2CAPChannel GetChannelWithL2CAPChannelRef (IOBluetoothL2CAPChannelRef l2capChannelRef);
 
-		[Export ("getL2CAPChannelRef")]
-		[Obsolete ("Deprecated in OS X 7.0")]
-		IOBluetoothL2CAPChannelRef GetL2CAPChannelRef ();
+//		[Export ("getL2CAPChannelRef")]
+//		[Obsolete ("Deprecated in OS X 7.0")]
+//		IOBluetoothL2CAPChannelRef GetL2CAPChannelRef ();
 
 	}
 
@@ -1104,29 +1152,29 @@ namespace MonoMac.IOBluetooth
 //
 //	}
 
-	[BaseType (typeof (IOBluetoothObject))]
+	[BaseType (typeof (IOBluetoothObject), Delegates=new string [] { "WeakDelegate" })]
 	interface IOBluetoothRFCOMMChannel {
 		[Static]
-		[Export ("registerForChannelOpenNotifications:selector:")]
-		IOBluetoothUserNotification RegisterForChannelOpenNotifications (NSObject @object, Selector selector);
+		[Export ("registerForChannelOpenNotifications:selector:"), Internal]
+		IOBluetoothUserNotification registerForChannelOpenNotifications (NSObject @object, Selector selector);
 
 		[Static]
-		[Export ("registerForChannelOpenNotifications:selector:withChannelID:direction:")]
-		IOBluetoothUserNotification RegisterForChannelOpenNotifications (NSObject @object, Selector selector, BluetoothRFCOMMChannelID channelID, IOBluetoothUserNotificationChannelDirection inDirection);
+		[Export ("registerForChannelOpenNotifications:selector:withChannelID:direction:"), Internal]
+		IOBluetoothUserNotification registerForChannelOpenNotifications (NSObject @object, Selector selector, BluetoothRFCOMMChannelID channelID, IOBluetoothUserNotificationChannelDirection inDirection);
 
-		[Static]
-		[Export ("withRFCOMMChannelRef:")]
-		IOBluetoothRFCOMMChannel GetChannelWithRFCOMMChannelRef (IOBluetoothRFCOMMChannelRef rfcommChannelRef);
+//		[Static]
+//		[Export ("withRFCOMMChannelRef:")]
+//		IOBluetoothRFCOMMChannel GetChannelWithRFCOMMChannelRef (IOBluetoothRFCOMMChannelRef rfcommChannelRef);
 
 		[Static]
 		[Export ("withObjectID:")]
 		IOBluetoothRFCOMMChannel GetChannelWithObjectID (IOBluetoothObjectID objectID);
 
-		[Export ("getRFCOMMChannelRef")]
-		IOBluetoothRFCOMMChannelRef GetRFCOMMChannelRef ();
+//		[Export ("getRFCOMMChannelRef")]
+//		IOBluetoothRFCOMMChannelRef GetRFCOMMChannelRef ();
 
-		[Export ("closeChannel")]
-		IOReturn CloseChannel ();
+		[Export ("closeChannel"), Internal]
+		IOReturn closeChannel ();
 
 		[Export ("isOpen")]
 		bool IsOpen { get; }
@@ -1137,25 +1185,25 @@ namespace MonoMac.IOBluetooth
 		[Export ("isTransmissionPaused")]
 		bool IsTransmissionPaused { get; }
 
-		[Export ("write:length:sleep:")]
-		[Obsolete ("Deprecated in OS X 5.0")]
-		IOReturn Write (IntPtr data, UInt16 length, bool sleep);
+//		[Export ("write:length:sleep:"), Internal]
+//		[Obsolete ("Deprecated in OS X 5.0")]
+//		IOReturn Write (IntPtr data, UInt16 length, bool sleep);
 
-		[Export ("writeAsync:length:refcon:")]
-		IOReturn WriteAsync (IntPtr data, UInt16 length, IntPtr refcon);
+		[Export ("writeAsync:length:refcon:"), Internal]
+		IOReturn writeAsync (IntPtr data, UInt16 length, IntPtr refcon);
 
-		[Export ("writeSync:length:")]
-		IOReturn WriteSync (IntPtr data, UInt16 length);
+		[Export ("writeSync:length:"), Internal]
+		IOReturn writeSync (IntPtr data, UInt16 length);
 
-		[Export ("writeSimple:length:sleep:bytesSent:")]
-		[Obsolete ("Deprecated in OS X 5.0")]
-		IOReturn WriteSimple (IntPtr data, UInt16 length, bool sleep, UInt32 numBytesSent);
+//		[Export ("writeSimple:length:sleep:bytesSent:"), Internal]
+//		[Obsolete ("Deprecated in OS X 5.0")]
+//		IOReturn writeSimple (IntPtr data, UInt16 length, bool sleep, UInt32 numBytesSent);
 
-		[Export ("setSerialParameters:dataBits:parity:stopBits:")]
-		IOReturn SetSerialParameters (UInt32 speed, UInt8 nBits, BluetoothRFCOMMParityType parity, UInt8 bitStop);
+		[Export ("setSerialParameters:dataBits:parity:stopBits:"), Internal]
+		IOReturn setSerialParameters (UInt32 speed, UInt8 nBits, BluetoothRFCOMMParityType parity, UInt8 bitStop);
 
-		[Export ("sendRemoteLineStatus:")]
-		IOReturn SendRemoteLineStatus (BluetoothRFCOMMLineStatus lineStatus);
+		[Export ("sendRemoteLineStatus:"), Internal]
+		IOReturn sendRemoteLineStatus (BluetoothRFCOMMLineStatus lineStatus);
 
 		[Export ("getChannelID")]
 		BluetoothRFCOMMChannelID ChannelID { get; }
@@ -1168,17 +1216,16 @@ namespace MonoMac.IOBluetooth
 
 		[Export ("getObjectID")]
 		IOBluetoothObjectID ObjectID { get; }
-
-		[Export ("registerForChannelCloseNotification:selector:")]
-		IOBluetoothUserNotification RegisterForChannelCloseNotification (NSObject observer, Selector inSelector);
+		
+		[Export ("registerForChannelCloseNotification:selector:"), Internal]
+		IOBluetoothUserNotification registerForChannelCloseNotification (NSObject observer, Selector inSelector);
 
 		//Detected properties
-		[Wrap ("WeakDelegate")]
+		[Wrap ("WeakDelegate"), NullAllowed]
 		IOBluetoothRFCOMMChannelDelegate Delegate { get; set; }
 
-		[Export ("delegate")]
+		[Export ("delegate"), NullAllowed]
 		NSObject WeakDelegate { get; set; }
-
 	}
 
 	[BaseType (typeof (NSObject))]
@@ -1203,8 +1250,7 @@ namespace MonoMac.IOBluetooth
 		void WriteCompleted (IOBluetoothRFCOMMChannel rfcommChannel, IntPtr refcon, IOReturn error);
 
 		[Export ("rfcommChannelQueueSpaceAvailable:")]
-		void QueueSpaceAvailable (IOBluetoothRFCOMMChannel rfcommChannel);
-
+		void QueueSpaceBecameAvailable (IOBluetoothRFCOMMChannel rfcommChannel);
 	}
 
 	[BaseType (typeof (NSObject))]
@@ -1217,9 +1263,9 @@ namespace MonoMac.IOBluetooth
 		[Export ("withType:sizeDescriptor:size:value:")]
 		IOBluetoothSDPDataElement GetElementWithType (BluetoothSDPDataElementTypeDescriptor type, BluetoothSDPDataElementSizeDescriptor newSizeDescriptor, uint32_t newSize, NSObject newValue);
 
-		[Static]
-		[Export ("withSDPDataElementRef:")]
-		IOBluetoothSDPDataElement GetElementWithSDPDataElementRef (IOBluetoothSDPDataElementRef sdpDataElementRef);
+//		[Static]
+//		[Export ("withSDPDataElementRef:")]
+//		IOBluetoothSDPDataElement GetElementWithSDPDataElementRef (IOBluetoothSDPDataElementRef sdpDataElementRef);
 
 		[Export ("initWithElementValue:")]
 		NSObject Constructor (NSObject element);
@@ -1227,8 +1273,8 @@ namespace MonoMac.IOBluetooth
 		[Export ("initWithType:sizeDescriptor:size:value:")]
 		NSObject Constructor (BluetoothSDPDataElementTypeDescriptor newType, BluetoothSDPDataElementSizeDescriptor newSizeDescriptor, uint32_t newSize, NSObject newValue);
 
-		[Export ("getSDPDataElementRef")]
-		IOBluetoothSDPDataElementRef SDPDataElementRef { get; }
+//		[Export ("getSDPDataElementRef")]
+//		IOBluetoothSDPDataElementRef SDPDataElementRef { get; }
 
 		[Export ("getTypeDescriptor")]
 		BluetoothSDPDataElementTypeDescriptor TypeDescriptor { get; }
@@ -1301,7 +1347,7 @@ namespace MonoMac.IOBluetooth
 		NSDictionary Attributes { get; }
 
 		[Export ("sortedAttributes")]
-		NSArray SortedAttributes { get; }
+		IOBluetoothSDPServiceAttribute[] SortedAttributes { get; }
 
 		[Static]
 		[Export ("withServiceDictionary:device:")]
@@ -1310,12 +1356,12 @@ namespace MonoMac.IOBluetooth
 		[Export ("initWithServiceDictionary:device:")]
 		NSObject Constructor (NSDictionary serviceDict, IOBluetoothDevice device);
 
-		[Static]
-		[Export ("withSDPServiceRecordRef:")]
-		IOBluetoothSDPServiceRecord GetRecordWithSDPServiceRecordRef (IOBluetoothSDPServiceRecordRef sdpServiceRecordRef);
+//		[Static]
+//		[Export ("withSDPServiceRecordRef:")]
+//		IOBluetoothSDPServiceRecord GetRecordWithSDPServiceRecordRef (IOBluetoothSDPServiceRecordRef sdpServiceRecordRef);
 
-		[Export ("getSDPServiceRecordRef")]
-		IOBluetoothSDPServiceRecordRef SDPServiceRecordRef { get; }
+//		[Export ("getSDPServiceRecordRef")]
+//		IOBluetoothSDPServiceRecordRef SDPServiceRecordRef { get; }
 
 //		[Export ("getDevice")]
 //		[Obsolete ("Deprecated in OS X 6.0")]
@@ -1331,14 +1377,14 @@ namespace MonoMac.IOBluetooth
 		[Export ("getServiceName")]
 		string ServiceName { get; }
 
-		[Export ("getRFCOMMChannelID:")]
-		IOReturn GetRFCOMMChannelID (out BluetoothRFCOMMChannelID rfcommChannelID);
+		[Export ("getRFCOMMChannelID:"), Internal]
+		IOReturn getRFCOMMChannelID (out BluetoothRFCOMMChannelID rfcommChannelID);
 
-		[Export ("getL2CAPPSM:")]
-		IOReturn GetL2CAPPSM (out BluetoothL2CAPPSM outPSM);
+		[Export ("getL2CAPPSM:"), Internal]
+		IOReturn getL2CAPPSM (out BluetoothL2CAPPSM outPSM);
 
-		[Export ("getServiceRecordHandle:")]
-		IOReturn GetServiceRecordHandle (out BluetoothSDPServiceRecordHandle outServiceRecordHandle);
+//		[Export ("getServiceRecordHandle:"), Internal]
+//		IOReturn getServiceRecordHandle (out BluetoothSDPServiceRecordHandle outServiceRecordHandle);
 
 		[Export ("matchesUUID16:")]
 		bool Matches (BluetoothSDPUUID16 uuid16);
@@ -1376,10 +1422,10 @@ namespace MonoMac.IOBluetooth
 		[Export ("uuid32:")]
 		IOBluetoothSDPUUID FromUuid32 (BluetoothSDPUUID32 uuid32);
 
-		[Static]
-		[Export ("withSDPUUIDRef:")]
-		[Obsolete ("Deprecated in OS X 7.0")]
-		IOBluetoothSDPUUID FromSDPUUIDRef (IOBluetoothSDPUUIDRef sdpUUIDRef);
+//		[Static]
+//		[Export ("withSDPUUIDRef:")]
+//		[Obsolete ("Deprecated in OS X 7.0")]
+//		IOBluetoothSDPUUID FromSDPUUIDRef (IOBluetoothSDPUUIDRef sdpUUIDRef);
 
 		[Export ("initWithUUID16:")]
 		NSObject Constructor (BluetoothSDPUUID16 uuid16);
@@ -1387,9 +1433,9 @@ namespace MonoMac.IOBluetooth
 		[Export ("initWithUUID32:")]
 		NSObject Constructor (BluetoothSDPUUID32 uuid32);
 
-		[Export ("getSDPUUIDRef")]
-		[Obsolete ("Deprecated in OS X 7.0")]
-		IOBluetoothSDPUUIDRef SDPUUIDRef { get; }
+//		[Export ("getSDPUUIDRef")]
+//		[Obsolete ("Deprecated in OS X 7.0")]
+//		IOBluetoothSDPUUIDRef SDPUUIDRef { get; }
 
 		[Export ("getUUIDWithLength:")]
 		IOBluetoothSDPUUID GetUUIDWithLength (uint newLength);
@@ -1408,7 +1454,7 @@ namespace MonoMac.IOBluetooth
 
 	}
 
-	[BaseType (typeof (NSObject))]
+	[BaseType (typeof (NSObject)), Internal]
 	interface IOBluetoothUserNotification {
 		[Export ("unregister")]
 		void Unregister ();

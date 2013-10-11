@@ -648,7 +648,7 @@ namespace MonoMac.IOBluetooth
 		SCOConnection  = 0,
 		ACLConnection  = 1,
 		ESCOConnection = 2,
-		LinkTypeNone   = 0xff
+		None   = 0xff
 	}
 
 	public enum BluetoothHCIEncryptionMode : byte
@@ -708,11 +708,6 @@ namespace MonoMac.IOBluetooth
 		On           = 0x01,
 		Off          = 0x00,
 		Unintialized = 0xFF,
-	}
-
-	public enum BluetoothConnectionHandle : ushort
-	{
-		None = 0xffff
 	}
 
 	/// <remarks>
@@ -832,5 +827,13 @@ namespace MonoMac.IOBluetooth
 		OverrunError,
 		ParityError,
 		FramingError
+	}
+
+	[Flags]
+	public enum IOBluetoothDeviceSearchOptions : uint
+	{
+		None                 = 0,
+		AlwaysStartInquiry   = 1 << 0,
+		DiscardCachedResults = 1 << 1,
 	}
 }
