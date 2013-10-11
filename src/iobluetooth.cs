@@ -344,26 +344,28 @@ namespace MonoMac.IOBluetooth
 
 //		[Export ("awakeAfterUsingCoder:")]
 //		NSObject AwakeAfterUsingCoder (NSCoder coder);
+	}
 
-		/* from HandsFreeDeviceAdditions */
+	[Category]
+	[BaseTypeAttribute (typeof(IOBluetoothDevice))]
+	interface HandsFreeDeviceAdditions {
+		[Bind ("handsFreeAudioGatewayDriverID")]
+		string GetHandsFreeAudioGatewayDriverID ();
 
-		[Export ("handsFreeAudioGatewayDriverID")]
-		string HandsFreeAudioGatewayDriverID { get; }
+		[Bind ("handsFreeAudioGatewayServiceRecord")]
+		IOBluetoothSDPServiceRecord GetHandsFreeAudioGatewayServiceRecord ();
 
-		[Export ("handsFreeAudioGatewayServiceRecord")]
-		IOBluetoothSDPServiceRecord HandsFreeAudioGatewayServiceRecord { get; }
+		[Bind ("isHandsFreeAudioGateway")]
+		bool GetIsHandsFreeAudioGateway ();
 
-		[Export ("isHandsFreeAudioGateway")]
-		bool IsHandsFreeAudioGateway { get; }
+		[Bind ("handsFreeDeviceDriverID")]
+		string GetHandsFreeDeviceDriverID ();
 
-		[Export ("handsFreeDeviceDriverID")]
-		string HandsFreeDeviceDriverID { get; }
+		[Bind ("handsFreeDeviceServiceRecord")]
+		IOBluetoothSDPServiceRecord GetHandsFreeDeviceServiceRecord ();
 
-		[Export ("handsFreeDeviceServiceRecord")]
-		IOBluetoothSDPServiceRecord HandsFreeDeviceServiceRecord { get; }
-
-		[Export ("isHandsFreeDevice")]
-		bool IsHandsFreeDevice { get; }
+		[Bind ("isHandsFreeDevice")]
+		bool GetIsHandsFreeDevice ();
 	}
 
 	[BaseType (typeof (NSObject))]
