@@ -121,8 +121,31 @@ namespace MonoMac.IOBluetooth
 		}
 
 		[Since (2,5)]
+		public Task<IOBluetoothRFCOMMChannel> OpenRFCOMMChannelAsync
+			(byte channelID)
+		{
+			TaskCompletionSource<IOBluetoothRFCOMMChannel> taskCompletionSource =
+				new TaskCompletionSource<IOBluetoothRFCOMMChannel> ();
+			IOBluetoothRFCOMMChannel rfcommChannel;
+			var result = openRFCOMMChannelAsync (out rfcommChannel, channelID, null);
+			IOObject.ThrowIfError (result);
+			EventHandler<IOReturnEventArgs> handler = null;
+			handler = (sender, e) => {
+				rfcommChannel.Opened -= handler;
+				var channel = sender as IOBluetoothRFCOMMChannel;
+				channel.Release ();
+				if (e.Result == IOReturn.Success)
+					taskCompletionSource.TrySetResult (channel);
+				else
+					taskCompletionSource.TrySetException (new IOReturnException (e.Result));
+			};
+			rfcommChannel.Opened += handler;
+			return taskCompletionSource.Task;
+		}
+
+		[Since (2,5)]
 		public IOBluetoothRFCOMMChannel OpenRFCOMMChannelAsync
-			(byte channelID, NSObject channelDelegate = null)
+			(byte channelID, NSObject channelDelegate)
 		{
 			IOBluetoothRFCOMMChannel rfcommChannel;
 			var result = openRFCOMMChannelAsync (out rfcommChannel, channelID, channelDelegate);
