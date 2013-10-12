@@ -330,7 +330,7 @@ namespace MonoMac.IOBluetooth
 				if (status == IOReturn.Success)
 					device.connectionTaskCompletionSource.TrySetResult (device);
 				else
-					device.connectionTaskCompletionSource.TrySetException (new IOKitException (status));
+					device.connectionTaskCompletionSource.TrySetException (new IOReturnException (status));
 				device.connectionTaskCompletionSource = null;
 			}
 		}

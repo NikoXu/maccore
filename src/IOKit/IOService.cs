@@ -70,7 +70,7 @@ namespace MonoMac.IOKit
 		/// </summary>
 		/// <value><c>true</c> if this instance is busy with an asynchronous task; otherwise, <c>false</c>.</value>
 		/// <exception cref="ObjectDisposedException">If this instance has already been disposed.</exception>
-		/// <exception cref="IOKitException">If the method call failed.</exception>
+		/// <exception cref="IOReturnException">If the method call failed.</exception>
 		public bool IsBusy {
 			get { return BusyState > 0; }
 		}
@@ -84,7 +84,7 @@ namespace MonoMac.IOKit
 		/// provider's busyState by one, which means that an IOService is marked busy when any of the above activities is ocurring
 		/// on it or any of its clients.</remarks>
 		/// <exception cref="ObjectDisposedException">If this instance has already been disposed.</exception>
-		/// <exception cref="IOKitException">If the method call failed.</exception>
+		/// <exception cref="IOReturnException">If the method call failed.</exception>
 		public uint BusyState {
 			get {
 				ThrowIfDisposed ();
@@ -104,7 +104,7 @@ namespace MonoMac.IOKit
 		/// by one, which means that an IOService is marked busy when any of the above activities
 		/// is ocurring on it or any of its clients. BusyState returns the busy state
 		/// of the root of the service plane which reflects the busy state of all IOServices.</remarks>
-		/// <exception cref="IOKitException">If the method call failed.</exception>
+		/// <exception cref="IOReturnException">If the method call failed.</exception>
 		public static bool IsAnyBusy {
 			get { return AllBusyState > 0; }
 		}
@@ -119,7 +119,7 @@ namespace MonoMac.IOKit
 		/// by one, which means that an IOService is marked busy when any of the above activities
 		/// is ocurring on it or any of its clients. BusyState returns the busy state
 		/// of the root of the service plane which reflects the busy state of all IOServices.</remarks>
-		/// <exception cref="IOKitException">If the method call failed.</exception>
+		/// <exception cref="IOReturnException">If the method call failed.</exception>
 		public static uint AllBusyState {
 			get { return GetBusyStateForPort (kIOMasterPortDefault); }
 		}
@@ -173,7 +173,7 @@ namespace MonoMac.IOKit
 		/// use an iterator as created by IORegistryEntry.CreateIterator(). IOService.AddMatchingNotification can also supply this information
 		/// and install a notification of new IOServices. The matching information used in the matching dictionary may vary depending
 		/// on the class of service being looked up.</remarks>
-		/// <exception cref="IOKitException">If the method call failed.</exception>
+		/// <exception cref="IOReturnException">If the method call failed.</exception>
 		public static IOIterator<T> GetMatchingServices<T> (NSDictionary matchingDictionary) where T : IOService
 		{
 			return GetMatchingServices<T> (kIOMasterPortDefault, matchingDictionary.Handle);
@@ -205,7 +205,7 @@ namespace MonoMac.IOKit
 		/// <remarks>This is the preferred method of finding IOService objects that may arrive at any time.
 		/// The type of notification specifies the state change the caller is interested in, on IOService's that match the match dictionary.
 		/// The matching information used in the matching dictionary may vary depending on the class of service being looked up.</remarks>
-		/// <exception cref="IOKitException">If the method call failed.</exception>
+		/// <exception cref="IOReturnException">If the method call failed.</exception>
 		public static IOIterator<T> AddMatchingNotification<T> (IONotificationPort notifyPort, NotificationType notificationType,
 		                                                                NSDictionary matchingDictionary, MatchingCallback<T> callback) where T : IOService
 		{
@@ -237,7 +237,7 @@ namespace MonoMac.IOKit
 		/// <remarks>IOService objects deliver notifications of their state changes to their clients via the IOService::message API,
 		/// and to other interested parties including callers of this function. Message types are defined IOKit/IOMessage.h.</remarks>
 		/// <exception cref="ObjectDisposedException">If this instance has already been disposed.</exception>
-		/// <exception cref="IOKitException">If the method call failed.</exception>
+		/// <exception cref="IOReturnException">If the method call failed.</exception>
 		public IOObject AddInterestNotification (IONotificationPort notifyPort, InterestType interestType, InterestCallback callback)
 		{
 			ThrowIfDisposed ();
@@ -265,7 +265,7 @@ namespace MonoMac.IOKit
 		/// such as <see cref="CreateMatchingDictionaryForClass"/>, <see cref="CreateMatchingDictionaryForName"/>
 		/// and <see cref="CreateMatchingDictionaryForBSDName"/>.</param>
 		/// <exception cref="ObjectDisposedException">If this instance has already been disposed.</exception>
-		/// <exception cref="IOKitException">If the method call failed.</exception>
+		/// <exception cref="IOReturnException">If the method call failed.</exception>
 		public bool MatchPropertyTable (NSDictionary matchingDictionary)
 		{
 			ThrowIfDisposed ();
@@ -283,7 +283,7 @@ namespace MonoMac.IOKit
 		/// <param name="nanoseconds">Number of nanoseconds to wait.</param>
 		/// <remarks>Blocks the caller until an IOService is non busy, see <see cref="BusyState"/>.</remarks>
 		/// <exception cref="ObjectDisposedException">If this instance has already been disposed.</exception>
-		/// <exception cref="IOKitException">If the method call failed.</exception>
+		/// <exception cref="IOReturnException">If the method call failed.</exception>
 		public bool Wait (int seconds, int nanoseconds = 0)
 		{
 			return Wait (new TimeSpec () { Seconds = (uint)seconds, Nanoseconds = nanoseconds });
@@ -296,7 +296,7 @@ namespace MonoMac.IOKit
 		/// <param name="waitTime">Specifies a maximum time to wait.</param>
 		/// <remarks>Blocks the caller until an IOService is non busy, see <see cref="BusyState"/>.</remarks>
 		/// <exception cref="ObjectDisposedException">If this instance has already been disposed.</exception>
-		/// <exception cref="IOKitException">If the method call failed.</exception>
+		/// <exception cref="IOReturnException">If the method call failed.</exception>
 		public bool Wait (TimeSpec waitTime)
 		{
 			ThrowIfDisposed ();
@@ -314,7 +314,7 @@ namespace MonoMac.IOKit
 		/// <param name="seconds">Number of seconds to wait.</param>
 		/// <param name="nanoseconds">Number of nanoseconds to wait.</param>
 		/// <remarks>Blocks the caller until all IOServices are not busy, see <see cref="BusyState"/>.</remarks>
-		/// <exception cref="IOKitException">If the method call failed.</exception>
+		/// <exception cref="IOReturnException">If the method call failed.</exception>
 		public static bool WaitAll (int seconds, int nanoseconds = 0)
 		{
 			return WaitAll (new TimeSpec () { Seconds = (uint)seconds, Nanoseconds = nanoseconds });
@@ -326,7 +326,7 @@ namespace MonoMac.IOKit
 		/// <returns><c>true</c> if the method timed out; otherwise <c>false</c></returns>
 		/// <param name="waitTime">Specifies a maximum time to wait.</param>
 		/// <remarks>Blocks the caller until all IOServices are not busy, see <see cref="BusyState"/>.</remarks>
-		/// <exception cref="IOKitException">If the method call failed.</exception>
+		/// <exception cref="IOReturnException">If the method call failed.</exception>
 		public static bool WaitAll (TimeSpec waitTime)
 		{
 			return WaitForPort (kIOMasterPortDefault, waitTime);
@@ -349,9 +349,9 @@ namespace MonoMac.IOKit
 		/// <param name="type">A constant specifying the type of connection to be created, interpreted only by the IOService's family.</param>
 		/// <remarks>A non-kernel client may request a connection be opened via the IOService.Open() method,
 		/// which will call IOService::newUserClient in the kernel. The rules & capabilities of user level clients
-		/// are family dependent, the default IOService implementation returns <see cref="ReturnType.Unsupported"/> (throws IOKitException).</remarks>
+		/// are family dependent, the default IOService implementation returns <see cref="ReturnType.Unsupported"/> (throws IOReturnException).</remarks>
 		/// <exception cref="ObjectDisposedException">If this instance has already been disposed.</exception>
-		/// <exception cref="IOKitException">If the method call failed.</exception>
+		/// <exception cref="IOReturnException">If the method call failed.</exception>
 		public IOConnection Open (Task owningTask, uint type)
 		{
 			ThrowIfDisposed ();
@@ -368,9 +368,9 @@ namespace MonoMac.IOKit
 		/// <remarks>A non-kernel client may request a bus or controller rescan for added or removed devices,
 		/// if the bus family does automatically notice such changes. For example, SCSI bus controllers do not notice device changes.
 		/// The implementation of this routine is family dependent, and the default IOService implementation returns
-		/// <see cref="ReturnType.Unsupported"/> (throws IOKitException).</remarks>
+		/// <see cref="ReturnType.Unsupported"/> (throws IOReturnException).</remarks>
 		/// <exception cref="ObjectDisposedException">If this instance has already been disposed.</exception>
-		/// <exception cref="IOKitException">If the method call failed.</exception>
+		/// <exception cref="IOReturnException">If the method call failed.</exception>
 		public void RequestProbe (uint options)
 		{
 			ThrowIfDisposed ();

@@ -78,7 +78,7 @@ namespace MonoMac.IOKit
 		/// <remarks>A connection created with IOService.Open () should be closed
 		/// when the connection is no longer to be used.</remarks>
 		/// <exception cref="ObjectDisposedException">If this instance has already been closed or disposed.</exception>
-		/// <exception cref="IOKitException">If the method call failed.</exception>
+		/// <exception cref="IOReturnException">If the method call failed.</exception>
 		public void Close ()
 		{
 			ThrowIfDisposed ();
@@ -95,7 +95,7 @@ namespace MonoMac.IOKit
 		/// <param name="reference">Some families may support passing a reference parameter for the callers use with the notification.</param>
 		/// <remarks>This is a generic method to pass a mach port send right to be be used by family specific notifications.</remarks>
 		/// <exception cref="ObjectDisposedException">If this instance has already been closed or disposed.</exception>
-		/// <exception cref="IOKitException">If the method call failed.</exception>
+		/// <exception cref="IOReturnException">If the method call failed.</exception>
 		public void SetNotificationPort (uint type, Port port, UIntPtr reference = default (UIntPtr))
 		{
 			ThrowIfDisposed ();
@@ -114,7 +114,7 @@ namespace MonoMac.IOKit
 		/// The properties are interpreted by the family and commonly represent configuration settings,
 		/// but may be interpreted as anything.</remarks>
 		/// <exception cref="ObjectDisposedException">If this instance has already been closed or disposed.</exception>
-		/// <exception cref="IOKitException">If the method call failed.</exception>
+		/// <exception cref="IOReturnException">If the method call failed.</exception>
 		public void SetCFProperties (INativeObject properties)
 		{
 			ThrowIfDisposed ();
@@ -133,7 +133,7 @@ namespace MonoMac.IOKit
 		/// The property is interpreted by the family and commonly represent configuration settings,
 		/// but may be interpreted as anything.</remarks>
 		/// <exception cref="ObjectDisposedException">If this instance has already been closed or disposed.</exception>
-		/// <exception cref="IOKitException">If the method call failed.</exception>
+		/// <exception cref="IOReturnException">If the method call failed.</exception>
 		public void SetCFProperty (string name, INativeObject value)
 		{
 			ThrowIfDisposed ();

@@ -1,5 +1,5 @@
 //
-// IOKitException.cs
+// IOReturnException.cs
 //
 // Author(s):
 //       David Lechner <david@lechnology.com>
@@ -28,9 +28,9 @@ using System;
 
 namespace MonoMac.IOKit
 {
-	public class IOKitException : Exception
+	public class IOReturnException : Exception
 	{
-		public IOKitException (IOReturn error)
+		public IOReturnException (IOReturn error)
 		{
 			Error = error;
 		}
@@ -39,7 +39,7 @@ namespace MonoMac.IOKit
 
 		public override string Message {
 			get {
-				return Error.ToString ();
+				return Error.GetMessage ();
 			}
 		}
 	}

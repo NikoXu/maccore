@@ -57,7 +57,7 @@ namespace MonoMac.IOKit
 		/// <summary>Creates a new default IOMasterPort port used to initiate communication with IOKit.</summary>
 		/// <remarks>Methods that don't specify an existing object require the IOMasterPort to be passed.
 		/// This constructor obtains that port.</remarks>
-		/// <exception cref="IOKitException">If there was an error creating the port.</exception>
+		/// <exception cref="IOReturnException">If there was an error creating the port.</exception>
 		public IOMasterPort () : this (Port.NULL)
 		{
 			rootEntry = new Lazy<IORegistryEntry> (() => IORegistryEntry.GetRootEntryForPort (Handle));
@@ -67,13 +67,13 @@ namespace MonoMac.IOKit
 		/// <remarks>Methods that don't specify an existing object require the IOMasterPort to be passed.
 		/// This constructor obtains that port.</remarks>
 		/// <param name="bootstrapPort">The bootstrap port.</param>
-		/// <exception cref="IOKitException">If there was an error creating the port.</exception>
+		/// <exception cref="IOReturnException">If there was an error creating the port.</exception>
 		public IOMasterPort (uint bootstrapPort) : base (IntPtr.Zero)
 		{
 			IntPtr masterPort;
 			var error = NewIOMasterPort (bootstrapPort, out masterPort);
 			if (error != IOReturn.Success)
-				throw new IOKitException (error);
+				throw new IOReturnException (error);
 			Handle = masterPort;
 		}
 
@@ -160,7 +160,7 @@ namespace MonoMac.IOKit
 		/// use an iterator as created by IORegistryEntry.CreateIterator(). IOService.AddMatchingNotification can also supply this information
 		/// and install a notification of new IOServices. The matching information used in the matching dictionary may vary depending
 		/// on the class of service being looked up.</remarks>
-		/// <exception cref="IOKitException">If the method call failed.</exception>
+		/// <exception cref="IOReturnException">If the method call failed.</exception>
 		public IOIterator<T> GetMatchingServices<T> (CFDictionaryRef matchingDictionary) where T : IOService
 		{
 			return IOService.GetMatchingServices<T> (Handle, matchingDictionary);
@@ -209,7 +209,7 @@ namespace MonoMac.IOKit
 		/// <param="options">RegistryIteratorOptions.Recursive may be set to recurse automatically
 		/// into each entry as it is returned from IOIteratorNext calls on the registry iterator.</param>
 		/// <returns>The iterator.</returns>
-		/// <exception cref="IOKitException">Thrown if the external method call failed.</exception>
+		/// <exception cref="IOReturnException">Thrown if the external method call failed.</exception>
 		public IORegistryIterator<IOObject> CreateRootIterator (RegistryPlane plane, RegistryIteratorOptions options)
 		{
 			return IORegistryEntry.CreateRootIteratorForPort (Handle, plane, options);

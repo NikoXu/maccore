@@ -86,7 +86,7 @@ namespace MonoMac.IOKit
 		/// This function returns the entry's global name. The global name defaults
 		/// to the entry's meta class name if it has not been named.</remarks>
 		/// <exception cref="ObjectDisposedException">If this instance has already been disposed.</exception>
-		/// <exception cref="IOKitException">Thrown if the external method call failed.</exception>
+		/// <exception cref="IOReturnException">Thrown if the external method call failed.</exception>
 		public string Name {
 			get {
 				ThrowIfDisposed ();
@@ -103,7 +103,7 @@ namespace MonoMac.IOKit
 		/// a matching dictionary with IORegistryEntry.CreateIDMatchingDictionary () to be used with the IOKit matching methods.
 		/// The ID is valid only until the machine reboots.</remarks>
 		/// <exception cref="ObjectDisposedException">If this instance has already been disposed.</exception>
-		/// <exception cref="IOKitException">Thrown if the external method call failed.</exception>
+		/// <exception cref="IOReturnException">Thrown if the external method call failed.</exception>
 		public ulong ID {
 			get {
 				ThrowIfDisposed ();
@@ -142,7 +142,7 @@ namespace MonoMac.IOKit
 		/// <param="options">RegistryIteratorOptions.Recursive may be set to recurse automatically
 		/// into each entry as it is returned from IOIteratorNext calls on the registry iterator.</param>
 		/// <returns>The iterator.</returns>
-		/// <exception cref="IOKitException">Thrown if the external method call failed.</exception>
+		/// <exception cref="IOReturnException">Thrown if the external method call failed.</exception>
 		public static IORegistryIterator<IOObject> CreateRootIterator (RegistryPlane plane, RegistryIteratorOptions options)
 		{
 			return CreateRootIteratorForPort (kIOMasterPortDefault, plane, options);
@@ -169,7 +169,7 @@ namespace MonoMac.IOKit
 		/// by default the children are iterated.</param>
 		/// <returns>The iterator.</returns>
 		/// <exception cref="ObjectDisposedException">Thrown if this instance has already been disposed.</exception>
-		/// <exception cref="IOKitException">Thrown if the external method call failed.</exception>
+		/// <exception cref="IOReturnException">Thrown if the external method call failed.</exception>
 		public IORegistryIterator<IOObject> CreateIterator (RegistryPlane plane, RegistryIteratorOptions options)
 		{
 			ThrowIfDisposed ();
@@ -188,7 +188,7 @@ namespace MonoMac.IOKit
 		/// <param="plane">The registry plane.</param>
 		/// <returns>The name.</returns>
 		/// <exception cref="ObjectDisposedException">Thrown if this instance has already been disposed.</exception>
-		/// <exception cref="IOKitException">Thrown if the external method call failed.</exception>
+		/// <exception cref="IOReturnException">Thrown if the external method call failed.</exception>
 		public string GetNameInPlane (RegistryPlane plane)
 		{
 			ThrowIfDisposed ();
@@ -206,7 +206,7 @@ namespace MonoMac.IOKit
 		/// <param="plane">The registry plane.</param>
 		/// <returns>The location.</returns>
 		/// <exception cref="ObjectDisposedException">Thrown if this instance has already been disposed.</exception>
-		/// <exception cref="IOKitException">Thrown if the external method call failed.</exception>
+		/// <exception cref="IOReturnException">Thrown if the external method call failed.</exception>
 		public string GetLocationInPlane (RegistryPlane plane)
 		{
 			ThrowIfDisposed ();
@@ -225,7 +225,7 @@ namespace MonoMac.IOKit
 		/// <param="plane">The registry plane.</param>
 		/// <returns>The path.</returns>
 		/// <exception cref="ObjectDisposedException">Thrown if this instance has already been disposed.</exception>
-		/// <exception cref="IOKitException">Thrown if the external method call failed.</exception>
+		/// <exception cref="IOReturnException">Thrown if the external method call failed.</exception>
 		public string GetPathInPlane (RegistryPlane plane)
 		{
 			ThrowIfDisposed ();
@@ -243,7 +243,7 @@ namespace MonoMac.IOKit
 		/// OSNumber, OSBoolean are created as their CF counterparts. </remarks>
 		/// <returns>A NSMutableDictionary.</returns>
 		/// <exception cref="ObjectDisposedException">Thrown if this instance has already been disposed.</exception>
-		/// <exception cref="IOKitException">Thrown if the external method call failed.</exception>
+		/// <exception cref="IOReturnException">Thrown if the external method call failed.</exception>
 		public NSMutableDictionary CreateCFProperties ()
 		{
 			ThrowIfDisposed ();
@@ -280,7 +280,7 @@ namespace MonoMac.IOKit
 		/// CFSet, CFString, CFData, CFNumber, CFBoolean, and are passed in the kernel as the corresponding
 		/// OSDictionary etc. objects.</param>
 		/// <exception cref="ObjectDisposedException">Thrown if this instance has already been disposed.</exception>
-		/// <exception cref="IOKitException">Thrown if the external method call failed.</exception>
+		/// <exception cref="IOReturnException">Thrown if the external method call failed.</exception>
 		public void SetCFProperties (INativeObject properties)
 		{
 			ThrowIfDisposed ();
@@ -297,7 +297,7 @@ namespace MonoMac.IOKit
 		/// these are currently : CFDictionary, CFArray, CFSet, CFString, CFData, CFNumber, CFBoolean, and are passed
 		/// in the kernel as the corresponding OSDictionary etc. objects.</param>
 		/// <exception cref="ObjectDisposedException">Thrown if this instance has already been disposed.</exception>
-		/// <exception cref="IOKitException">Thrown if the external method call failed.</exception>
+		/// <exception cref="IOReturnException">Thrown if the external method call failed.</exception>
 		public void SetCFProperty (string propertyName, INativeObject properties)
 		{
 			ThrowIfDisposed ();
@@ -311,7 +311,7 @@ namespace MonoMac.IOKit
 		/// <param="plane">The registry plane.</param>
 		/// <returns>The created iterator over the children of the entry.</returns>
 		/// <exception cref="ObjectDisposedException">Thrown if this instance has already been disposed.</exception>
-		/// <exception cref="IOKitException">Thrown if the external method call failed.</exception>
+		/// <exception cref="IOReturnException">Thrown if the external method call failed.</exception>
 		public IORegistryIterator<IOObject> GetChildIterator (RegistryPlane plane)
 		{
 			ThrowIfDisposed ();
@@ -327,7 +327,7 @@ namespace MonoMac.IOKit
 		/// <param="plane">The registry plane.</param>
 		/// <returns>The first child of the registry entry.</returns>
 		/// <exception cref="ObjectDisposedException">Thrown if this instance has already been disposed.</exception>
-		/// <exception cref="IOKitException">Thrown if the external method call failed.</exception>
+		/// <exception cref="IOReturnException">Thrown if the external method call failed.</exception>
 		public IORegistryEntry GetChildEntry (RegistryPlane plane)
 		{
 			ThrowIfDisposed ();
@@ -343,7 +343,7 @@ namespace MonoMac.IOKit
 		/// <param="plane">The registry plane.</param>
 		/// <returns>The created iterator over the parents of the entry.</returns>
 		/// <exception cref="ObjectDisposedException">Thrown if this instance has already been disposed.</exception>
-		/// <exception cref="IOKitException">Thrown if the external method call failed.</exception>
+		/// <exception cref="IOReturnException">Thrown if the external method call failed.</exception>
 		public IORegistryIterator<IOObject> GetParentIterator (RegistryPlane plane)
 		{
 			ThrowIfDisposed ();
@@ -359,7 +359,7 @@ namespace MonoMac.IOKit
 		/// <param="plane">The registry plane.</param>
 		/// <returns>The first parent of the registry entry.</returns>
 		/// <exception cref="ObjectDisposedException">Thrown if this instance has already been disposed.</exception>
-		/// <exception cref="IOKitException">Thrown if the external method call failed.</exception>
+		/// <exception cref="IOReturnException">Thrown if the external method call failed.</exception>
 		public IORegistryEntry GetParentEntry (RegistryPlane plane)
 		{
 			ThrowIfDisposed ();

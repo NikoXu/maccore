@@ -190,7 +190,7 @@ namespace MonoMac.IOKit
 		internal static void ThrowIfError (IOReturn result)
 		{
 			if (result != IOReturn.Success)
-				throw new IOKitException (result);
+				throw new IOReturnException (result);
 		}
 
 		public override bool Equals (object obj)
