@@ -39,20 +39,13 @@ namespace MonoMac.IOKit
 		{
 		}
 
-		/// <summary>Recurse into the current entry in the registry iteration.</summary>
-		/// <remarks>This method makes the current entry, ie. the last entry returned by IOIteratorNext,
-		///  the root in a new level of recursion.</remarks>
-		/// <returns>A kern_return_t error code.</returns>
-		[DllImport (Constants.IOKitLibrary)]
-		extern static kern_return_t IORegistryIteratorEnterEntry(io_iterator_t iterator);
+		// TODO: implement these functions
 
-		/// <summary>Exits a level of recursion, restoring the current entry.</summary>
-		/// <remarks>This method undoes an IORegistryIteratorEnterEntry, restoring the current entry.
- 		/// If there are no more levels of recursion to exit false is returned, otherwise true is returned.</remarks>
-		/// <returns>kIOReturnSuccess if a level of recursion was undone, kIOReturnNoDevice
-		/// if no recursive levels are left in the iteration.</returns>
-		[DllImport (Constants.IOKitLibrary)]
-		extern static kern_return_t IORegistryIteratorExitEntry(io_iterator_t iterator);
+//		[DllImport (Constants.IOKitLibrary)]
+//		extern static kern_return_t IORegistryIteratorEnterEntry(io_iterator_t iterator);
+
+//		[DllImport (Constants.IOKitLibrary)]
+//		extern static kern_return_t IORegistryIteratorExitEntry(io_iterator_t iterator);
 
 	}
 }

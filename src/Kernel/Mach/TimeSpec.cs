@@ -30,7 +30,7 @@ using System.Runtime.InteropServices;
 namespace MonoMac.Kernel.Mach
 {
 	[StructLayout (LayoutKind.Sequential)]
-	public struct TimeSpec
+	internal struct TimeSpec
 	{
 		public uint	Seconds;
 		public int Nanoseconds;

@@ -47,6 +47,12 @@ namespace MonoMac.IOKit
 
 		public T Current { get; private set; }
 
+		[DllImport (Constants.IOKitLibrary)]
+		extern static io_object_t IOIteratorNext (io_iterator_t iterator);
+
+		[DllImport (Constants.IOKitLibrary)]
+		extern static boolean_t IOIteratorIsValid (io_iterator_t iterator);
+
 		public bool MoveNext ()
 		{
 			var nextObject = IOIteratorNext (Handle);
@@ -55,6 +61,9 @@ namespace MonoMac.IOKit
 				throw new InvalidOperationException ();
 			return Current != null;
 		}
+
+		[DllImport (Constants.IOKitLibrary)]
+		extern static void IOIteratorReset (io_iterator_t iterator);
 
 		public void Reset ()
 		{
@@ -72,35 +81,6 @@ namespace MonoMac.IOKit
 		}
 
 		#endregion
-
-		/// <summary>
-		/// Returns the next object in an iteration.
-		/// </summary>
-		/// <returns>If the iterator handle is valid, the next element in the iteration is returned, otherwise zero is returned.
-		///  The element should be released by the caller when it is finished.</returns>
-		/// <param name="iterator">An IOKit iterator handle.</param>
-		/// <remarks>This function returns the next object in an iteration, or zero if no more remain or the iterator is invalid.</remarks>
-		[DllImport (Constants.IOKitLibrary)]
-		extern static io_object_t IOIteratorNext (io_iterator_t iterator);
-
-		/// <summary>
-		/// Resets an iteration back to the beginning.
-		/// </summary>
-		/// <param name="iterator">An IOKit iterator handle.</param>
-		/// <remarks>If an iterator is invalid, or if the caller wants to start over, IOIteratorReset will set the iteration back to the beginning.</remarks>
-		[DllImport (Constants.IOKitLibrary)]
-		extern static void IOIteratorReset (io_iterator_t iterator);
-
-		/// <summary>
-		/// Checks an iterator is still valid.
-		/// </summary>
-		/// <returns>True if the iterator handle is valid, otherwise false is returned./returns>
-		/// <param name="iterator">An IOKit iterator handle.</param>
-		/// <remarks>Some iterators will be made invalid if changes are made to the structure they are iterating over.
-		/// This function checks the iterator is still valid and should be called when IOIteratorNext returns zero.
-		/// An invalid iterator can be reset and the iteration restarted.</remarks>
-		[DllImport (Constants.IOKitLibrary)]
-		extern static boolean_t IOIteratorIsValid (io_iterator_t iterator);
 	}
 }
 

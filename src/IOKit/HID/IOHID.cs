@@ -39,41 +39,15 @@ namespace MonoMac.IOKit.HID
 {
 	public static class IOHID
 	{
-		/* This is used to find HID Devices in the IORegistry */
 		public const string DeviceKey                   = "IOHIDDevice";
-
-		/*!
-		    @define kIOHIDElementKey
-		    @abstract Keys that represents an element property.
-		    @discussion Property for a HID Device or element dictionary.
-		        Elements can be heirarchical, so they can contain other elements.
-		*/
 		public const string ElementKey                  = "Elements";
 	}
 
-	/*! @	delegate IOHIDCallback
-    @discussion Type and arguments of callout C function that is used when a completion routine is called.
-    @param context void * pointer to your data, often a pointer to an object.
-    @param result Completion result of desired operation.
-    @param refcon void * pointer to more data.
-    @param sender Interface instance sending the completion routine.
-*/
 	delegate void IOHIDCallback (
                                     IntPtr                  context, 
                                     IOReturn                result, 
                                     IntPtr                  sender);
 
-/*! @	delegate IOHIDReportCallback
-    @discussion Type and arguments of callout C function that is used when a HID report completion routine is called.
-    @param context void * pointer to your data, often a pointer to an object.
-    @param result Completion result of desired operation.
-    @param refcon void * pointer to more data.
-    @param sender Interface instance sending the completion routine.
-    @param type The type of the report that was completed.
-    @param reportID The ID of the report that was completed.
-    @param report Pointer to the buffer containing the contents of the report.
-    @param reportLength Size of the buffer received upon completion.
-*/
 	delegate void IOHIDReportCallback (
                                     IntPtr                  context, 
                                     IOReturn                result, 
@@ -84,38 +58,18 @@ namespace MonoMac.IOKit.HID
                                     uint8_t[]               report, 
                                     CFIndex                 reportLength);
 
-/*! @	delegate IOHIDValueCallback
-    @discussion Type and arguments of callout C function that is used when an element value completion routine is called.
-    @param context void * pointer to more data.
-    @param result Completion result of desired operation.
-    @param sender Interface instance sending the completion routine.
-    @param value IOHIDValueRef containing the returned element value.
-*/
 	delegate void IOHIDValueCallback ( 
                                     IntPtr                  context,
                                     IOReturn                result, 
                                     IntPtr                  sender,
                                     IOHIDValueRef           value);
 
-/*! @	delegate IOHIDValueMultipleCallback
-    @discussion Type and arguments of callout C function that is used when an element value completion routine is called.
-    @param context void * pointer to more data.
-    @param result Completion result of desired operation.
-    @param sender Interface instance sending the completion routine.
-    @param multiple CFDictionaryRef containing the returned element key value pairs.
-*/
 	delegate void IOHIDValueMultipleCallback ( 
                                     IntPtr                  context,
                                     IOReturn                result, 
                                     IntPtr                  sender,
                                     CFDictionaryRef         multiple);
 
-/*! @	delegate IOHIDDeviceCallback
-    @discussion Type and arguments of callout C function that is used when a device routine is called.
-    @param context void * pointer to more data.
-    @param result Completion result of desired operation.
-    @param device IOHIDDeviceRef containing the sending device.
-*/
 	delegate void IOHIDDeviceCallback ( 
                                     IntPtr                  context,
                                     IOReturn                result, 

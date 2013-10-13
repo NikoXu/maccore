@@ -44,10 +44,6 @@ namespace MonoMac.IOKit.USB
 		DescriptorType DescriptorType { get; }
 	}
 
-	/// <summary>
-	/// Standard header used for all USB descriptors.
-	/// Used to read the length of a descriptor so that we can allocate storage for the whole descriptor later on.
-	/// </summary>
 	[StructLayout (LayoutKind.Sequential)]
 	struct IOUSBDescriptorHeader : IIOUSBDescriptor
 	{
@@ -58,73 +54,26 @@ namespace MonoMac.IOKit.USB
 		public DescriptorType DescriptorType { get { return descriptorType; } }
 	}
 
-	/// <summary>
-	/// Standard USB Configuration Descriptor.
-	/// It is variable length, so this only specifies the known fields.
-	/// We use the TotalLength field to read the whole descriptor.
-	/// See the USB Specification at http://www.usb.org.
-	/// </summary>
 	[StructLayout (LayoutKind.Sequential)]
 	public struct IOUSBConfigurationDescriptor : IIOUSBDescriptor
 	{
 		UInt8 length;
-
-		/// <summary>
-		/// The length of this descriptor (bLength).
-		/// </summary>
 		public byte Length { get { return length; } }
 
 		DescriptorType descriptorType;
-
-		/// <summary>
-		/// The type of the descriptor (bDescriptorType).
-		/// </summary>
-		/// <remarks>
-		/// Will always be <see cref="DescriptorType.Configuration"/>
-		/// </remarks>
 		public DescriptorType DescriptorType { get { return descriptorType; } }
 
 		UInt16 totalLength;
-
-		/// <summary>
-		/// The total length (wTotalLength).
-		/// </summary>
 		public ushort TotalLength {
 			get { return (ushort)IOUSB.USBToHostOrder ((short)totalLength); }
 		}
 
-		/// <summary>
-		/// The count of suppoted interfaces  (bNumInterfaces).
-		/// </summary>
 		public UInt8 InterfaceCount;
-
-		/// <summary>
-		/// The configuration value (bConfigurationValue).
-		/// </summary>
-		/// <remarks>
-		/// Set the IOUSBDevice.CurrentConfiguration property to this value to
-		/// select this configuration.
-		/// </remarks>
 		public UInt8 ConfigurationValue;
-
-		/// <summary>
-		/// The configuration index (iConfiguration).
-		/// </summary>
 		public UInt8 ConfigurationIndex;
-
-		/// <summary>
-		/// The attributes (bmAttributes).
-		/// </summary>
-		/// <remarks>
-		/// <see cref="PowerAttributes.BusPowered"/> will always be set.
-		/// </remarks>
 		public PowerAttributes PowerAttributes;
 
 		UInt8 maxPower;
-
-		/// <summary>
-		/// The max power in mA (bMaxPower).
-		/// </summary>
 		public int MaxPower {
 			get {
 				// TODO: check for Gen X mode

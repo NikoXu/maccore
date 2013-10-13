@@ -30,51 +30,27 @@ namespace MonoMac.IOKit
 {
 	public enum NotificationType
 	{
-		/// <summary>
-		/// Delivered when an IOService is registered.
-		/// </summary>
 		[Key ("IOServicePublish")]
 		Publish,
 
-		/// <summary>
-		/// Delivered when an IOService is registered, but only once per IOService instance.
-		/// Some IOService's may be reregistered when their state is changed.
-		/// </summary>
 		[Key ("IOServiceFirstPublish")]
 		FirstPublish,
 
-		/// <summary>
-		/// Delivered when an IOService has had all matching drivers in the kernel probed and started.
-		/// </summary>
 		[Key ("IOServiceMatched")]
 		Matched,
 
-		/// <summary>
-		/// Delivered when an IOService has had all matching drivers in the kernel probed and started,
-		/// but only once per IOService instance. Some IOService's may be reregistered when their state is changed.
-		/// </summary>
 		[Key ("IOServiceFirstMatch")]
 		FirstMatch,
 
-		/// <summary>
-		/// Delivered after an IOService has been terminated.
-		/// </summary>
 		[Key ("IOServiceTerminate")]
 		Terminated
 	}
 
 	public enum InterestType
 	{
-		/// <summary>
-		///  General state changes delivered via the IOService::message API.
-		/// </summary>
 		[Key ("IOGeneralInterest")]
 		General,
 
-		/// <summary>
-		/// Delivered when the IOService changes its busy state to or from zero.
-		/// The message argument contains the new busy state causing the notification.
-		/// </summary>
 		[Key ("IOBusyInterest")]
 		Busy,
 		
@@ -85,117 +61,83 @@ namespace MonoMac.IOKit
 		PriorityPowerState
 	}
 
-	/// <summary>
-	/// options for IORegistry.CreateIterator (), IORegistryEntry.CreateIterator () and
-	/// IORegistryEntry.SearchCFProperty ()
-	/// </summary>
 	[Flags]
 	public enum RegistryIteratorOptions
 	{
-		/// <summary>
-		/// No flags are set.
-		/// </summary>
-		None = 0x00000000,
 
-		/// <summary>
-		/// kIORegistryIterateRecursively
-		/// </summary>
-		Recusive = 0x00000001,
-
-		/// <summary>
-		/// kIORegistryIterateParents
-		/// </summary>
+		None           = 0x00000000,
+		Recusive       = 0x00000001,
 		IncludeParents = 0x00000002
-	};
+	}
 
 	public enum RegistryPlane
 	{
-		/// <summary>
-		/// kIOServicePlane
-		/// </summary>
 		[Key ("IOService")]
 		Service,
 
-		/// <summary>
-		/// kIOPowerPlane.
-		/// </summary>
-		[Key ("IOSPower")]
+		[Key ("IOPower")]
 		Power,
 
-		/// <summary>
-		/// kIODeviceTreePlane
-		/// </summary>
 		[Key ("IODeviceTree")]
 		DeviceTree,
 
-		/// <summary>
-		/// kIOAudioPlane
-		/// </summary>
 		[Key ("IOAudio")]
 		Audio,
 
-		/// <summary>
-		/// kIOFireWirePlane
-		/// </summary>
 		[Key ("IOFireWire")]
 		FireWire,
 
-		/// <summary>
-		/// kIOUSBPlane
-		/// </summary>
 		[Key ("IOUSB")]
 		USB
 	}
 
-	/// <summary>
-	/// Used by IOReceivePort
-	/// </summary>
 	public enum OSMessageID
 	{
-		/// <summary>
-		/// kOSNotificationMessageID
-		/// </summary>
 		Notification  = 53,
-
-		/// <summary>
-		/// kOSAsyncCompleteMessageID
-		/// </summary>
 		AsyncComplete = 57
 	}
-}
 
-public static class EnumUtil
-{
-	/// <summary>
-	/// Gets the key from the KeyAttribute of an Enum value.
-	/// </summary>
-	/// <returns>The key.</returns>
-	/// <param name="value">Value.</param>
-	public static string GetKey (this Enum value)
+	public static class EnumExtensions
 	{
-		var field = value.GetType ().GetField (value.ToString ());
-		foreach (KeyAttribute attribute in field.GetCustomAttributes (typeof(KeyAttribute), false))
-			return attribute.Key;
-		throw new ArgumentException ("Enum does not have a KeyAttribute", "value");
-	}
-}
+		public static string GetKey (this NotificationType value)
+		{
+			return GetKeyForEnum (value);
+		}
 
-/// <summary>
-/// Allows enums to be converted to the corresponding key string.
-/// </summary>
-[System.AttributeUsage (System.AttributeTargets.Field, Inherited = false, AllowMultiple = false)]
-public sealed class KeyAttribute : Attribute
-{
-	readonly string key;
+		public static string GetKey (this InterestType value)
+		{
+			return GetKeyForEnum (value);
+		}
 
-	public string Key {
-		get {
-			return key;
+		public static string GetKey (this RegistryPlane value)
+		{
+			return GetKeyForEnum (value);
+		}
+
+		static string GetKeyForEnum (Enum value)
+		{
+			var field = value.GetType ().GetField (value.ToString ());
+			foreach (KeyAttribute attribute in field.GetCustomAttributes (typeof(KeyAttribute), false))
+				return attribute.Key;
+			throw new ArgumentException ("Enum does not have a KeyAttribute", "value");
 		}
 	}
 
-	public KeyAttribute (string key)
+	// used by GetKey () extension method to convert enum to string
+	[System.AttributeUsage (System.AttributeTargets.Field, Inherited = false, AllowMultiple = false)]
+	internal sealed class KeyAttribute : Attribute
 	{
-		this.key = key;
+		readonly string key;
+
+		public string Key {
+			get {
+				return key;
+			}
+		}
+
+		public KeyAttribute (string key)
+		{
+			this.key = key;
+		}
 	}
 }

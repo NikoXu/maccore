@@ -39,14 +39,9 @@ namespace MonoMac.IOKit
 {
 	public class IOReceivePort : Port
 	{
-		/// <summary>
-		/// Creates a mach port suitable for receiving IOKit messages of the specified type.
-		/// </summary>
-		/// <param name="msgType">Type of message to be sent to this port.</param>
-		/// <remarks>In the future IOKit may use specialized messages and ports
-		/// instead of the standard ports created by mach_port_allocate(). Use this
-		/// function instead of mach_port_allocate() to ensure compatibility with future
-		/// revisions of IOKit.</remarks>
+		[DllImport (Constants.IOKitLibrary)]
+		extern static kern_return_t IOCreateReceivePort (uint32_t msgType, out mach_port_t recvPort);
+
 		public IOReceivePort (OSMessageID msgType) : base (IntPtr.Zero)
 		{
 			IntPtr receivePort;
@@ -54,19 +49,5 @@ namespace MonoMac.IOKit
 			IOObject.ThrowIfError (result);
 			Handle = receivePort;
 		}
-
-		/// <summary>
-		/// Creates and returns a mach port suitable for receiving IOKit messages of the specified type.
-		/// </summary>
-		/// <returns>A kern_return_t error code.</returns>
-		/// <param name="msgType">Type of message to be sent to this port
-		/// (kOSNotificationMessageID or kOSAsyncCompleteMessageID)</param>
-		/// <param name="recvPort"> The created port is returned.</param>
-		/// <remarks>In the future IOKit may use specialized messages and ports
-		/// instead of the standard ports created by mach_port_allocate(). Use this
-		/// function instead of mach_port_allocate() to ensure compatibility with future
-		/// revisions of IOKit.</remarks>
-		[DllImport (Constants.IOKitLibrary)]
-		extern static kern_return_t IOCreateReceivePort (uint32_t msgType, out mach_port_t recvPort);
 	}
 }

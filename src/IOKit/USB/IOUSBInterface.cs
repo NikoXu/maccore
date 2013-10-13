@@ -39,6 +39,7 @@ using IOByteCount = System.UInt32;
 using UInt8 = System.Byte;
 using io_service_t = System.IntPtr;
 using mach_port_t = System.IntPtr;
+using System.Threading.Tasks;
 
 namespace MonoMac.IOKit.USB
 {
@@ -495,13 +496,23 @@ namespace MonoMac.IOKit.USB
 				IOObject.ThrowIfError (result);
 			}
 
-			// TODO: replace IOAsyncCallback1 with a more suitable delegate
-			void SendControlRequestAsync (IOUSBDevRequest request, IOAsyncCallback1 callback)
+			public Task<int> SendControlRequestAsync (IOUSBDevRequest request)
 			{
 				ThrowIfDisposed ();
+				var completionSource = new TaskCompletionSource<int> ();
+				GCHandle callbackHandle = new GCHandle ();
+				IOAsyncCallback1 callback = (refCon, callbackResult, arg0) => {
+					callbackHandle.Free ();
+					if (callbackResult == IOReturn.Success)
+					completionSource.TrySetResult ((int)arg0);
+					else
+					completionSource.TrySetException (new IOReturnException (callbackResult));
+				};
+				callbackHandle = GCHandle.Alloc (callback, GCHandleType.Pinned);
 				var result = @interface.ControlRequestAsync (interfaceRef, pipeIndex,
 				                                             request, callback, IntPtr.Zero);
 				IOObject.ThrowIfError (result);
+				return completionSource.Task;
 			}
 
 			public PipeProperties Properties {
@@ -570,21 +581,46 @@ namespace MonoMac.IOKit.USB
 				IOObject.ThrowIfError (result);
 			}
 
-			public void ReadAsync (uint byteCount, IOAsyncCallback1 callback)
+			public Task<byte[]> ReadAsync (uint byteCount)
 			{
 				ThrowIfDisposed ();
 				var buffer = new byte[byteCount];
+				var bufferHandle = GCHandle.Alloc (buffer, GCHandleType.Pinned);
+				var completionSource = new TaskCompletionSource<byte[]> ();
+				GCHandle callbackHandle = new GCHandle ();
+				IOAsyncCallback1 callback = (refCon, callbackResult, arg0) => {
+					bufferHandle.Free ();
+					callbackHandle.Free ();
+					if (callbackResult == IOReturn.Success) {
+						Array.Resize<byte> (ref buffer, (int)arg0);
+						completionSource.TrySetResult (buffer);
+					} else
+						completionSource.TrySetException (new IOReturnException (callbackResult));
+				};
+				callbackHandle = GCHandle.Alloc (callback, GCHandleType.Pinned);
 				var result = @interface.ReadPipeAsync (interfaceRef, pipeIndex, buffer,
 				                                       byteCount, callback, IntPtr.Zero);
 				IOObject.ThrowIfError (result);
+				return completionSource.Task;
 			}
 
-			public void WriteAsync (byte[] bytes, IOAsyncCallback1 callback)
+			public Task<int> WriteAsync (byte[] bytes)
 			{
 				ThrowIfDisposed ();
+				var completionSource = new TaskCompletionSource<int> ();
+				GCHandle callbackHandle = new GCHandle ();
+				IOAsyncCallback1 callback = (refCon, callbackResult, arg0) => {
+					callbackHandle.Free ();
+					if (callbackResult == IOReturn.Success)
+					completionSource.TrySetResult ((int)arg0);
+					else
+					completionSource.TrySetException (new IOReturnException (callbackResult));
+				};
+				callbackHandle = GCHandle.Alloc (callback, GCHandleType.Pinned);
 				var result = @interface.WritePipeAsync (interfaceRef, pipeIndex, bytes,
 				                                        (uint)bytes.Length,callback, IntPtr.Zero);
 				IOObject.ThrowIfError (result);
+				return completionSource.Task;
 			}
 			
 			[Since (0,4)]
@@ -595,14 +631,24 @@ namespace MonoMac.IOKit.USB
 				IOObject.ThrowIfError (result);
 			}
 
-			// TODO: replace IOAsyncCallback1 with a more suitable delegate
 			[Since (0,4)]
-			void SendControlRequestAsync (IOUSBDevRequestTO request, IOAsyncCallback1 callback)
+			public Task<int> SendControlRequestAsync (IOUSBDevRequestTO request)
 			{
 				ThrowIfDisposed ();
+				var completionSource = new TaskCompletionSource<int> ();
+				GCHandle callbackHandle = new GCHandle ();
+				IOAsyncCallback1 callback = (refCon, callbackResult, arg0) => {
+					callbackHandle.Free ();
+					if (callbackResult == IOReturn.Success)
+					completionSource.TrySetResult ((int)arg0);
+					else
+					completionSource.TrySetException (new IOReturnException (callbackResult));
+				};
+				callbackHandle = GCHandle.Alloc (callback, GCHandleType.Pinned);
 				var result = @interface.ControlRequestAsyncTO (interfaceRef, pipeIndex,
-				                                             request, callback, IntPtr.Zero);
+				                                               request, callback, IntPtr.Zero);
 				IOObject.ThrowIfError (result);
+				return completionSource.Task;
 			}
 			
 			[Since (0,4)]
@@ -628,24 +674,49 @@ namespace MonoMac.IOKit.USB
 			}
 			
 			[Since (0,4)]
-			public void ReadAsync (uint byteCount, uint noDataTimeout, uint completionTimeout, IOAsyncCallback1 callback)
+			public Task<byte[]> ReadAsync (uint byteCount, uint noDataTimeout, uint completionTimeout)
 			{
 				ThrowIfDisposed ();
 				var buffer = new byte[byteCount];
+				var bufferHandle = GCHandle.Alloc (buffer, GCHandleType.Pinned);
+				var completionSource = new TaskCompletionSource<byte[]> ();
+				GCHandle callbackHandle = new GCHandle ();
+				IOAsyncCallback1 callback = (refCon, callbackResult, arg0) => {
+					bufferHandle.Free ();
+					callbackHandle.Free ();
+					if (callbackResult == IOReturn.Success) {
+						Array.Resize<byte> (ref buffer, (int)arg0);
+						completionSource.TrySetResult (buffer);
+					} else
+						completionSource.TrySetException (new IOReturnException (callbackResult));
+				};
+				callbackHandle = GCHandle.Alloc (callback, GCHandleType.Pinned);
 				var result = @interface.ReadPipeAsyncTO (interfaceRef, pipeIndex, buffer,
 				                                         byteCount, noDataTimeout,
 				                                         completionTimeout, callback, IntPtr.Zero);
 				IOObject.ThrowIfError (result);
+				return completionSource.Task;
 			}
 
 			[Since (0,4)]
-			public void WriteAsync (byte[] bytes, uint noDataTimeout, uint completionTimeout, IOAsyncCallback1 callback)
+			public Task<int> WriteAsync (byte[] bytes, uint noDataTimeout, uint completionTimeout)
 			{
 				ThrowIfDisposed ();
+				var completionSource = new TaskCompletionSource<int> ();
+				GCHandle callbackHandle = new GCHandle ();
+				IOAsyncCallback1 callback = (refCon, callbackResult, arg0) => {
+					callbackHandle.Free ();
+					if (callbackResult == IOReturn.Success)
+					completionSource.TrySetResult ((int)arg0);
+					else
+					completionSource.TrySetException (new IOReturnException (callbackResult));
+				};
+				callbackHandle = GCHandle.Alloc (callback, GCHandleType.Pinned);
 				var result = @interface.WritePipeAsyncTO (interfaceRef, pipeIndex, bytes,
 				                                          noDataTimeout, completionTimeout,
 				                                          (uint)bytes.Length,callback, IntPtr.Zero);
 				IOObject.ThrowIfError (result);
+				return completionSource.Task;
 			}
 
 			[Since (2,0)]
@@ -935,146 +1006,39 @@ namespace MonoMac.IOKit.USB
 		public UInt8 Mult;
 		public UInt16 BytesPerInterval;
 	}
-	
-	/// <summary>
-	/// Structure used to encode information about each isoc frame.
-	/// </summary>
+
 	[StructLayout (LayoutKind.Sequential)]
 	public struct IOUSBIsocFrame
 	{
-		/// <summary>
-		/// Returns status associated with the frame.
-		/// </summary>
 		public IOReturn Status;
-
-		/// <summary>
-		/// Input specifiying how many bytes to read or write.
-		/// </summary>
 		public UInt16   RequestedCount;
-
-		/// <summary>
-		/// Actual # of bytes transferred.
-		/// </summary>
 		public UInt16   ActualCount;
 	} 
 
-	/// <summary>
-	/// Structure used to encode information about each isoc frame that is processed
-	/// at hardware interrupt time (low latency).
-	/// </summary>
 	[StructLayout (LayoutKind.Sequential)]
 	public struct IOUSBLowLatencyIsocFrame
 	{
-		/// <summary>
-		/// Returns status associated with the frame.
-		/// </summary>
 		public IOReturn Status;
-
-		/// <summary>
-		/// Input specifiying how many bytes to read or write.
-		/// </summary>
 		public UInt16 RequestedCount;
-
-		/// <summary>
-		/// Actual # of bytes transferred.
-		/// </summary>
 		public UInt16 ActualCount;
-
-		/// <summary>
-		/// Time stamp that indicates time when frame was procesed.
-		/// </summary>
 		public AbsoluteTime TimeStamp;
 	}
 
-	/// <summary>
-	/// Structure used with the IOUSBLib GetEndpointPropertiesV3 and GetPipePropertiesV3 API.
-	/// Most of the fields are taken directly from corresponding Standard Endpoint Descriptor and
-	/// SuperSpeed Endpoint Companion Descriptor. BytesPerInterval will be synthesized
-	/// for High Speed High Bandwidth Isochronous endpoints.
-	/// </summary>
 	[StructLayout (LayoutKind.Sequential)]
 	public struct IOUSBEndpointProperties
 	{
-		/// <summary>
-		/// Version of the structure.
-		/// Currently kUSBEndpointPropertiesVersion3.
-		/// Need to set this when using this structure
-		/// </summary>
 		public EndpointPropertiesVersion Version;
-
-		/// <summary>
-		/// Used as an input for GetEndpointPropertiesV3.
-		/// Used as an output for GetPipePropertiesV3
-		/// </summary>
 		public UInt8 AlternateSetting;
-
-		/// <summary>
-		/// Used as an input for GetEndpointPropertiesV3.
-		/// Used as an output for GetPipePropertiesV3.
-		/// </summary>
 		public EndpointDirection Direction;
-
-		/// <summary>
-		/// Used as an input for GetEndpointPropertiesV3.
-		/// Used as an output for GetPipePropertiesV3
-		/// </summary>
 		public UInt8 EndpointNumber;
-
-		/// <summary>
-		/// Endpoint transfer type.
-		/// </summary>
 		public EndpointType TransferType;
-
-		/// <summary>
-		/// For interrupt endpoints, <see cref="InterruptUsageType"/> and
-		/// for isoc endpoints, <see cref="IsocUsageType"/>.
-		/// For Bulk endpoints of the UAS Mass Storage Protocol, the pipe ID.
-		/// </summary>
 		public UInt8 UsageType;
-
-		/// <summary>
-		/// For isoc endpoints only
-		/// </summary>
 		public IsocSyncType SyncType;
-
-		/// <summary>
-		/// The Interval field from the Standard Endpoint descriptor.
-		/// </summary>
 		public Interval Interval;
-
-		/// <summary>
-		/// The meaning of this value depends on whether this is called
-		/// with GetPipePropertiesV3 or GetEndpointPropertiesV3.
-		/// See the documentation of those calls for more info.
-		/// </summary>
 		public UInt16 MaxPacketSize;
-
-		/// <summary>
-		/// For SuperSpeed endpoints, maximum number of packets the endpoint
-		/// can send or receive as part of a burst
-		/// </summary>
 		public UInt8 MaxBurst;
-
-		/// <summary>
-		/// For SuperSpeed bulk endpoints, maximum number of streams this
-		/// endpoint supports.
-		/// </summary>
 		public UInt8 MaxStreams;
-
-		/// <summary>
-		/// For SuperSpeed isoc endpoints, this is the mult value from the
-		/// SuperSpeed Endpoint Companion Descriptor. For High Speed isoc and
-		/// interrupt endpoints, this is bits 11 and 12 of the Standard Endpoint
-		/// Descriptor, which represents a similar value.
-		/// </summary>
 		public UInt8 Mult;
-
-		/// <summary>
-		/// For SuperSpeed interrupt and isoc endpoints, this is the
-		/// BytesPerInterval from the SuperSpeed Endpoint Companion Descriptor.
-		/// For High Speed High Bandwidth isoc endpoints, this will be equal to
-		/// MaxPacketSize * (Mult + 1).
-		/// </summary>
 		public UInt16 BytesPerInterval;
 	}
 

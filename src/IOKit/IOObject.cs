@@ -64,52 +64,41 @@ namespace MonoMac.IOKit
 			Dispose (false);
 		}
 
-		/// <summary>
-		/// Gets the class name of this IOObject.
-		/// </summary>
-		/// <exception cref="ObjectDisposedException">If this object has been disposed.</exception>
+		#region INativeObject implementation
+
+		public IntPtr Handle { get; protected set; }
+
+		#endregion
+
+		#region API Wrappers
+
+		[DllImport (Constants.IOKitLibrary)]
+		internal extern static kern_return_t IOObjectRelease (io_object_t obj);
+
+		[DllImport (Constants.IOKitLibrary)]
+		internal extern static kern_return_t IOObjectRetain (io_object_t obj);
+
+//		[DllImport (Constants.IOKitLibrary)]
+//		extern static CFStringRef IOObjectGetClass (io_object_t obj, io_name_t className);
+
+		[DllImport (Constants.IOKitLibrary)]
+		extern static CFStringRef IOObjectCopyClass (io_object_t obj);
+
 		[Since (4,0)]
 		public string ClassName {
 			get {
 				ThrowIfDisposed ();
-				var bundleIdentifierHandle = IOObjectCopyClass (Handle);
-				var bundleIdentifier = new CFString (bundleIdentifierHandle);
-				CFType.Release (bundleIdentifierHandle);
-				return bundleIdentifier.ToString ();
+				var classNameRef = IOObjectCopyClass (Handle);
+				var className = new CFString (classNameRef);
+				CFType.Release (classNameRef);
+				return className.ToString ();
 			}
 		}
 
-		/// <summary>
-		/// Gets the kernel retain count of an IOKit object.
-		/// </summary>
-		/// <remarks>This function may be used in diagnostics to determine the current retain count of the kernel object at the kernel level.</remarks>
-		/// <exception cref="ObjectDisposedException">If this object has been disposed.</exception>
-		[Since (6,0)]
-		public uint KernelRetainCount {
-			get {
-				ThrowIfDisposed ();
-				return IOObjectGetKernelRetainCount (Handle);
-			}
-		}
+		[DllImport (Constants.IOKitLibrary)]
+		extern static CFStringRef IOObjectCopySuperclassForClass (CFStringRef classname);
 
-		/// <summary>
-		/// Gets the retain count for the current process of an IOKit object.
-		/// </summary>
-		/// <remarks>This function may be used in diagnostics to determine the current retain count for the calling process of the kernel object.</remarks>
-		/// <exception cref="ObjectDisposedException">If this object has been disposed.</exception>
-		[Since (6,0)]
-		public uint UserRetainCount {
-			get {
-				ThrowIfDisposed ();
-				return IOObjectGetUserRetainCount (Handle);
-			}
-		}
-
-		/// <summary>
-		/// Gets the superclass name of the given class.
-		/// </summary>
-		/// <returns>The resulting superclass name. If there is no superclass, or a valid class name is not passed in, then <code>null</code> is returned.</returns>
-		/// <param name="classname">The name of the class.</param>
+		[Since (4,0)]
 		public static string GetSuperclassForClass (string className)
 		{
 			var classNameAsCFString = new CFString (className);
@@ -121,11 +110,9 @@ namespace MonoMac.IOKit
 			return bundleIdentifier.ToString ();
 		}
 
-		/// <summary>
-		/// Gets the bundle identifier of the given class.
-		/// </summary>
-		/// <returns>The resulting bundle identifier. If a valid class name is not passed in, then <code>null</code> is returned.</returns>
-		/// <param name="classname">The name of the class.</param>
+		[DllImport (Constants.IOKitLibrary)]
+		extern static CFStringRef IOObjectCopyBundleIdentifierForClass (CFStringRef classname);
+
 		[Since (4,0)]
 		public static string GetBundleIdentifierForClass (string className)
 		{
@@ -138,18 +125,59 @@ namespace MonoMac.IOKit
 			return bundleIdentifier.ToString ();
 		}
 
-		/// <summary>
-		/// Performs an OSDynamicCast operation on an IOKit object.
-		/// </summary>
-		/// <returns>If the represents an object in the kernel that dynamic casts to the class <c>true</c> is returned,
-		/// otherwise <c>false</c>.</returns>
-		/// <param name="className">The name of the class.</param>
-		/// <exception cref="ObjectDisposedException">If this object has been disposed.</exception>
+		[DllImport (Constants.IOKitLibrary)]
+		extern static boolean_t IOObjectIsEqualTo (io_object_t obj1, io_object_t obj2);
+
+		public override bool Equals (object obj)
+		{
+			var ioObj = obj as IOObject;
+			if (ioObj != null)
+				return IOObjectIsEqualTo (Handle, ioObj.Handle);
+			return base.Equals (obj);
+		}
+
+		public override int GetHashCode ()
+		{
+			return 0;
+		}
+
+		[DllImport (Constants.IOKitLibrary)]
+		extern static uint32_t IOObjectGetKernelRetainCount (io_object_t obj);
+
+		[Since (6,0)]
+		public uint KernelRetainCount {
+			get {
+				ThrowIfDisposed ();
+				return IOObjectGetKernelRetainCount (Handle);
+			}
+		}
+
+		[DllImport (Constants.IOKitLibrary)]
+		extern static uint32_t IOObjectGetUserRetainCount (io_object_t obj);
+
+		[Since (6,0)]
+		public uint UserRetainCount {
+			get {
+				ThrowIfDisposed ();
+				return IOObjectGetUserRetainCount (Handle);
+			}
+		}
+
+//		[DllImport (Constants.IOKitLibrary)]
+//		extern static uint32_t IOObjectGetRetainCount (io_object_t obj);
+
+		[DllImport (Constants.IOKitLibrary)]
+		extern static boolean_t IOObjectConformsTo (io_object_t obj, io_name_t className);
+
 		public bool ConformsTo (string className)
 		{
 			ThrowIfDisposed ();
 			return IOObjectConformsTo (Handle, className);
 		}
+
+		#endregion
+
+		#region custom API
 
 		public T Cast<T> () where T : IOObject
 		{
@@ -158,13 +186,32 @@ namespace MonoMac.IOKit
 			return MarshalNativeObject<T> (Handle, false);
 		}
 
-		/// <summary>
-		/// Releases all resource used by the <see cref="IOKit.IOObject"/> object.
-		/// </summary>
-		/// <remarks>Call <see cref="Dispose"/> when you are finished using the <see cref="IOKit.IOObject"/>. The <see cref="Dispose"/>
-		/// method leaves the <see cref="IOKit.IOObject"/> in an unusable state. After calling <see cref="Dispose"/>, you must
-		/// release all references to the <see cref="IOKit.IOObject"/> so the garbage collector can reclaim the memory that
-		/// the <see cref="IOKit.IOObject"/> was occupying.</remarks>
+		internal static void ThrowIfError (IOReturn result)
+		{
+			if (result != IOReturn.Success)
+				throw new IOReturnException (result);
+		}
+
+		internal static T MarshalNativeObject<T> (IntPtr handle, bool owns) where T : IOObject
+		{
+			if (!constructorCache.ContainsKey (typeof(T))) {
+				var constructorInfo = typeof(T).GetConstructor (BindingFlags.Instance | BindingFlags.NonPublic, null,
+				                                                new Type[] { typeof(IntPtr), typeof(bool) }, null);
+				if (constructorInfo == null)
+					throw new ArgumentException (string.Format ("Type '{0}' does not contain a constructor 'T(IntPtr, bool)'", typeof(T).Name));
+				constructorCache.Add (typeof(T), (handle2, owns2) => (T)constructorInfo.Invoke (new object [] { handle2, owns2 }));
+			}
+			return (T)constructorCache [typeof(T)].Invoke (handle, owns);
+		}
+
+		public event EventHandler Disposing;
+
+		public event EventHandler Disposed;
+
+		#endregion
+
+		#region IDisposable implementation
+
 		public void Dispose ()
 		{
 			OnDisposing ();
@@ -187,24 +234,7 @@ namespace MonoMac.IOKit
 				throw new ObjectDisposedException (GetType ().Name);
 		}
 
-		internal static void ThrowIfError (IOReturn result)
-		{
-			if (result != IOReturn.Success)
-				throw new IOReturnException (result);
-		}
-
-		public override bool Equals (object obj)
-		{
-			var ioObj = obj as IOObject;
-			if (ioObj != null)
-				return IOObjectIsEqualTo (Handle, ioObj.Handle);
-			return base.Equals (obj);
-		}
-
-		public override int GetHashCode ()
-		{
-			return 0;
-		}
+		#endregion
 
 		protected void OnDisposing ()
 		{
@@ -217,138 +247,6 @@ namespace MonoMac.IOKit
 			if (Disposed != null)
 				Disposed (this, EventArgs.Empty);
 		}
-
-		internal static T MarshalNativeObject<T> (IntPtr handle, bool owns) where T : IOObject
-		{
-			if (!constructorCache.ContainsKey (typeof(T))) {
-				var constructorInfo = typeof(T).GetConstructor (BindingFlags.Instance | BindingFlags.NonPublic, null,
-				                                                new Type[] { typeof(IntPtr), typeof(bool) }, null);
-				if (constructorInfo == null)
-					throw new ArgumentException (string.Format ("Type '{0}' does not contain a constructor 'T(IntPtr, bool)'", typeof(T).Name));
-				constructorCache.Add (typeof(T), (handle2, owns2) => (T)constructorInfo.Invoke (new object [] { handle2, owns2 }));
-			}
-			return (T)constructorCache [typeof(T)].Invoke (handle, owns);
-		}
-
-		/// <summary>
-		/// Occurs when this instance is about to be disposed.
-		/// </summary>
-		public event EventHandler Disposing;
-
-		/// <summary>
-		/// Occurs when this instance has been disposed.
-		/// </summary>
-		public event EventHandler Disposed;
-
-		/// <summary>
-		/// Gets the handle of the native object.
-		/// </summary>
-		public IntPtr Handle { get; protected set; }
-
-		/// <summary>
-		/// Releases an object handle previously returned by IOKitLib.
-		/// </summary>
-		/// <returns>A kern_return_t error code.</returns>
-		/// <param name="obj">The IOKit object to release.</param>
-		/// <remarks>All objects returned by IOKitLib should be released with this function when access to them is no longer needed.
-		/// Using the object after it has been released may or may not return an error,
-		/// depending on how many references the task has to the same object in the kernel.</remarks>
-		[DllImport (Constants.IOKitLibrary)]
-		internal extern static kern_return_t IOObjectRelease (io_object_t obj);
-
-		/// <summary>
-		/// Retains an object handle previously returned by IOKitLib.
-		/// </summary>
-		/// <returns>A kern_return_t error code.</returns>
-		/// <param name="obj">The IOKit object to retain.</param>
-		/// <remarks>Gives the caller an additional reference to an existing object handle previously returned by IOKitLib.</remarks>
-		[DllImport (Constants.IOKitLibrary)]
-		internal extern static kern_return_t IOObjectRetain (io_object_t obj);
-
-		/// <summary>
-		/// Return the class name of an IOKit object.
-		/// </summary>
-		/// <returns>A kern_return_t error code.</returns>
-		/// <param name="obj">The IOKit object.</param>
-		/// <param name="className">Caller allocated buffer to receive the name string.</param>
-		/// <remarks>This function uses the OSMetaClass system in the kernel to derive the name of the class the object is an instance of.</remarks>
-		[DllImport (Constants.IOKitLibrary)]
-		extern static CFStringRef IOObjectGetClass (io_object_t obj, io_name_t className);
-
-		/// <summary>
-		/// Return the class name of an IOKit object.
-		/// </summary>
-		/// <returns>The resulting CFStringRef. This should be released by the caller. If a valid object is not passed in, then NULL is returned.</returns>
-		/// <param name="obj">The IOKit object.</param>
-		/// <remarks>This function does the same thing as IOObjectGetClass, but returns the result as a CFStringRef.</remarks>
-		[DllImport (Constants.IOKitLibrary)]
-		extern static CFStringRef IOObjectCopyClass (io_object_t obj);
-
-		/// <summary>
-		/// Return the superclass name of the given class.
-		/// </summary>
-		/// <returns>The resulting CFStringRef. This should be released by the caller. If there is no superclass, or a valid class name is not passed in, then NULL is returned.</returns>
-		/// <param name="classname">The name of the class as a CFString.</param>
-		/// <remarks>This function uses the OSMetaClass system in the kernel to derive the name of the superclass of the class.</remarks>
-		[DllImport (Constants.IOKitLibrary)]
-		extern static CFStringRef IOObjectCopySuperclassForClass (CFStringRef classname);
-
-		/// <summary>
-		/// Return the bundle identifier of the given class.
-		/// </summary>
-		/// <returns>The resulting CFStringRef. This should be released by the caller. If a valid class name is not passed in, then NULL is returned.</returns>
-		/// <param name="classname">The name of the class as a CFString.</param>
-		/// <remarks>This function uses the OSMetaClass system in the kernel to derive the name of the kmod, which is the same as the bundle identifier.</remarks>
-		[DllImport (Constants.IOKitLibrary)]
-		extern static CFStringRef IOObjectCopyBundleIdentifierForClass (CFStringRef classname);
-
-		/// <summary>
-		/// Performs an OSDynamicCast operation on an IOKit object.
-		/// </summary>
-		/// <returns>If the object handle is valid, and represents an object in the kernel that dynamic casts to the class true is returned, otherwise false.</returns>
-		/// <param name="obj">An IOKit object.</param>
-		/// <param name="className">The name of the class, as a C-string.</param>
-		/// <remarks>This function uses the OSMetaClass system in the kernel to determine if the object will dynamic cast to a class,
-		/// specified as a C-string. In other words, if the object is of that class or a subclass.</remarks>
-		[DllImport (Constants.IOKitLibrary)]
-		extern static boolean_t IOObjectConformsTo (io_object_t obj, io_name_t className);
-
-		/// <summary>
-		/// Checks two object handles to see if they represent the same kernel object.
-		/// </summary>
-		/// <returns>If both object handles are valid, and represent the same object in the kernel true is returned, otherwise false.</returns>
-		/// <param name="obj1">An IOKit object.</param>
-		/// <param name="obj2">Another IOKit object.</param>
-		/// <remarks>If two object handles are returned by IOKitLib functions, this function will compare them to see if they represent the same kernel object.</remarks>
-		[DllImport (Constants.IOKitLibrary)]
-		extern static boolean_t IOObjectIsEqualTo (io_object_t obj1, io_object_t obj2);
-
-		/// <summary>
-		/// Returns kernel retain count of an IOKit object.
-		/// </summary>
-		/// <returns>If the object handle is valid, the kernel objects retain count is returned, otherwise zero is returned.</returns>
-		/// <param name="obj">An IOKit object.</param>
-		/// <remarks>This function may be used in diagnostics to determine the current retain count of the kernel object at the kernel level.</remarks>
-		[DllImport (Constants.IOKitLibrary)]
-		extern static uint32_t IOObjectGetKernelRetainCount (io_object_t obj);
-
-		/// <summary>
-		/// Returns the retain count for the current process of an IOKit object.
-		/// </summary>
-		/// <returns>If the object handle is valid, the objects user retain count is returned, otherwise zero is returned.</returns>
-		/// <param name="obj">An IOKit object.</param>
-		/// <remarks>This function may be used in diagnostics to determine the current retain count for the calling process of the kernel object.</remarks>
-		[DllImport (Constants.IOKitLibrary)]
-		extern static uint32_t IOObjectGetUserRetainCount (io_object_t obj);
-
-		/// <summary>
-		/// Returns kernel retain count of an IOKit object. Identical to IOObjectGetKernelRetainCount() but available prior to Mac OS 10.6.
-		/// </summary>
-		/// <returns>If the object handle is valid, the kernel objects retain count is returned, otherwise zero is returned.</returns>
-		/// <param name="obj">An IOKit object.</param>
-		/// <remarks>This function may be used in diagnostics to determine the current retain count of the kernel object at the kernel level.</remarks>
-		[DllImport (Constants.IOKitLibrary)]
-		extern static uint32_t IOObjectGetRetainCount (io_object_t obj);
 	}
 }
 
