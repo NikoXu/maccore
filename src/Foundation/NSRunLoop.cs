@@ -113,12 +113,12 @@ namespace MonoMac.Foundation {
 
 		public void Stop ()
 		{
-			GetCFRunLoop ().Stop ();
+			CFRunLoop.Stop ();
 		}
 
 		public void WakeUp ()
 		{
-			GetCFRunLoop ().WakeUp ();
+			CFRunLoop.WakeUp ();
 		}
 
 		public bool RunUntil (NSRunLoopMode mode, NSDate limitDate)

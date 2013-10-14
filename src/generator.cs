@@ -1670,7 +1670,7 @@ public class Generator {
 		marshal_types.Add (new MarshalType (typeof (Selector), "IntPtr", "{0}.Handle", "Selector.FromHandle ("));
 		marshal_types.Add (new MarshalType (typeof (Class), "IntPtr", "{0}.Handle", "new Class ("));
 		marshal_types.Add (new MarshalType (typeof (NSString), "IntPtr", "{0}.Handle", "new NSString ("));
-		marshal_types.Add (new MarshalType (typeof (CFRunLoop), "IntPtr", "{0}.Handle", "new CFRunLoop ("));
+		marshal_types.Add (new MarshalType (typeof (CFRunLoop), "IntPtr", "{0}.Handle", "CFType.GetCFObject<CFRunLoop> ("));
 		marshal_types.Add (new MarshalType (typeof (CGColorSpace), "IntPtr", "{0}.Handle", "new CGColorSpace ("));
 		marshal_types.Add (new MarshalType (typeof (DispatchQueue), "IntPtr", "{0}.Handle", "new DispatchQueue ("));
 		marshal_types.Add (new MarshalType (typeof (MidiEndpoint), "IntPtr", "{0}.Handle", "new MidiEndpoint ("));

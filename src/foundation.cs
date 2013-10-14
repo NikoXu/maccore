@@ -2074,7 +2074,7 @@ namespace MonoMac.Foundation
 		NSString CurrentMode { get; }
 
 		[Export ("getCFRunLoop")]
-		CFRunLoop GetCFRunLoop ();
+		CFRunLoop CFRunLoop { get; }
 
 		[Export ("addTimer:forMode:")]
 		void AddTimer (NSTimer timer, NSString forMode);

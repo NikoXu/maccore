@@ -58,6 +58,10 @@ namespace MonoMac.CoreFoundation {
 	}
 
 	public class CFRunLoopSource : CFType {
+		protected CFRunLoopSource ()
+		{
+		}
+
 		internal CFRunLoopSource (IntPtr handle)
 			: this (handle, false)
 		{
@@ -112,7 +116,6 @@ namespace MonoMac.CoreFoundation {
 		extern static IntPtr CFRunLoopSourceCreate (IntPtr allocator, int order, IntPtr context);
 
 		protected CFRunLoopSourceCustom ()
-			: base (IntPtr.Zero, true)
 		{
 			gch = GCHandle.Alloc (this);
 			var ctx = new CFRunLoopSourceContext ();
@@ -131,6 +134,7 @@ namespace MonoMac.CoreFoundation {
 
 			if (Handle == IntPtr.Zero)
 				throw new NotSupportedException ();
+			Register ();
 		}
 
 		delegate void ScheduleCallback (IntPtr info, IntPtr runLoop, IntPtr mode);
@@ -139,8 +143,8 @@ namespace MonoMac.CoreFoundation {
 		{
 			var source = GCHandle.FromIntPtr (info).Target as CFRunLoopSourceCustom;
 
-			var loop = new CFRunLoop (runLoop);
-			var mstring = new CFString (mode);
+			var loop = GetCFObject<CFRunLoop> (runLoop);
+			var mstring = GetCFObject<CFString> (mode);
 
 			try {
 				source.OnSchedule (loop, (string)mstring);
@@ -158,8 +162,8 @@ namespace MonoMac.CoreFoundation {
 		{
 			var source = GCHandle.FromIntPtr (info).Target as CFRunLoopSourceCustom;
 
-			var loop = new CFRunLoop (runLoop);
-			var mstring = new CFString (mode);
+			var loop = GetCFObject<CFRunLoop> (runLoop);
+			var mstring = GetCFObject<CFString> (mode);
 
 			try {
 				source.OnCancel (loop, (string)mstring);
@@ -192,6 +196,9 @@ namespace MonoMac.CoreFoundation {
 	}
 
 	public class CFRunLoop : CFType {
+		const string ModeDefault = "kCFRunLoopDefaultMode";
+		const string ModeCommon = "kCFRunLoopCommonModes";
+
 		static IntPtr CoreFoundationLibraryHandle = Dlfcn.dlopen (Constants.CoreFoundationLibrary, 0);
 
 		static NSString _CFDefaultRunLoopMode;
@@ -212,16 +219,12 @@ namespace MonoMac.CoreFoundation {
 			}
 		}
 
-		// Note: This is a broken binding... we do not know what the values of the constant strings are, just their variable names and things are done by comparing CFString pointers, not a string compare anyway.
-		public const string ModeDefault = "kCFRunLoopDefaultMode";
-		public const string ModeCommon = "kCFRunLoopCommonModes";
-		
 		[DllImport (Constants.CoreFoundationLibrary)]
 		extern static IntPtr CFRunLoopGetCurrent ();
 
 		static public CFRunLoop Current {
 			get {
-				return new CFRunLoop (CFRunLoopGetCurrent ());
+				return GetCFObject<CFRunLoop> (CFRunLoopGetCurrent ());
 			}
 		}
 
