@@ -47,10 +47,8 @@ namespace MonoMac.IOKit.USB
 	{
 		Lazy<IOCFPlugin<IOUSBInterfaceUserClientType>> pluginInterface;
 		Lazy<IIOCFPlugin<IOUSBInterfaceInterface>> interfaceInterface;
-
+		Lazy<PipeCollection> pipes;
 		Lazy<CFRunLoopSource> interfaceAsyncEventSource;
-		Lazy<Port> interfaceAsyncPort;
-		Dictionary<int, Pipe> pipes;
 
 		internal IOUSBInterface (IntPtr handle, bool owns) : base (handle, owns)
 		{
@@ -93,15 +91,14 @@ namespace MonoMac.IOKit.USB
 					(() =>	pluginInterface.Value.QueryInterface<IOUSBInterfaceInterface> ());
 
 			interfaceAsyncEventSource = new Lazy<CFRunLoopSource> (CreateAsyncEventSource);
-			interfaceAsyncPort = new Lazy<Port> (CreateAsyncPort);
-			pipes = new Dictionary<int, Pipe> ();
+			pipes = new Lazy<PipeCollection>(() => new PipeCollection (this));
 		}
 
-		IntPtr InterfaceInterfaceRef {
+		IntPtr InterfaceRef {
 			get { return interfaceInterface.Value.Handle; }
 		}
 
-		IOUSBInterfaceInterface InterfaceInterface {
+		IOUSBInterfaceInterface Interface {
 			get { return interfaceInterface.Value.Interface; }
 		}
 
@@ -109,15 +106,11 @@ namespace MonoMac.IOKit.USB
 			get { return interfaceAsyncEventSource.Value; }
 		}
 
-		public Port AsyncPort {
-			get { return interfaceAsyncPort.Value; }
-		}
-
 		public InterfaceClass Class {
 			get {
 				ThrowIfDisposed ();
 				byte @class;
-				var result = InterfaceInterface.GetInterfaceClass (InterfaceInterfaceRef, out @class);
+				var result = Interface.GetInterfaceClass (InterfaceRef, out @class);
 				IOObject.ThrowIfError (result);
 				return (InterfaceClass)@class;
 			}
@@ -127,7 +120,7 @@ namespace MonoMac.IOKit.USB
 			get {
 				ThrowIfDisposed ();
 				byte subClass;
-				var result = InterfaceInterface.GetInterfaceSubClass (InterfaceInterfaceRef, out subClass);
+				var result = Interface.GetInterfaceSubClass (InterfaceRef, out subClass);
 				IOObject.ThrowIfError (result);
 				return (InterfaceSubClass)subClass;
 			}
@@ -137,7 +130,7 @@ namespace MonoMac.IOKit.USB
 			get {
 				ThrowIfDisposed ();
 				byte protocol;
-				var result = InterfaceInterface.GetInterfaceProtocol (InterfaceInterfaceRef, out protocol);
+				var result = Interface.GetInterfaceProtocol (InterfaceRef, out protocol);
 				IOObject.ThrowIfError (result);
 				return (InterfaceProtocol)protocol;
 			}
@@ -147,7 +140,7 @@ namespace MonoMac.IOKit.USB
 			get {
 				ThrowIfDisposed ();
 				ushort vendor;
-				var result = InterfaceInterface.GetDeviceVendor (InterfaceInterfaceRef, out vendor);
+				var result = Interface.GetDeviceVendor (InterfaceRef, out vendor);
 				IOObject.ThrowIfError (result);
 				return vendor;
 			}
@@ -157,7 +150,7 @@ namespace MonoMac.IOKit.USB
 			get {
 				ThrowIfDisposed ();
 				ushort product;
-				var result = InterfaceInterface.GetDeviceProduct (InterfaceInterfaceRef, out product);
+				var result = Interface.GetDeviceProduct (InterfaceRef, out product);
 				IOObject.ThrowIfError (result);
 				return product;
 			}
@@ -167,7 +160,7 @@ namespace MonoMac.IOKit.USB
 			get {
 				ThrowIfDisposed ();
 				ushort releaseNumber;
-				var result = InterfaceInterface.GetDeviceReleaseNumber (InterfaceInterfaceRef, out releaseNumber);
+				var result = Interface.GetDeviceReleaseNumber (InterfaceRef, out releaseNumber);
 				IOObject.ThrowIfError (result);
 				return releaseNumber;
 			}
@@ -177,7 +170,7 @@ namespace MonoMac.IOKit.USB
 			get {
 				ThrowIfDisposed ();
 				byte value;
-				var result = InterfaceInterface.GetConfigurationValue (InterfaceInterfaceRef, out value);
+				var result = Interface.GetConfigurationValue (InterfaceRef, out value);
 				IOObject.ThrowIfError (result);
 				return (int)value;
 			}
@@ -187,7 +180,7 @@ namespace MonoMac.IOKit.USB
 			get {
 				ThrowIfDisposed ();
 				byte number;
-				var result = InterfaceInterface.GetInterfaceNumber (InterfaceInterfaceRef, out number);
+				var result = Interface.GetInterfaceNumber (InterfaceRef, out number);
 				IOObject.ThrowIfError (result);
 				return (int)number;
 			}
@@ -197,13 +190,13 @@ namespace MonoMac.IOKit.USB
 			get {
 				ThrowIfDisposed ();
 				byte setting;
-				var result = InterfaceInterface.GetAlternateSetting (InterfaceInterfaceRef, out setting);
+				var result = Interface.GetAlternateSetting (InterfaceRef, out setting);
 				IOObject.ThrowIfError (result);
 				return (int)setting;
 			}
 			set {
 				ThrowIfDisposed ();
-				var result = InterfaceInterface.SetAlternateInterface (InterfaceInterfaceRef, (byte)value);
+				var result = Interface.SetAlternateInterface (InterfaceRef, (byte)value);
 				IOObject.ThrowIfError (result);
 			}
 		}
@@ -212,7 +205,7 @@ namespace MonoMac.IOKit.USB
 			get {
 				ThrowIfDisposed ();
 				byte count;
-				var result = InterfaceInterface.GetNumEndpoints (InterfaceInterfaceRef, out count);
+				var result = Interface.GetNumEndpoints (InterfaceRef, out count);
 				IOObject.ThrowIfError (result);
 				return (int)count;
 			}
@@ -222,7 +215,7 @@ namespace MonoMac.IOKit.USB
 			get {
 				ThrowIfDisposed ();
 				uint locationId;
-				var result = InterfaceInterface.GetLocationID (InterfaceInterfaceRef, out locationId);
+				var result = Interface.GetLocationID (InterfaceRef, out locationId);
 				IOObject.ThrowIfError (result);
 				return locationId;
 			}
@@ -232,34 +225,20 @@ namespace MonoMac.IOKit.USB
 			get {
 				ThrowIfDisposed ();
 				IntPtr deviceRef;
-				var result = InterfaceInterface.GetDevice (InterfaceInterfaceRef, out deviceRef);
+				var result = Interface.GetDevice (InterfaceRef, out deviceRef);
 				IOObject.ThrowIfError (result);
 				return new IOUSBDevice (deviceRef, true);
 			}
 		}
 
-		public Pipe DefaultPipe {
-			get { return this [0]; }
-		}
+		public PipeCollection Pipes { get { return pipes.Value; } }
 
-		[IndexerName ("Pipes")]
-		public Pipe this[int index] {
-			get {
-				ThrowIfDisposed ();
-				if (index < 0 || index > EndpointCount)
-					throw new ArgumentException ("Index must be between 0 and EndpointCount", "index");
-				if (!pipes.ContainsKey (index))
-					pipes.Add (index, new Pipe (InterfaceInterface, InterfaceInterfaceRef, (byte)index));
-				return pipes [index];
-			}
-		}
-		
 		[Since (2,0)]
 		public uint BandwidthAvailible {
 			get {
 				ThrowIfDisposed ();
 				uint bandwidth;
-				var result = InterfaceInterface.GetBandwidthAvailable (InterfaceInterfaceRef, out bandwidth);
+				var result = Interface.GetBandwidthAvailable (InterfaceRef, out bandwidth);
 				IOObject.ThrowIfError (result);
 				return bandwidth;
 			}
@@ -270,7 +249,7 @@ namespace MonoMac.IOKit.USB
 			get {
 				ThrowIfDisposed ();
 				uint time;
-				var result = InterfaceInterface.GetFrameListTime (InterfaceInterfaceRef, out time);
+				var result = Interface.GetFrameListTime (InterfaceRef, out time);
 				IOObject.ThrowIfError (result);
 				return time;
 			}
@@ -281,7 +260,7 @@ namespace MonoMac.IOKit.USB
 			get  {
 				ThrowIfDisposed ();
 				NumVersion ioUSBLibVersion, usbFamilyVersion;
-				var result = InterfaceInterface.GetIOUSBLibVersion (InterfaceInterfaceRef, out ioUSBLibVersion, out usbFamilyVersion);
+				var result = Interface.GetIOUSBLibVersion (InterfaceRef, out ioUSBLibVersion, out usbFamilyVersion);
 				IOObject.ThrowIfError (result);
 				return ioUSBLibVersion;
 			}
@@ -292,50 +271,41 @@ namespace MonoMac.IOKit.USB
 			get  {
 				ThrowIfDisposed ();
 				NumVersion ioUSBLibVersion, usbFamilyVersion;
-				var result = InterfaceInterface.GetIOUSBLibVersion (InterfaceInterfaceRef, out ioUSBLibVersion, out usbFamilyVersion);
+				var result = Interface.GetIOUSBLibVersion (InterfaceRef, out ioUSBLibVersion, out usbFamilyVersion);
 				IOObject.ThrowIfError (result);
 				return usbFamilyVersion;
 			}
 		}
 
-		public CFRunLoopSource CreateAsyncEventSource ()
+		CFRunLoopSource CreateAsyncEventSource ()
 		{
 			ThrowIfDisposed ();
 			IntPtr runLoopSourceRef;
-			var result = InterfaceInterface.CreateInterfaceAsyncEventSource (InterfaceInterfaceRef, out runLoopSourceRef);
+			var result = Interface.CreateInterfaceAsyncEventSource (InterfaceRef, out runLoopSourceRef);
 			IOObject.ThrowIfError (result);
 			var runLoopSource = new CFRunLoopSource (runLoopSourceRef, false);
 			CFType.Release (runLoopSourceRef);
 			return runLoopSource;
 		}
 
-		public Port CreateAsyncPort ()
-		{
-			ThrowIfDisposed ();
-			IntPtr portRef;
-			var result = InterfaceInterface.CreateInterfaceAsyncPort (InterfaceInterfaceRef, out portRef);
-			IOObject.ThrowIfError (result);
-			return new Port (portRef);
-		}
-
 		public void Open ()
 		{
 			ThrowIfDisposed ();
-			var result = InterfaceInterface.USBInterfaceOpen (InterfaceInterfaceRef);
+			var result = Interface.USBInterfaceOpen (InterfaceRef);
 			IOObject.ThrowIfError (result);
 		}
 
 		public void Close ()
 		{
 			ThrowIfDisposed ();
-			var result = InterfaceInterface.USBInterfaceClose (InterfaceInterfaceRef);
+			var result = Interface.USBInterfaceClose (InterfaceRef);
 			IOObject.ThrowIfError (result);
 		}
 
 		public ulong GetBusFrameNumber (out ulong atTime) {
 			ThrowIfDisposed ();
 			ulong frame;
-			var result = InterfaceInterface.GetBusFrameNumber (InterfaceInterfaceRef, out frame, out atTime);
+			var result = Interface.GetBusFrameNumber (InterfaceRef, out frame, out atTime);
 			IOObject.ThrowIfError (result);
 			return (ulong)IOUSB.USBToHostOrder ((long)frame);
 		}
@@ -344,7 +314,7 @@ namespace MonoMac.IOKit.USB
 		public void OpenSeize ()
 		{
 			ThrowIfDisposed ();
-			var result = InterfaceInterface.USBInterfaceOpenSeize (InterfaceInterfaceRef);
+			var result = Interface.USBInterfaceOpenSeize (InterfaceRef);
 			IOObject.ThrowIfError (result);
 		}
 
@@ -355,9 +325,9 @@ namespace MonoMac.IOKit.USB
 			byte transferType;
 			ushort maxPacketSize;
 			byte interval;
-			var result = InterfaceInterface.GetEndpointProperties (InterfaceInterfaceRef, alternateSetting, endpoint,
-			                                                       (byte)direction, out transferType,
-			                                                       out maxPacketSize, out interval);
+			var result = Interface.GetEndpointProperties (InterfaceRef, alternateSetting, endpoint,
+			                                              (byte)direction, out transferType,
+			                                              out maxPacketSize, out interval);
 			IOObject.ThrowIfError (result);
 			return new EndpointProperties () {
 				TransferType = (EndpointType) transferType,
@@ -371,7 +341,7 @@ namespace MonoMac.IOKit.USB
 		{
 			ThrowIfDisposed ();
 			ulong microFrame;
-			var result = InterfaceInterface.GetBusMicroFrameNumber (InterfaceInterfaceRef, out microFrame, out atTime);
+			var result = Interface.GetBusMicroFrameNumber (InterfaceRef, out microFrame, out atTime);
 			IOObject.ThrowIfError (result);
 			return microFrame;
 		}
@@ -393,7 +363,7 @@ namespace MonoMac.IOKit.USB
 				currentRef = Marshal.AllocHGlobal (Marshal.SizeOf (current));
 				Marshal.StructureToPtr (current, currentRef, false);
 			}
-			var result = InterfaceInterface.FindNextAssociatedDescriptor (InterfaceInterfaceRef, currentRef, (byte)type);
+			var result = Interface.FindNextAssociatedDescriptor (InterfaceRef, currentRef, (byte)type);
 			if (currentRef != IntPtr.Zero)
 				Marshal.FreeHGlobal (currentRef);
 			if (result == IntPtr.Zero)
@@ -424,7 +394,7 @@ namespace MonoMac.IOKit.USB
 				currentRef = Marshal.AllocHGlobal (Marshal.SizeOf (current));
 				Marshal.StructureToPtr (current, currentRef, false);
 			}
-			var result = InterfaceInterface.FindNextAltInterface (InterfaceInterfaceRef, currentRef, request);
+			var result = Interface.FindNextAltInterface (InterfaceRef, currentRef, request);
 			if (currentRef != IntPtr.Zero)
 				Marshal.FreeHGlobal (currentRef);
 			if (result == IntPtr.Zero)
@@ -443,7 +413,7 @@ namespace MonoMac.IOKit.USB
 		{
 			ThrowIfDisposed ();
 			ulong frame;
-			var result = InterfaceInterface.GetBusFrameNumberWithTime (InterfaceInterfaceRef, out frame, out atTime);
+			var result = Interface.GetBusFrameNumberWithTime (InterfaceRef, out frame, out atTime);
 			IOObject.ThrowIfError (result);
 			return frame;
 		}
@@ -457,7 +427,7 @@ namespace MonoMac.IOKit.USB
 				Direction = diretion,
 				EndpointNumber = endpoint
 			};
-			var result = InterfaceInterface.GetEndpointPropertiesV3 (InterfaceInterfaceRef, ref properties);
+			var result = Interface.GetEndpointPropertiesV3 (InterfaceRef, ref properties);
 			IOObject.ThrowIfError (result);
 			return properties;
 		}
@@ -465,23 +435,22 @@ namespace MonoMac.IOKit.USB
 		protected override void Dispose (bool disposing)
 		{
 			base.Dispose (disposing);
-			foreach (var pipe in pipes.Values)
-				pipe.Dispose ();
+			if (pipes.IsValueCreated)
+				foreach (var pipe in pipes.Value)
+					pipe.Dispose ();
 		}
 
 		public class Pipe : IDisposable
 		{
-			IOUSBInterfaceInterface @interface;
-			IntPtr interfaceRef;
+			IOUSBInterface instance;
 			byte pipeIndex;
-			Dictionary<uint, Stream> streams;
+			Lazy<StreamCollection> streams;
 
-			internal Pipe (IOUSBInterfaceInterface @interface, IntPtr interfaceRef, byte pipeIndex)
+			internal Pipe (IOUSBInterface instance, byte pipeIndex)
 			{
-				this.@interface = @interface;
-				this.interfaceRef = interfaceRef;
+				this.instance  = instance;
 				this.pipeIndex = pipeIndex;
-				streams = new Dictionary<uint, Stream> ();
+				streams = new Lazy<StreamCollection> (() => new StreamCollection (this));
 			}
 
 			~Pipe ()
@@ -492,7 +461,8 @@ namespace MonoMac.IOKit.USB
 			void SendControlRequest (ref IOUSBDevRequest request)
 			{
 				ThrowIfDisposed ();
-				var result = @interface.ControlRequest (interfaceRef, pipeIndex, ref request);
+				var result = instance.Interface.ControlRequest
+					(instance.InterfaceRef, pipeIndex, ref request);
 				IOObject.ThrowIfError (result);
 			}
 
@@ -509,8 +479,9 @@ namespace MonoMac.IOKit.USB
 					completionSource.TrySetException (new IOReturnException (callbackResult));
 				};
 				callbackHandle = GCHandle.Alloc (callback, GCHandleType.Pinned);
-				var result = @interface.ControlRequestAsync (interfaceRef, pipeIndex,
-				                                             request, callback, IntPtr.Zero);
+				var result = instance.Interface.ControlRequestAsync
+					(instance.InterfaceRef, pipeIndex,
+					 request, callback, IntPtr.Zero);
 				IOObject.ThrowIfError (result);
 				return completionSource.Task;
 			}
@@ -520,9 +491,10 @@ namespace MonoMac.IOKit.USB
 					ThrowIfDisposed ();
 					byte direction, number, transferType, interval;
 					ushort maxPacketSize;
-					var result = @interface.GetPipeProperties (interfaceRef, pipeIndex,
-					                                           out direction, out number, out transferType,
-					                                           out maxPacketSize, out interval);
+					var result = instance.Interface.GetPipeProperties
+						(instance.InterfaceRef, pipeIndex,
+						 out direction, out number, out transferType,
+						 out maxPacketSize, out interval);
 					IOObject.ThrowIfError (result);
 					return new PipeProperties () {
 						Direction = (EndpointDirection)direction,
@@ -537,7 +509,8 @@ namespace MonoMac.IOKit.USB
 			public byte Status {
 				get {
 					ThrowIfDisposed ();
-					var result = @interface.GetPipeStatus (interfaceRef, pipeIndex);
+					var result = instance.Interface.GetPipeStatus
+						(instance.InterfaceRef, pipeIndex);
 					// TODO: create enum for common return values.
 					IOObject.ThrowIfError (result);
 					return 0;
@@ -547,21 +520,24 @@ namespace MonoMac.IOKit.USB
 			public void Abort ()
 			{
 				ThrowIfDisposed ();
-				var result = @interface.AbortPipe (interfaceRef, pipeIndex);
+				var result = instance.Interface.AbortPipe
+					(instance.InterfaceRef, pipeIndex);
 				IOObject.ThrowIfError (result);
 			}
 
 			public void Reset ()
 			{
 				ThrowIfDisposed ();
-				var result = @interface.ResetPipe (interfaceRef, pipeIndex);
+				var result = instance.Interface.ResetPipe
+					(instance.InterfaceRef, pipeIndex);
 				IOObject.ThrowIfError (result);
 			}
 
 			public void ClearStall ()
 			{
 				ThrowIfDisposed ();
-				var result = @interface.ClearPipeStall (interfaceRef, pipeIndex);
+				var result = instance.Interface.ClearPipeStall
+					(instance.InterfaceRef, pipeIndex);
 				IOObject.ThrowIfError (result);
 			}
 
@@ -569,7 +545,8 @@ namespace MonoMac.IOKit.USB
 			{
 				ThrowIfDisposed ();
 				var buffer = new byte[byteCount];
-				var result = @interface.ReadPipe (interfaceRef, pipeIndex, buffer, ref byteCount);
+				var result = instance.Interface.ReadPipe
+					(instance.InterfaceRef, pipeIndex, buffer, ref byteCount);
 				IOObject.ThrowIfError (result);
 				return buffer;
 			}
@@ -577,11 +554,12 @@ namespace MonoMac.IOKit.USB
 			public void Write (byte[] bytes)
 			{
 				ThrowIfDisposed ();
-				var result = @interface.WritePipe (interfaceRef, pipeIndex, bytes, (uint)bytes.Length);
+				var result = instance.Interface.WritePipe
+					(instance.InterfaceRef, pipeIndex, bytes, (uint)bytes.Length);
 				IOObject.ThrowIfError (result);
 			}
 
-			public Task<byte[]> ReadAsync (uint byteCount)
+			public Task<byte[]> ReadAsync (int byteCount)
 			{
 				ThrowIfDisposed ();
 				var buffer = new byte[byteCount];
@@ -598,8 +576,9 @@ namespace MonoMac.IOKit.USB
 						completionSource.TrySetException (new IOReturnException (callbackResult));
 				};
 				callbackHandle = GCHandle.Alloc (callback, GCHandleType.Pinned);
-				var result = @interface.ReadPipeAsync (interfaceRef, pipeIndex, buffer,
-				                                       byteCount, callback, IntPtr.Zero);
+				var result = instance.Interface.ReadPipeAsync
+					(instance.InterfaceRef, pipeIndex, buffer,
+					 (uint)byteCount, callback, IntPtr.Zero);
 				IOObject.ThrowIfError (result);
 				return completionSource.Task;
 			}
@@ -617,8 +596,9 @@ namespace MonoMac.IOKit.USB
 					completionSource.TrySetException (new IOReturnException (callbackResult));
 				};
 				callbackHandle = GCHandle.Alloc (callback, GCHandleType.Pinned);
-				var result = @interface.WritePipeAsync (interfaceRef, pipeIndex, bytes,
-				                                        (uint)bytes.Length,callback, IntPtr.Zero);
+				var result = instance.Interface.WritePipeAsync
+					(instance.InterfaceRef, pipeIndex, bytes,
+					 (uint)bytes.Length,callback, IntPtr.Zero);
 				IOObject.ThrowIfError (result);
 				return completionSource.Task;
 			}
@@ -627,7 +607,8 @@ namespace MonoMac.IOKit.USB
 			void SendControlRequest (ref IOUSBDevRequestTO request)
 			{
 				ThrowIfDisposed ();
-				var result = @interface.ControlRequestTO (interfaceRef, pipeIndex, ref request);
+				var result = instance.Interface.ControlRequestTO
+					(instance.InterfaceRef, pipeIndex, ref request);
 				IOObject.ThrowIfError (result);
 			}
 
@@ -645,8 +626,9 @@ namespace MonoMac.IOKit.USB
 					completionSource.TrySetException (new IOReturnException (callbackResult));
 				};
 				callbackHandle = GCHandle.Alloc (callback, GCHandleType.Pinned);
-				var result = @interface.ControlRequestAsyncTO (interfaceRef, pipeIndex,
-				                                               request, callback, IntPtr.Zero);
+				var result = instance.Interface.ControlRequestAsyncTO
+					(instance.InterfaceRef, pipeIndex,
+					 request, callback, IntPtr.Zero);
 				IOObject.ThrowIfError (result);
 				return completionSource.Task;
 			}
@@ -656,9 +638,9 @@ namespace MonoMac.IOKit.USB
 			{
 				ThrowIfDisposed ();
 				var buffer = new byte[byteCount];
-				var result = @interface.ReadPipeTO (interfaceRef, pipeIndex, buffer,
-				                                    ref byteCount, noDataTimeout,
-				                                    completionTimeout);
+				var result = instance.Interface.ReadPipeTO
+					(instance.InterfaceRef, pipeIndex, buffer,
+					 ref byteCount, noDataTimeout, completionTimeout);
 				IOObject.ThrowIfError (result);
 				return buffer;
 			}
@@ -667,9 +649,9 @@ namespace MonoMac.IOKit.USB
 			public void Write (byte[] bytes, uint noDataTimeout, uint completionTimeout)
 			{
 				ThrowIfDisposed ();
-				var result = @interface.WritePipeTO (interfaceRef, pipeIndex, bytes,
-				                                     (uint)bytes.Length, noDataTimeout,
-				                                     completionTimeout);
+				var result = instance.Interface.WritePipeTO
+					(instance.InterfaceRef, pipeIndex, bytes,
+					 (uint)bytes.Length, noDataTimeout, completionTimeout);
 				IOObject.ThrowIfError (result);
 			}
 			
@@ -691,9 +673,10 @@ namespace MonoMac.IOKit.USB
 						completionSource.TrySetException (new IOReturnException (callbackResult));
 				};
 				callbackHandle = GCHandle.Alloc (callback, GCHandleType.Pinned);
-				var result = @interface.ReadPipeAsyncTO (interfaceRef, pipeIndex, buffer,
-				                                         byteCount, noDataTimeout,
-				                                         completionTimeout, callback, IntPtr.Zero);
+				var result = instance.Interface.ReadPipeAsyncTO
+					(instance.InterfaceRef, pipeIndex, buffer,
+					 byteCount, noDataTimeout,
+					 completionTimeout, callback, IntPtr.Zero);
 				IOObject.ThrowIfError (result);
 				return completionSource.Task;
 			}
@@ -712,9 +695,10 @@ namespace MonoMac.IOKit.USB
 					completionSource.TrySetException (new IOReturnException (callbackResult));
 				};
 				callbackHandle = GCHandle.Alloc (callback, GCHandleType.Pinned);
-				var result = @interface.WritePipeAsyncTO (interfaceRef, pipeIndex, bytes,
-				                                          noDataTimeout, completionTimeout,
-				                                          (uint)bytes.Length,callback, IntPtr.Zero);
+				var result = instance.Interface.WritePipeAsyncTO
+					(instance.InterfaceRef, pipeIndex, bytes,
+					 noDataTimeout, completionTimeout,
+					 (uint)bytes.Length,callback, IntPtr.Zero);
 				IOObject.ThrowIfError (result);
 				return completionSource.Task;
 			}
@@ -723,7 +707,8 @@ namespace MonoMac.IOKit.USB
 			public void ClearStallBothEnds ()
 			{
 				ThrowIfDisposed ();
-				var result = @interface.ClearPipeStallBothEnds (interfaceRef, pipeIndex);
+				var result = instance.Interface.ClearPipeStallBothEnds
+					(instance.InterfaceRef, pipeIndex);
 				IOObject.ThrowIfError (result);
 			}
 
@@ -731,7 +716,8 @@ namespace MonoMac.IOKit.USB
 			public void SetPipePolicy (ushort maxPacketSize, Interval maxInterval)
 			{
 				ThrowIfDisposed ();
-				var result = @interface.SetPipePolicy (interfaceRef, pipeIndex, maxPacketSize, (byte)maxInterval);
+				var result = instance.Interface.SetPipePolicy
+					(instance.InterfaceRef, pipeIndex, maxPacketSize, (byte)maxInterval);
 				IOObject.ThrowIfError (result);
 			}
 
@@ -742,10 +728,11 @@ namespace MonoMac.IOKit.USB
 					ThrowIfDisposed ();
 					byte direction, number, transferType, interval, maxBurst, mult;
 					ushort maxPacketSize, bytesPerInterval;
-					var result = @interface.GetPipePropertiesV2 (interfaceRef, pipeIndex,
-					                                             out direction, out number, out transferType,
-					                                             out maxPacketSize, out interval,
-					                                             out maxBurst, out mult, out bytesPerInterval);
+					var result = instance.Interface.GetPipePropertiesV2
+						(instance.InterfaceRef, pipeIndex,
+						 out direction, out number, out transferType,
+						 out maxPacketSize, out interval,
+						 out maxBurst, out mult, out bytesPerInterval);
 					IOObject.ThrowIfError (result);
 					return new PipePropertiesV2 () {
 						Direction = (EndpointDirection)direction,
@@ -767,7 +754,8 @@ namespace MonoMac.IOKit.USB
 					IOUSBEndpointProperties properties = new IOUSBEndpointProperties () {
 						Version = EndpointPropertiesVersion.V3
 					};
-					var result = @interface.GetPipePropertiesV3 (interfaceRef, pipeIndex, ref properties);
+					var result = instance.Interface.GetPipePropertiesV3
+						(instance.InterfaceRef, pipeIndex, ref properties);
 					IOObject.ThrowIfError (result);
 					return properties;
 				}
@@ -778,7 +766,8 @@ namespace MonoMac.IOKit.USB
 				get {
 					ThrowIfDisposed ();
 					uint count;
-					var result = @interface.SupportsStreams (interfaceRef, pipeIndex, out count);
+					var result = instance.Interface.SupportsStreams
+						(instance.InterfaceRef, pipeIndex, out count);
 					IOObject.ThrowIfError (result);
 					return count;
 				}
@@ -789,47 +778,128 @@ namespace MonoMac.IOKit.USB
 				ThrowIfDisposed ();
 				if (count == 0)
 					throw new ArgumentOutOfRangeException ("count");
-				var result = @interface.CreateStreams (interfaceRef, pipeIndex, count);
+				var result = instance.Interface.CreateStreams
+					(instance.InterfaceRef, pipeIndex, count);
 				IOObject.ThrowIfError (result);
 			}
 
 			[Since (8,0)]
 			public void DisposeStreams () {
 				ThrowIfDisposed ();
-				var result = @interface.CreateStreams (interfaceRef, pipeIndex, 0);
+				var result = instance.Interface.CreateStreams
+					(instance.InterfaceRef, pipeIndex, 0);
 				IOObject.ThrowIfError (result);
-				foreach (var stream in streams.Values)
-					stream.Dispose ();
-				streams.Clear ();
+				if (streams.IsValueCreated)
+					foreach (var stream in Streams)
+						stream.Dispose ();
 			}
 
 			[Since (8,0)]
-			public uint ConfiguredStreamCount {
-				get {
-					ThrowIfDisposed ();
-					uint count;
-					var result = @interface.GetConfiguredStreams (interfaceRef, pipeIndex, out count);
-					IOObject.ThrowIfError (result);
-					return count;
+			public StreamCollection Streams { get { return streams.Value; } }
+
+			public class StreamCollection : IEnumerable<Stream>
+			{
+				Pipe instance;
+				Dictionary<int, Stream> streams;
+
+				internal StreamCollection (Pipe instance)
+				{
+					this.instance = instance;
+					streams = new Dictionary<int, Stream> ();
 				}
-			}
 
-			[Since (8,0)]
-			[IndexerName ("Streams")]
-			public Stream this[uint id] {
-				get {
-					ThrowIfDisposed ();
-					if (id < 1 || id > ConfiguredStreamCount)
-						throw new ArgumentOutOfRangeException ("id");
-					if (!streams.ContainsKey (id))
-						streams.Add (id, new Stream (@interface, interfaceRef, pipeIndex, id));
-					return streams [id];
+				public Stream this[int id] {
+					get {
+						instance.ThrowIfDisposed ();
+						if (id < 1 || id > Count)
+							throw new ArgumentOutOfRangeException ("id");
+						if (!streams.ContainsKey (id))
+							streams.Add (id, new Stream (instance, (uint)id));
+						return streams [id];
+					}
+				}
+
+				public int Count {
+					get {
+						instance.ThrowIfDisposed ();
+						uint count;
+						var result = instance.instance.Interface.GetConfiguredStreams
+							(instance.instance.InterfaceRef, instance.pipeIndex, out count);
+						IOObject.ThrowIfError (result);
+						return (int)count;
+					}
+				}
+
+				#region IEnumerable implementation
+
+				public IEnumerator<Stream> GetEnumerator ()
+				{
+					return new StreamEnumerator (this);
+				}
+
+				#endregion
+
+				#region IEnumerable implementation
+
+				System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator ()
+				{
+					return GetEnumerator ();
+				}
+
+				#endregion
+
+				class StreamEnumerator : IEnumerator<Stream>
+				{
+					StreamCollection instance;
+					int position;
+
+					public StreamEnumerator (StreamCollection instance)
+					{
+						this.instance = instance;
+						Reset ();
+					}
+
+					#region IEnumerator implementation
+
+					public bool MoveNext ()
+					{
+						position++;
+						return position <= instance.Count;
+					}
+
+					public void Reset ()
+					{
+						position = 0;
+					}
+
+					object System.Collections.IEnumerator.Current {
+						get { return  Current; }
+					}
+
+					#endregion
+
+					#region IDisposable implementation
+
+					public void Dispose ()
+					{
+						instance = null;
+					}
+
+					#endregion
+
+					#region IEnumerator implementation
+
+					public Pipe.Stream Current {
+						get { return instance [position]; }
+					}
+
+					#endregion
 				}
 			}
 
 			protected void ThrowIfDisposed ()
 			{
-				if (interfaceRef == IntPtr.Zero)
+				if (instance == null || instance.InterfaceRef == IntPtr.Zero)
 					throw new ObjectDisposedException (GetType ().Name);
 			}
 
@@ -841,28 +911,30 @@ namespace MonoMac.IOKit.USB
 
 			protected void Dispose (bool disposing)
 			{
+				if (streams.IsValueCreated) {
+					if (Streams.Count > 0) {
+						try {
+							DisposeStreams ();
+						} catch (Exception) {
+							// no throwing exceptions in finalizer!
+						}
+					}
+				}
 				if (disposing) {
-					@interface = null;
+					instance = null;
 					streams = null;
 				}
-				if (ConfiguredStreamCount > 0)
-					DisposeStreams ();
-				interfaceRef = IntPtr.Zero;
 			}
 
 			public class Stream : System.IO.Stream, IDisposable
 			{
-				IOUSBInterfaceInterface @interface;
-				IntPtr interfaceRef;
-				byte pipeIndex;
+				Pipe instance;
 				uint id;
 				List<AsyncCallback> callbacks;
 
-				internal Stream (IOUSBInterfaceInterface @interface, IntPtr interfaceRef, byte pipeIndex, uint id)
+				internal Stream (Pipe instance, uint id)
 				{
-					this.@interface = @interface;
-					this.interfaceRef = interfaceRef;
-					this.pipeIndex = pipeIndex;
+					this.instance = instance;
 					this.id = id;
 					callbacks = new List<AsyncCallback> ();
 				}
@@ -889,7 +961,9 @@ namespace MonoMac.IOKit.USB
 						Array.Copy (buffer, offset, buffer2, 0, count);
 					}
 					uint size = (uint)count;
-					var result = @interface.ReadStreamsPipeTO (interfaceRef, pipeIndex, id, buffer2, ref size, (uint)this.WriteTimeout, (uint)this.WriteTimeout);
+					var result = instance.instance.Interface.ReadStreamsPipeTO
+						(instance.instance.InterfaceRef, instance.pipeIndex, id, buffer2, ref size,
+						 (uint)this.WriteTimeout, (uint)this.WriteTimeout);
 					IOObject.ThrowIfError (result);
 					return (int)size;
 				}
@@ -914,7 +988,10 @@ namespace MonoMac.IOKit.USB
 						buffer2 = new byte[count];
 						Array.Copy (buffer, offset, buffer2, 0, count);
 					}
-					var result = @interface.WriteStreamsPipeTO (interfaceRef, pipeIndex, id, buffer2, (uint)count, (uint)this.WriteTimeout, (uint)this.WriteTimeout);
+					var result = instance.instance.Interface.WriteStreamsPipeTO
+						(instance.instance.InterfaceRef, instance.pipeIndex, id,
+						 buffer2, (uint)count, (uint)this.WriteTimeout,
+						 (uint)this.WriteTimeout);
 					IOObject.ThrowIfError (result);
 				}
 
@@ -964,7 +1041,8 @@ namespace MonoMac.IOKit.USB
 
 				protected void ThrowIfDisposed ()
 				{
-					if (interfaceRef == IntPtr.Zero)
+					if (instance == null || instance.instance == null ||
+					    instance.instance.InterfaceRef == IntPtr.Zero)
 						throw new ObjectDisposedException (GetType ().Name);
 				}
 
@@ -977,13 +1055,104 @@ namespace MonoMac.IOKit.USB
 				protected void Dispose (bool disposing)
 				{
 					if (disposing) {
-						@interface = null;
+						instance = null;
 						callbacks = null;
 					}
-					interfaceRef = IntPtr.Zero;
 				}
 			}
 		}
+
+		public class PipeCollection : IEnumerable<Pipe>
+		{
+			IOUSBInterface instance;
+			Dictionary<int, Pipe> pipes;
+
+			internal PipeCollection (IOUSBInterface instance)
+			{
+				this.instance = instance;
+				pipes = new Dictionary<int, Pipe> ();
+			}
+
+			public Pipe this[int index] {
+				get {
+					instance.ThrowIfDisposed ();
+					if (index < 1 || index > instance.EndpointCount)
+						throw new ArgumentException ("Index must be between 1 and EndpointCount", "index");
+					if (!pipes.ContainsKey (index))
+						pipes.Add (index, new Pipe (instance, (byte)index));
+					return pipes [index];
+				}
+			}
+
+			public int Count { get { return instance.EndpointCount - 1; } }
+
+			#region IEnumerable implementation
+
+			public IEnumerator<Pipe> GetEnumerator ()
+			{
+				return new PipeEnumerator (this);
+			}
+
+			#endregion
+
+			#region IEnumerable implementation
+
+			System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator ()
+			{
+				return GetEnumerator ();
+			}
+
+			#endregion
+
+			class PipeEnumerator : IEnumerator<Pipe>
+			{
+				PipeCollection instance;
+				int position;
+
+				internal PipeEnumerator (PipeCollection instance)
+				{
+					this.instance = instance;
+					Reset ();
+				}
+
+				#region IEnumerator implementation
+
+				public bool MoveNext ()
+				{
+					position++;
+					return position <= instance.instance.EndpointCount;
+				}
+
+				public void Reset ()
+				{
+					position = 0;
+				}
+
+				object System.Collections.IEnumerator.Current {
+					get { return Current; }
+				}
+
+				#endregion
+
+				#region IDisposable implementation
+
+				public void Dispose ()
+				{
+					instance = null;
+				}
+
+				#endregion
+
+				#region IEnumerator implementation
+
+				public Pipe Current {
+					get { return instance [position]; }
+				}
+
+				#endregion
+			}
+		}
+
 	}
 	
 	public struct PipeProperties
@@ -1059,342 +1228,409 @@ namespace MonoMac.IOKit.USB
 	[StructLayout (LayoutKind.Sequential)]
 	class IOUSBInterfaceInterface : IUnknown
 	{
-		CreateInterfaceAsyncEventSource createInterfaceAsyncEventSource;
-		GetInterfaceAsyncEventSource getInterfaceAsyncEventSource;
-		CreateInterfaceAsyncPort createInterfaceAsyncPort;
-		GetInterfaceAsyncPort getInterfaceAsyncPort;
-		USBInterfaceOpen usbInterfaceOpen;
-		USBInterfaceClose usbInterfaceClose;
-		GetInterfaceClass getInterfaceClass;
-		GetInterfaceSubClass getInterfaceSubClass;
-		GetInterfaceProtocol getInterfaceProtocol;
-		GetDeviceVendor getDeviceVendor;
-		GetDeviceProduct getDeviceProduct;
-		GetDeviceReleaseNumber getDeviceReleaseNumber;
-		GetConfigurationValue getConfigurationValue;
-		GetInterfaceNumber getInterfaceNumber;
-		GetAlternateSetting getAlternateSetting;
-		GetNumEndpoints getNumEndpoints;
-		GetLocationID getLocationID;
-		GetDevice getDevice;
-		SetAlternateInterface setAlternateInterface;
-		GetBusFrameNumber getBusFrameNumber;
-		ControlRequest controlRequest;
-		ControlRequestAsync controlRequestAsync;
-		GetPipeProperties getPipeProperties;
-		GetPipeStatus getPipeStatus;
-		AbortPipe abortPipe;
-		ResetPipe resetPipe;
-		ClearPipeStall clearPipeStall;
-		ReadPipe readPipe;
-		WritePipe writePipe;
-		ReadPipeAsync readPipeAsync;
-		WritePipeAsync writePipeAsync;
-		ReadIsochPipeAsync readIsochPipeAsync;
-		WriteIsochPipeAsync writeIsochPipeAsync;
+		_CreateInterfaceAsyncEventSource createInterfaceAsyncEventSource;
+		_GetInterfaceAsyncEventSource getInterfaceAsyncEventSource;
+		_CreateInterfaceAsyncPort createInterfaceAsyncPort;
+		_GetInterfaceAsyncPort getInterfaceAsyncPort;
+		_USBInterfaceOpen usbInterfaceOpen;
+		_USBInterfaceClose usbInterfaceClose;
+		_GetInterfaceClass getInterfaceClass;
+		_GetInterfaceSubClass getInterfaceSubClass;
+		_GetInterfaceProtocol getInterfaceProtocol;
+		_GetDeviceVendor getDeviceVendor;
+		_GetDeviceProduct getDeviceProduct;
+		_GetDeviceReleaseNumber getDeviceReleaseNumber;
+		_GetConfigurationValue getConfigurationValue;
+		_GetInterfaceNumber getInterfaceNumber;
+		_GetAlternateSetting getAlternateSetting;
+		_GetNumEndpoints getNumEndpoints;
+		_GetLocationID getLocationID;
+		_GetDevice getDevice;
+		_SetAlternateInterface setAlternateInterface;
+		_GetBusFrameNumber getBusFrameNumber;
+		_ControlRequest controlRequest;
+		_ControlRequestAsync controlRequestAsync;
+		_GetPipeProperties getPipeProperties;
+		_GetPipeStatus getPipeStatus;
+		_AbortPipe abortPipe;
+		_ResetPipe resetPipe;
+		_ClearPipeStall clearPipeStall;
+		_ReadPipe readPipe;
+		_WritePipe writePipe;
+		_ReadPipeAsync readPipeAsync;
+		_WritePipeAsync writePipeAsync;
+		_ReadIsochPipeAsync readIsochPipeAsync;
+		_WriteIsochPipeAsync writeIsochPipeAsync;
 
-		public CreateInterfaceAsyncEventSource CreateInterfaceAsyncEventSource {
+		public _CreateInterfaceAsyncEventSource CreateInterfaceAsyncEventSource {
 			get { return createInterfaceAsyncEventSource; }
 		}
 
-		public GetInterfaceAsyncEventSource GetInterfaceAsyncEventSource {
+		public _GetInterfaceAsyncEventSource GetInterfaceAsyncEventSource {
 			get { return getInterfaceAsyncEventSource; }
 		}
 
-		public CreateInterfaceAsyncPort  CreateInterfaceAsyncPort  {
+		public _CreateInterfaceAsyncPort CreateInterfaceAsyncPort  {
 			get { return createInterfaceAsyncPort; }
 		}
 
-		public GetInterfaceAsyncPort GetInterfaceAsyncPort {
+		public _GetInterfaceAsyncPort GetInterfaceAsyncPort {
 			get { return getInterfaceAsyncPort; }
 		}
 
-		public USBInterfaceOpen USBInterfaceOpen {
+		public _USBInterfaceOpen USBInterfaceOpen {
 			get { return usbInterfaceOpen; }
 		}
 
-		public USBInterfaceClose USBInterfaceClose {
+		public _USBInterfaceClose USBInterfaceClose {
 			get { return usbInterfaceClose; }
 		}
 
-		public GetInterfaceClass GetInterfaceClass {
+		public _GetInterfaceClass GetInterfaceClass {
 			get { return getInterfaceClass; }
 		}
 
-		public GetInterfaceSubClass GetInterfaceSubClass{
+		public _GetInterfaceSubClass GetInterfaceSubClass{
 			get { return getInterfaceSubClass; }
 		}
 
-		public GetInterfaceProtocol GetInterfaceProtocol {
+		public _GetInterfaceProtocol GetInterfaceProtocol {
 			get { return getInterfaceProtocol; }
 		}
 
-		public GetDeviceVendor GetDeviceVendor {
+		public _GetDeviceVendor GetDeviceVendor {
 			get { return getDeviceVendor; }
 		}
 
-		public GetDeviceProduct GetDeviceProduct {
+		public _GetDeviceProduct GetDeviceProduct {
 			get { return getDeviceProduct; }
 		}
 
-		public GetDeviceReleaseNumber GetDeviceReleaseNumber {
+		public _GetDeviceReleaseNumber GetDeviceReleaseNumber {
 			get { return getDeviceReleaseNumber; }
 		}
 
-		public GetConfigurationValue GetConfigurationValue {
+		public _GetConfigurationValue GetConfigurationValue {
 			get { return getConfigurationValue; }
 		}
 
-		public GetInterfaceNumber GetInterfaceNumber {
+		public _GetInterfaceNumber GetInterfaceNumber {
 			get { return getInterfaceNumber; }
 		}
 
-		public GetAlternateSetting GetAlternateSetting {
+		public _GetAlternateSetting GetAlternateSetting {
 			get { return getAlternateSetting; }
 		}
 
-		public GetNumEndpoints GetNumEndpoints {
+		public _GetNumEndpoints GetNumEndpoints {
 			get { return getNumEndpoints; }
 		}
 
-		public GetLocationID GetLocationID {
+		public _GetLocationID GetLocationID {
 			get { return getLocationID; }
 		}
 
-		public GetDevice GetDevice {
+		public _GetDevice GetDevice {
 			get { return getDevice; }
 		}
 
-		public SetAlternateInterface SetAlternateInterface {
+		public _SetAlternateInterface SetAlternateInterface {
 			get { return setAlternateInterface; }
 		}
 
-		public GetBusFrameNumber GetBusFrameNumber {
+		public _GetBusFrameNumber GetBusFrameNumber {
 			get { return getBusFrameNumber; }
 		}
 
-		public ControlRequest ControlRequest {
+		public _ControlRequest ControlRequest {
 			get { return controlRequest; }
 		}
 
-		public ControlRequestAsync ControlRequestAsync {
+		public _ControlRequestAsync ControlRequestAsync {
 			get { return controlRequestAsync; }
 		}
 
-		public GetPipeProperties GetPipeProperties {
+		public _GetPipeProperties GetPipeProperties {
 			get { return getPipeProperties; }
 		}
 
-		public GetPipeStatus GetPipeStatus {
+		public _GetPipeStatus GetPipeStatus {
 			get { return getPipeStatus; }
 		}
 
-		public AbortPipe AbortPipe {
+		public _AbortPipe AbortPipe {
 			get { return abortPipe; }
 		}
 
-		public ResetPipe ResetPipe {
+		public _ResetPipe ResetPipe {
 			get { return resetPipe; }
 		}
 
-		public ClearPipeStall ClearPipeStall {
+		public _ClearPipeStall ClearPipeStall {
 			get { return clearPipeStall; }
 		}
 
-		public ReadPipe ReadPipe {
+		public _ReadPipe ReadPipe {
 			get { return readPipe; }
 		}
 
-		public WritePipe WritePipe {
+		public _WritePipe WritePipe {
 			get { return writePipe; }
 		}
 
-		public ReadPipeAsync ReadPipeAsync {
+		public _ReadPipeAsync ReadPipeAsync {
 			get { return readPipeAsync; }
 		}
 
-		public WritePipeAsync WritePipeAsync {
+		public _WritePipeAsync WritePipeAsync {
 			get { return writePipeAsync; }
 		}
 
-		public ReadIsochPipeAsync ReadIsochPipeAsync {
+		public _ReadIsochPipeAsync ReadIsochPipeAsync {
 			get { return readIsochPipeAsync; }
 		}
 
-		public WriteIsochPipeAsync WriteIsochPipeAsync {
+		public _WriteIsochPipeAsync WriteIsochPipeAsync {
 			get { return writeIsochPipeAsync; }
 		}
 
-		public virtual ControlRequestTO ControlRequestTO {
+		public virtual _ControlRequestTO ControlRequestTO {
 			get { throw new NotImplementedException (); }
 		}
 
-		public virtual ControlRequestAsyncTO ControlRequestAsyncTO {
+		public virtual _ControlRequestAsyncTO ControlRequestAsyncTO {
 			get { throw new NotImplementedException (); }
 		}
 
-		public virtual ReadPipeTO ReadPipeTO {
+		public virtual _ReadPipeTO ReadPipeTO {
 			get { throw new NotImplementedException (); }
 		}
 
-		public virtual WritePipeTO WritePipeTO {
+		public virtual _WritePipeTO WritePipeTO {
 			get { throw new NotImplementedException (); }
 		}
 
-		public virtual ReadPipeAsyncTO ReadPipeAsyncTO {
+		public virtual _ReadPipeAsyncTO ReadPipeAsyncTO {
 			get { throw new NotImplementedException (); }
 		}
 
-		public virtual WritePipeAsyncTO WritePipeAsyncTO {
+		public virtual _WritePipeAsyncTO WritePipeAsyncTO {
 			get { throw new NotImplementedException (); }
 		}
 
-		public virtual USBInterfaceGetStringIndex USBInterfaceGetStringIndex {
+		public virtual _USBInterfaceGetStringIndex USBInterfaceGetStringIndex {
 			get { throw new NotImplementedException (); }
 		}
 
-		public virtual USBInterfaceOpenSeize USBInterfaceOpenSeize {
+		public virtual _USBInterfaceOpenSeize USBInterfaceOpenSeize {
 			get { throw new NotImplementedException (); }
 		}
 
-		public virtual ClearPipeStallBothEnds ClearPipeStallBothEnds {
+		public virtual _ClearPipeStallBothEnds ClearPipeStallBothEnds {
 			get { throw new NotImplementedException (); }
 		}
 
-		public virtual SetPipePolicy SetPipePolicy {
+		public virtual _SetPipePolicy SetPipePolicy {
 			get { throw new NotImplementedException (); }
 		}
 
-		public virtual GetBandwidthAvailable GetBandwidthAvailable {
+		public virtual _GetBandwidthAvailable GetBandwidthAvailable {
 			get { throw new NotImplementedException (); }
 		}
 
-		public virtual GetEndpointProperties GetEndpointProperties {
+		public virtual _GetEndpointProperties GetEndpointProperties {
 			get { throw new NotImplementedException (); }
 		}
 
-		public virtual LowLatencyReadIsochPipeAsync LowLatencyReadIsochPipeAsync {
+		public virtual _LowLatencyReadIsochPipeAsync LowLatencyReadIsochPipeAsync {
 			get { throw new NotImplementedException (); }
 		}
 
-		public virtual LowLatencyWriteIsochPipeAsync LowLatencyWriteIsochPipeAsync {
+		public virtual _LowLatencyWriteIsochPipeAsync LowLatencyWriteIsochPipeAsync {
 			get { throw new NotImplementedException (); }
 		}
 
-		public virtual LowLatencyCreateBuffer LowLatencyCreateBuffer {
+		public virtual _LowLatencyCreateBuffer LowLatencyCreateBuffer {
 			get { throw new NotImplementedException (); }
 		}
 
-		public virtual LowLatencyDestroyBuffer LowLatencyDestroyBuffer {
+		public virtual _LowLatencyDestroyBuffer LowLatencyDestroyBuffer {
 			get { throw new NotImplementedException (); }
 		}
 
-		public virtual GetBusMicroFrameNumber GetBusMicroFrameNumber {
+		public virtual _GetBusMicroFrameNumber GetBusMicroFrameNumber {
 			get { throw new NotImplementedException (); }
 		}
 
-		public virtual GetFrameListTime GetFrameListTime {
+		public virtual _GetFrameListTime GetFrameListTime {
 			get { throw new NotImplementedException (); }
 		}
 
-		public virtual GetIOUSBLibVersion GetIOUSBLibVersion {
+		public virtual _GetIOUSBLibVersion GetIOUSBLibVersion {
 			get { throw new NotImplementedException (); }
 		}
 
-		public virtual FindNextAssociatedDescriptor FindNextAssociatedDescriptor {
+		public virtual _FindNextAssociatedDescriptor FindNextAssociatedDescriptor {
 			get { throw new NotImplementedException (); }
 		}
 
-		public virtual FindNextAltInterface FindNextAltInterface {
+		public virtual _FindNextAltInterface FindNextAltInterface {
 			get { throw new NotImplementedException (); }
 		}
 
-		public virtual GetBusFrameNumberWithTime GetBusFrameNumberWithTime {
+		public virtual _GetBusFrameNumberWithTime GetBusFrameNumberWithTime {
 			get { throw new NotImplementedException (); }
 		}
 
-		public virtual GetPipePropertiesV2 GetPipePropertiesV2 {
+		public virtual _GetPipePropertiesV2 GetPipePropertiesV2 {
 			get { throw new NotImplementedException (); }
 		}
 
-		public virtual GetPipePropertiesV3 GetPipePropertiesV3 {
+		public virtual _GetPipePropertiesV3 GetPipePropertiesV3 {
 			get { throw new NotImplementedException (); }
 		}
 
-		public virtual GetEndpointPropertiesV3 GetEndpointPropertiesV3 {
+		public virtual _GetEndpointPropertiesV3 GetEndpointPropertiesV3 {
 			get { throw new NotImplementedException (); }
 		}
 
-		public virtual SupportsStreams SupportsStreams {
+		public virtual _SupportsStreams SupportsStreams {
 			get { throw new NotImplementedException (); }
 		}
 
-		public virtual CreateStreams CreateStreams {
+		public virtual _CreateStreams CreateStreams {
 			get { throw new NotImplementedException (); }
 		}
 
-		public virtual GetConfiguredStreams GetConfiguredStreams {
+		public virtual _GetConfiguredStreams GetConfiguredStreams {
 			get { throw new NotImplementedException (); }
 		}
 
-		public virtual ReadStreamsPipeTO ReadStreamsPipeTO {
+		public virtual _ReadStreamsPipeTO ReadStreamsPipeTO {
 			get { throw new NotImplementedException (); }
 		}
 
-		public virtual WriteStreamsPipeTO WriteStreamsPipeTO {
+		public virtual _WriteStreamsPipeTO WriteStreamsPipeTO {
 			get { throw new NotImplementedException (); }
 		}
 
-		public virtual ReadStreamsPipeAsyncTO ReadStreamsPipeAsyncTO {
+		public virtual _ReadStreamsPipeAsyncTO ReadStreamsPipeAsyncTO {
 			get { throw new NotImplementedException (); }
 		}
 
-		public virtual WriteStreamsPipeAsyncTO WriteStreamsPipeAsyncTO {
+		public virtual _WriteStreamsPipeAsyncTO WriteStreamsPipeAsyncTO {
 			get { throw new NotImplementedException (); }
 		}
 
-		public virtual AbortStreamsPipe AbortStreamsPipe {
+		public virtual _AbortStreamsPipe AbortStreamsPipe {
 			get { throw new NotImplementedException (); }
 		}
+
+		public delegate IOReturn _CreateInterfaceAsyncEventSource (IntPtr self, out CFRunLoopSourceRef source);
+		public delegate ICFRunLoopSourceRef _GetInterfaceAsyncEventSource (IntPtr self);
+		public delegate IOReturn _CreateInterfaceAsyncPort (IntPtr self, out mach_port_t port);
+		public delegate mach_port_t _GetInterfaceAsyncPort (IntPtr self);
+		public delegate IOReturn _USBInterfaceOpen (IntPtr self);
+		public delegate IOReturn _USBInterfaceClose (IntPtr self);
+		public delegate IOReturn _GetInterfaceClass (IntPtr self, out UInt8 intfClass);
+		public delegate IOReturn _GetInterfaceSubClass (IntPtr self, out UInt8 intfSubClass);
+		public delegate IOReturn _GetInterfaceProtocol (IntPtr self, out UInt8 intfProtocol);
+		public delegate IOReturn _GetDeviceVendor (IntPtr self, out UInt16 devVendor);
+		public delegate IOReturn _GetDeviceProduct (IntPtr self, out UInt16 devProduct);
+		public delegate IOReturn _GetDeviceReleaseNumber (IntPtr self, out UInt16 devRelNum);
+		public delegate IOReturn _GetConfigurationValue (IntPtr self, out UInt8 configVal);
+		public delegate IOReturn _GetInterfaceNumber (IntPtr self, out UInt8 intfNumber);
+		public delegate IOReturn _GetAlternateSetting (IntPtr self, out UInt8 intfAltSetting);
+		public delegate IOReturn _GetNumEndpoints (IntPtr self, out UInt8 intfNumEndpoints);
+		public delegate IOReturn _GetLocationID (IntPtr self, out UInt32 locationID);
+		public delegate IOReturn _GetDevice (IntPtr self, out io_service_t device);
+		public delegate IOReturn _SetAlternateInterface (IntPtr self, UInt8 alternateSetting);
+		public delegate IOReturn _GetBusFrameNumber (IntPtr self, out UInt64 frame, out AbsoluteTime atTime);
+		public delegate IOReturn _ControlRequest (IntPtr self, UInt8 pipeRef, ref IOUSBDevRequest req);
+		public delegate IOReturn _ControlRequestAsync (IntPtr self, UInt8 pipeRef, [MarshalAs (UnmanagedType.LPStruct)] IOUSBDevRequest req, IOAsyncCallback1 callback, IntPtr refCon);
+		public delegate IOReturn _GetPipeProperties (IntPtr self, UInt8 pipeRef, out UInt8 direction, out UInt8 number, out UInt8 transferType, out UInt16 maxPacketSize, out UInt8 interval);
+		public delegate IOReturn _GetPipeStatus (IntPtr self, UInt8 pipeRef);
+		public delegate IOReturn _AbortPipe (IntPtr self, UInt8 pipeRef);
+		public delegate IOReturn _ResetPipe (IntPtr self, UInt8 pipeRef);
+		public delegate IOReturn _ClearPipeStall (IntPtr self, UInt8 pipeRef);
+		public delegate IOReturn _ReadPipe (IntPtr self, UInt8 pipeRef, [MarshalAs (UnmanagedType.LPArray, SizeParamIndex = 3)] byte[] buf, ref UInt32 size);
+		public delegate IOReturn _WritePipe (IntPtr self, UInt8 pipeRef, [MarshalAs (UnmanagedType.LPArray, SizeParamIndex = 3)] byte[] buf, UInt32 size);
+		public delegate IOReturn _ReadPipeAsync (IntPtr self, UInt8 pipeRef, [MarshalAs (UnmanagedType.LPArray, SizeParamIndex = 3)] byte[] buf, UInt32 size, IOAsyncCallback1 callback, IntPtr refcon);
+		public delegate IOReturn _WritePipeAsync (IntPtr self, UInt8 pipeRef, [MarshalAs (UnmanagedType.LPArray, SizeParamIndex = 3)] byte[] buf, UInt32 size, IOAsyncCallback1 callback, IntPtr refcon);
+		public delegate IOReturn _ReadIsochPipeAsync (IntPtr self, UInt8 pipeRef, IntPtr buf, UInt64 frameStart, UInt32 numFrames, [MarshalAs (UnmanagedType.LPArray, SizeParamIndex = 4)] IOUSBIsocFrame[] frameList, IOAsyncCallback1 callback, IntPtr refcon);
+		public delegate IOReturn _WriteIsochPipeAsync (IntPtr self, UInt8 pipeRef, IntPtr buf, UInt64 frameStart, UInt32 numFrames, [MarshalAs (UnmanagedType.LPArray, SizeParamIndex = 4)] IOUSBIsocFrame[] frameList, IOAsyncCallback1 callback, IntPtr refcon);
+		public delegate IOReturn _ControlRequestTO (IntPtr self, UInt8 pipeRef, ref IOUSBDevRequestTO req);
+		public delegate IOReturn _ControlRequestAsyncTO (IntPtr self, UInt8 pipeRef, [MarshalAs (UnmanagedType.LPStruct)] IOUSBDevRequestTO req, IOAsyncCallback1 callback, IntPtr refCon);
+		public delegate IOReturn _ReadPipeTO (IntPtr self, UInt8 pipeRef, [MarshalAs (UnmanagedType.LPArray, SizeParamIndex = 3)] byte[] buf, ref UInt32 size, UInt32 noDataTimeout, UInt32 completionTimeout);
+		public delegate IOReturn _WritePipeTO (IntPtr self, UInt8 pipeRef, [MarshalAs (UnmanagedType.LPArray, SizeParamIndex = 3)] byte[] buf, UInt32 size, UInt32 noDataTimeout, UInt32 completionTimeout);
+		public delegate IOReturn _ReadPipeAsyncTO (IntPtr self, UInt8 pipeRef, [MarshalAs (UnmanagedType.LPArray, SizeParamIndex = 3)] byte[] buf, UInt32 size, UInt32 noDataTimeout, UInt32 completionTimeout, IOAsyncCallback1 callback, IntPtr refcon);
+		public delegate IOReturn _WritePipeAsyncTO (IntPtr self, UInt8 pipeRef, [MarshalAs (UnmanagedType.LPArray, SizeParamIndex = 3)] byte[] buf, UInt32 size, UInt32 noDataTimeout, UInt32 completionTimeout, IOAsyncCallback1 callback, IntPtr refcon);
+		public delegate IOReturn _USBInterfaceGetStringIndex (IntPtr self, out UInt8 si);
+		public delegate IOReturn _USBInterfaceOpenSeize (IntPtr self);
+		public delegate IOReturn _ClearPipeStallBothEnds (IntPtr self, UInt8 pipeRef);
+		public delegate IOReturn _SetPipePolicy (IntPtr self, UInt8 pipeRef, UInt16 maxPacketSize, UInt8 maxInterval);
+		public delegate IOReturn _GetBandwidthAvailable (IntPtr self, out UInt32 bandwidth);
+		public delegate IOReturn _GetEndpointProperties (IntPtr self, UInt8 alternateSetting, UInt8 endpointNumber, UInt8 direction, out UInt8 transferType, out UInt16 maxPacketSize, out UInt8 interval);
+		public delegate IOReturn _LowLatencyReadIsochPipeAsync (IntPtr self, UInt8 pipeRef, IntPtr buf, UInt64 frameStart, UInt32 numFrames, UInt32 updateFrequency, [MarshalAs (UnmanagedType.LPArray, SizeParamIndex = 4)] IOUSBLowLatencyIsocFrame[] frameList, IOAsyncCallback1 callback, IntPtr refcon);
+		public delegate IOReturn _LowLatencyWriteIsochPipeAsync (IntPtr self, UInt8 pipeRef, IntPtr buf, UInt64 frameStart, UInt32 numFrames, UInt32 updateFrequency, [MarshalAs (UnmanagedType.LPArray, SizeParamIndex = 4)] IOUSBLowLatencyIsocFrame[] frameList, IOAsyncCallback1 callback, IntPtr refcon);
+		public delegate IOReturn _LowLatencyCreateBuffer (IntPtr self, out IntPtr buffer, IOByteCount size, UInt32 bufferType);
+		public delegate IOReturn _LowLatencyDestroyBuffer (IntPtr self, IntPtr buffer);
+		public delegate IOReturn _GetBusMicroFrameNumber (IntPtr self, out UInt64 microFrame, out AbsoluteTime atTime);
+		public delegate IOReturn _GetFrameListTime (IntPtr self, out UInt32 microsecondsInFrame);
+		public delegate IOReturn _GetIOUSBLibVersion (IntPtr self, out NumVersion ioUSBLibVersion, out NumVersion usbFamilyVersion);
+		public delegate /*IOUSBDescriptorHeader*/ IntPtr _FindNextAssociatedDescriptor (IntPtr self, [In]IntPtr currentDescriptor, UInt8 descriptorType);
+		public delegate /*IOUSBDescriptorHeader*/ IntPtr _FindNextAltInterface (IntPtr self, [In]IntPtr current, [MarshalAs (UnmanagedType.LPStruct)] IOUSBFindInterfaceRequest request);
+		public delegate IOReturn _GetBusFrameNumberWithTime (IntPtr self, out UInt64 frame, out AbsoluteTime atTime);
+		public delegate IOReturn _GetPipePropertiesV2 (IntPtr self, UInt8 pipeRef, out UInt8 direction, out UInt8 number, out UInt8 transferType, out UInt16 maxPacketSize, out UInt8 interval, out UInt8 maxBurst, out UInt8 mult, out UInt16 bytesPerInterval);
+		public delegate IOReturn _GetPipePropertiesV3 (IntPtr self, UInt8 pipeRef, ref IOUSBEndpointProperties properties);
+		public delegate IOReturn _GetEndpointPropertiesV3 (IntPtr self, ref IOUSBEndpointProperties properties);
+		public delegate IOReturn _SupportsStreams (IntPtr self, UInt8 pipeRef, out UInt32 supportsStreams);
+		public delegate IOReturn _CreateStreams (IntPtr self, UInt8 pipeRef, UInt32 streamID);
+		public delegate IOReturn _GetConfiguredStreams (IntPtr self, UInt8 pipeRef, out UInt32 configuredStreams);
+		public delegate IOReturn _ReadStreamsPipeTO (IntPtr self, UInt8 pipeRef, UInt32 streamID, [MarshalAs (UnmanagedType.LPArray, SizeParamIndex = 4)] byte[] buf, ref UInt32 size, UInt32 noDataTimeout, UInt32 completionTimeout);
+		public delegate IOReturn _WriteStreamsPipeTO (IntPtr self, UInt8 pipeRef, UInt32 streamID, [MarshalAs (UnmanagedType.LPArray, SizeParamIndex = 4)] byte[] buf, UInt32 size, UInt32 noDataTimeout, UInt32 completionTimeout);
+		public delegate IOReturn _ReadStreamsPipeAsyncTO (IntPtr self, UInt8 pipeRef, UInt32 streamID, [MarshalAs (UnmanagedType.LPArray, SizeParamIndex = 4)] byte[] buf, UInt32 size, UInt32 noDataTimeout, UInt32 completionTimeout, IOAsyncCallback1 callback, IntPtr refcon);
+		public delegate IOReturn _WriteStreamsPipeAsyncTO (IntPtr self, UInt8 pipeRef, UInt32 streamID, [MarshalAs (UnmanagedType.LPArray, SizeParamIndex = 4)] byte[] buf, UInt32 size, UInt32 noDataTimeout, UInt32 completionTimeout, IOAsyncCallback1 callback, IntPtr refcon);
+		public delegate IOReturn _AbortStreamsPipe (IntPtr self, UInt8 pipeRef, UInt32 streamID);
 	}
 
 	[Guid ("4923AC4C-4896-11D5-9208-000A27801E86")]
 	[StructLayout (LayoutKind.Sequential)]
 	class IOUSBInterfaceInterface182 : IOUSBInterfaceInterface
 	{
-		ControlRequestTO controlRequestTO;
-		ControlRequestAsyncTO controlRequestAsyncTO;
-		ReadPipeTO readPipeTO;
-		WritePipeTO writePipeTO;
-		ReadPipeAsyncTO readPipeAsyncTO;
-		WritePipeAsyncTO writePipeAsyncTO;
-		USBInterfaceGetStringIndex usbInterfaceGetStringIndex;
+		_ControlRequestTO controlRequestTO;
+		_ControlRequestAsyncTO controlRequestAsyncTO;
+		_ReadPipeTO readPipeTO;
+		_WritePipeTO writePipeTO;
+		_ReadPipeAsyncTO readPipeAsyncTO;
+		_WritePipeAsyncTO writePipeAsyncTO;
+		_USBInterfaceGetStringIndex usbInterfaceGetStringIndex;
 
-		public override ControlRequestTO ControlRequestTO {
+		public override _ControlRequestTO ControlRequestTO {
 			get { return controlRequestTO; }
 		}
 
-		public override ControlRequestAsyncTO ControlRequestAsyncTO {
+		public override _ControlRequestAsyncTO ControlRequestAsyncTO {
 			get { return controlRequestAsyncTO; }
 		}
 
-		public override ReadPipeTO ReadPipeTO {
+		public override _ReadPipeTO ReadPipeTO {
 			get { return readPipeTO; }
 		}
 
-		public override WritePipeTO WritePipeTO {
+		public override _WritePipeTO WritePipeTO {
 			get { return writePipeTO; }
 		}
 
-		public override ReadPipeAsyncTO ReadPipeAsyncTO {
+		public override _ReadPipeAsyncTO ReadPipeAsyncTO {
 			get { return readPipeAsyncTO; }
 		}
 
-		public override WritePipeAsyncTO WritePipeAsyncTO {
+		public override _WritePipeAsyncTO WritePipeAsyncTO {
 			get { return writePipeAsyncTO; }
 		}
 
-		public override USBInterfaceGetStringIndex USBInterfaceGetStringIndex {
+		public override _USBInterfaceGetStringIndex USBInterfaceGetStringIndex {
 			get { return usbInterfaceGetStringIndex; }
 		}
 	}
@@ -1403,9 +1639,9 @@ namespace MonoMac.IOKit.USB
 	[StructLayout (LayoutKind.Sequential)]
 	class IOUSBInterfaceInterface183 : IOUSBInterfaceInterface182
 	{
-		USBInterfaceOpenSeize usbInterfaceOpenSeize;
+		_USBInterfaceOpenSeize usbInterfaceOpenSeize;
 
-		public override USBInterfaceOpenSeize USBInterfaceOpenSeize {
+		public override _USBInterfaceOpenSeize USBInterfaceOpenSeize {
 			get { return usbInterfaceOpenSeize; }
 		}
 	}
@@ -1414,24 +1650,24 @@ namespace MonoMac.IOKit.USB
 	[StructLayout (LayoutKind.Sequential)]
 	class IOUSBInterfaceInterface190 : IOUSBInterfaceInterface183
 	{
-		ClearPipeStallBothEnds clearPipeStallBothEnds;
-		SetPipePolicy setPipePolicy;
-		GetBandwidthAvailable getBandwidthAvailable;
-		GetEndpointProperties getEndpointProperties;
+		_ClearPipeStallBothEnds clearPipeStallBothEnds;
+		_SetPipePolicy setPipePolicy;
+		_GetBandwidthAvailable getBandwidthAvailable;
+		_GetEndpointProperties getEndpointProperties;
 
-		public override ClearPipeStallBothEnds ClearPipeStallBothEnds {
+		public override _ClearPipeStallBothEnds ClearPipeStallBothEnds {
 			get { return clearPipeStallBothEnds; }
 		}
 
-		public override SetPipePolicy SetPipePolicy {
+		public override _SetPipePolicy SetPipePolicy {
 			get { return setPipePolicy; }
 		}
 
-		public override GetBandwidthAvailable GetBandwidthAvailable {
+		public override _GetBandwidthAvailable GetBandwidthAvailable {
 			get { return getBandwidthAvailable; }
 		}
 
-		public override GetEndpointProperties GetEndpointProperties {
+		public override _GetEndpointProperties GetEndpointProperties {
 			get { return getEndpointProperties; }
 		}
 	}
@@ -1440,24 +1676,24 @@ namespace MonoMac.IOKit.USB
 	[StructLayout (LayoutKind.Sequential)]
 	class IOUSBInterfaceInterface192 : IOUSBInterfaceInterface190
 	{
-		LowLatencyReadIsochPipeAsync lowLatencyReadIsochPipeAsync;
-		LowLatencyWriteIsochPipeAsync lowLatencyWriteIsochPipeAsync;
-		LowLatencyCreateBuffer lowLatencyCreateBuffer;
-		LowLatencyDestroyBuffer lowLatencyDestroyBuffer;
+		_LowLatencyReadIsochPipeAsync lowLatencyReadIsochPipeAsync;
+		_LowLatencyWriteIsochPipeAsync lowLatencyWriteIsochPipeAsync;
+		_LowLatencyCreateBuffer lowLatencyCreateBuffer;
+		_LowLatencyDestroyBuffer lowLatencyDestroyBuffer;
 
-		public override LowLatencyReadIsochPipeAsync LowLatencyReadIsochPipeAsync {
+		public override _LowLatencyReadIsochPipeAsync LowLatencyReadIsochPipeAsync {
 			get { return lowLatencyReadIsochPipeAsync; }
 		}
 
-		public override LowLatencyWriteIsochPipeAsync LowLatencyWriteIsochPipeAsync {
+		public override _LowLatencyWriteIsochPipeAsync LowLatencyWriteIsochPipeAsync {
 			get { return lowLatencyWriteIsochPipeAsync; }
 		}
 
-		public override LowLatencyCreateBuffer LowLatencyCreateBuffer {
+		public override _LowLatencyCreateBuffer LowLatencyCreateBuffer {
 			get { return lowLatencyCreateBuffer; }
 		}
 
-		public override LowLatencyDestroyBuffer LowLatencyDestroyBuffer {
+		public override _LowLatencyDestroyBuffer LowLatencyDestroyBuffer {
 			get { return lowLatencyDestroyBuffer; }
 		}
 	}
@@ -1466,19 +1702,19 @@ namespace MonoMac.IOKit.USB
 	[StructLayout (LayoutKind.Sequential)]
 	class IOUSBInterfaceInterface197 : IOUSBInterfaceInterface192
 	{
-		GetBusMicroFrameNumber getBusMicroFrameNumber;
-		GetFrameListTime getFrameListTime;
-		GetIOUSBLibVersion getIOUSBLibVersion;
+		_GetBusMicroFrameNumber getBusMicroFrameNumber;
+		_GetFrameListTime getFrameListTime;
+		_GetIOUSBLibVersion getIOUSBLibVersion;
 
-		public override GetBusMicroFrameNumber GetBusMicroFrameNumber {
+		public override _GetBusMicroFrameNumber GetBusMicroFrameNumber {
 			get { return getBusMicroFrameNumber; }
 		}
 
-		public override GetFrameListTime GetFrameListTime {
+		public override _GetFrameListTime GetFrameListTime {
 			get { return getFrameListTime; }
 		}
 
-		public override GetIOUSBLibVersion GetIOUSBLibVersion {
+		public override _GetIOUSBLibVersion GetIOUSBLibVersion {
 			get { return getIOUSBLibVersion; }
 		}
 	}
@@ -1487,14 +1723,14 @@ namespace MonoMac.IOKit.USB
 	[StructLayout (LayoutKind.Sequential)]
 	class IOUSBInterfaceInterface220 : IOUSBInterfaceInterface197
 	{
-		FindNextAssociatedDescriptor findNextAssociatedDescriptor;
-		FindNextAltInterface findNextAltInterface;
+		_FindNextAssociatedDescriptor findNextAssociatedDescriptor;
+		_FindNextAltInterface findNextAltInterface;
 
-		public override FindNextAssociatedDescriptor FindNextAssociatedDescriptor {
+		public override _FindNextAssociatedDescriptor FindNextAssociatedDescriptor {
 			get { return findNextAssociatedDescriptor; }
 		}
 
-		public override FindNextAltInterface FindNextAltInterface {
+		public override _FindNextAltInterface FindNextAltInterface {
 			get { return findNextAltInterface; }
 		}
 	}
@@ -1509,9 +1745,9 @@ namespace MonoMac.IOKit.USB
 	[StructLayout (LayoutKind.Sequential)]
 	class IOUSBInterfaceInterface300 : IOUSBInterfaceInterface245
 	{
-		GetBusFrameNumberWithTime getBusFrameNumberWithTime;
+		_GetBusFrameNumberWithTime getBusFrameNumberWithTime;
 
-		public override GetBusFrameNumberWithTime GetBusFrameNumberWithTime {
+		public override _GetBusFrameNumberWithTime GetBusFrameNumberWithTime {
 			get { return getBusFrameNumberWithTime; }
 		}
 	}
@@ -1520,9 +1756,9 @@ namespace MonoMac.IOKit.USB
 	[StructLayout (LayoutKind.Sequential)]
 	class IOUSBInterfaceInterface500 : IOUSBInterfaceInterface300
 	{
-		GetPipePropertiesV2 getPipePropertiesV2;
+		_GetPipePropertiesV2 getPipePropertiesV2;
 
-		public override GetPipePropertiesV2 GetPipePropertiesV2 {
+		public override _GetPipePropertiesV2 GetPipePropertiesV2 {
 			get { return getPipePropertiesV2; }
 		}
 	}
@@ -1531,1283 +1767,56 @@ namespace MonoMac.IOKit.USB
 	[StructLayout (LayoutKind.Sequential)]
 	class IOUSBInterfaceInterface550 : IOUSBInterfaceInterface500
 	{
-		GetPipePropertiesV3 getPipePropertiesV3;
-		GetEndpointPropertiesV3 getEndpointPropertiesV3;
-		SupportsStreams supportsStreams;
-		CreateStreams createStreams;
-		GetConfiguredStreams getConfiguredStreams;
-		ReadStreamsPipeTO readStreamsPipeTO;
-		WriteStreamsPipeTO writeStreamsPipeTO;
-		ReadStreamsPipeAsyncTO readStreamsPipeAsyncTO;
-		WriteStreamsPipeAsyncTO writeStreamsPipeAsyncTO;
-		AbortStreamsPipe abortStreamsPipe;
+		_GetPipePropertiesV3 getPipePropertiesV3;
+		_GetEndpointPropertiesV3 getEndpointPropertiesV3;
+		_SupportsStreams supportsStreams;
+		_CreateStreams createStreams;
+		_GetConfiguredStreams getConfiguredStreams;
+		_ReadStreamsPipeTO readStreamsPipeTO;
+		_WriteStreamsPipeTO writeStreamsPipeTO;
+		_ReadStreamsPipeAsyncTO readStreamsPipeAsyncTO;
+		_WriteStreamsPipeAsyncTO writeStreamsPipeAsyncTO;
+		_AbortStreamsPipe abortStreamsPipe;
 
-		public override GetPipePropertiesV3 GetPipePropertiesV3 {
+		public override _GetPipePropertiesV3 GetPipePropertiesV3 {
 			get { return getPipePropertiesV3; }
 		}
 
-		public override GetEndpointPropertiesV3 GetEndpointPropertiesV3 {
+		public override _GetEndpointPropertiesV3 GetEndpointPropertiesV3 {
 			get { return getEndpointPropertiesV3; }
 		}
 
-		public override SupportsStreams SupportsStreams {
+		public override _SupportsStreams SupportsStreams {
 			get { return supportsStreams; }
 		}
 
-		public override CreateStreams CreateStreams {
+		public override _CreateStreams CreateStreams {
 			get { return createStreams; }
 		}
 
-		public override GetConfiguredStreams GetConfiguredStreams {
+		public override _GetConfiguredStreams GetConfiguredStreams {
 			get { return getConfiguredStreams; }
 		}
 
-		public override ReadStreamsPipeTO ReadStreamsPipeTO {
+		public override _ReadStreamsPipeTO ReadStreamsPipeTO {
 			get { return readStreamsPipeTO; }
 		}
 
-		public override WriteStreamsPipeTO WriteStreamsPipeTO {
+		public override _WriteStreamsPipeTO WriteStreamsPipeTO {
 			get { return writeStreamsPipeTO; }
 		}
 
-		public override ReadStreamsPipeAsyncTO ReadStreamsPipeAsyncTO {
+		public override _ReadStreamsPipeAsyncTO ReadStreamsPipeAsyncTO {
 			get { return readStreamsPipeAsyncTO; }
 		}
 
-		public override WriteStreamsPipeAsyncTO WriteStreamsPipeAsyncTO {
+		public override _WriteStreamsPipeAsyncTO WriteStreamsPipeAsyncTO {
 			get { return writeStreamsPipeAsyncTO; }
 		}
 
-		public override AbortStreamsPipe AbortStreamsPipe {
+		public override _AbortStreamsPipe AbortStreamsPipe {
 			get { return abortStreamsPipe; }
 		}
 	}
-
-	/*!
-	@interface IOUSBInterfaceInterface
-	@abstract   The object you use to access a USB device interface from user space, returned by all versions
-	        of the IOUSBFamily currently shipping.
-	@discussion The functions listed here will work with any version of the IOUSBInterfaceInterface, including
-	        the one shipped with Mac OS X version 10.0.
-	*/
-
-	/*!
-	@function CreateInterfaceAsyncEventSource
-	@abstract   Creates a run loop source for delivery of all asynchronous notifications on this device.
-	@discussion The Mac OS X kernel does not spawn a thread to callback to the client. Instead 
-	        it delivers completion notifications on a Mach port (see @link //apple_ref/C/instm/IOUSBInterfaceInterface/CreateInterfaceAsyncPort/ CreateInterfaceAsyncPort @/link). This 
-	        routine wraps that port with the appropriate routing code so that 
-	        the completion notifications can be automatically routed through the client's 
-	        CFRunLoop.
-	@param      self Pointer to the IOUSBInterfaceInterface.
-	@param      source Pointer to a CFRunLoopSourceRef to return the newly created run loop event source.
-	@result     Returns kIOReturnSuccess if successful or a kern_return_t if failed.
-	*/
-	delegate IOReturn CreateInterfaceAsyncEventSource (IntPtr self, out CFRunLoopSourceRef source);
-
-	/*!
-    @function GetInterfaceAsyncEventSource
-    @abstract   Returns the CFRunLoopSourceRef for this IOService instance.
-    @discussion (description)
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @result     Returns the run loop source if one has been created, 0 otherwise.
-	*/
-	delegate ICFRunLoopSourceRef GetInterfaceAsyncEventSource (IntPtr self);
-
-	/*!
-    @function CreateInterfaceAsyncPort
-    @abstract   Creates and registers a mach_port_t for asynchronous communications.
-    @discussion The Mac OS X kernel does not spawn a thread to callback to the client. Instead 
-                it delivers completion notifications on this Mach port. After receiving a message 
-                on this port the client is obliged to call the IOKitLib.h: IODispatchCalloutFromMessage() 
-                function for decoding the notification message.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @result     Returns kIOReturnSuccess if successful or a kern_return_t if failed.
-	*/
-	delegate IOReturn CreateInterfaceAsyncPort (IntPtr self, out mach_port_t port);
-
-	/*!
-    @function GetInterfaceAsyncPort
-    @abstract   Returns the mach_port_t port for this IOService instance.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @result     Returns the port if one exists, 0 otherwise.
-	*/
-	delegate mach_port_t GetInterfaceAsyncPort (IntPtr self);
-
-	/*!
-    @function USBInterfaceOpen
-    @abstract   Opensthe IOUSBInterface for exclusive access.
-    @discussion Before the client can transfer data to and from the interface, it must have 
-                succeeded in opening the interface. This establishes an exclusive link between 
-                the client's task and the actual interface device. Opening the interface causes 
-                pipes to be created on each endpoint contained in the interface. If the interface 
-                contains isochronous endpoints, an attempt is made to allocate bandwidth on 
-                the bus for each of those pipes. If there is not enough bandwidth available, 
-                an isochronous pipe may be created with a bandwidth of zero. The software must 
-                then call SetPipePolicy to change the size of that pipe before it can be used 
-                for I/O.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @result     Returns kIOReturnExclusiveAccess if some other task has the device opened already,
-                kIOReturnError if the connection with the kernel cannot be established or
-                kIOReturnSuccess if successful.
-	*/
-	delegate IOReturn USBInterfaceOpen (IntPtr self);
-
-	/*!
-    @function USBInterfaceClose
-    @abstract   Closes the task's connection to the IOUSBInterface.
-    @discussion Releases the client's exclusive access to the IOUSBInterface.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService.
-	*/
-	delegate IOReturn USBInterfaceClose (IntPtr self);
-
-	/*!
-    @function GetInterfaceClass
-    @abstract   Returns the USB Class of the interface  (bInterfaceClass).
-    @discussion The interface does not have to be open to use this function.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @param      intfClass Pointer to UInt8 to hold the interface Class.
-    @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService.
-	*/
-	delegate IOReturn GetInterfaceClass (IntPtr self, out UInt8 intfClass);
-
-	/*!
-    @function GetInterfaceSubClass
-    @abstract   Returns the USB Subclass of the interface (bInterfaceSubClass).
-    @discussion The interface does not have to be open to use this function.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @param      intfSubClass Pointer to UInt8 to hold the interface Subclass.
-    @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService.
-	*/
-	delegate IOReturn GetInterfaceSubClass (IntPtr self, out UInt8 intfSubClass);
-
-	/*!
-    @function GetInterfaceProtocol
-    @abstract   Returns the USB Protocol of the interface (bInterfaceProtocol).
-    @discussion The interface does not have to be open to use this function.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @param      intfProtocol Pointer to UInt8 to hold the interface Protocol.
-    @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService.
-	*/
-	delegate IOReturn GetInterfaceProtocol (IntPtr self, out UInt8 intfProtocol);
-
-	/*!
-    @function GetDeviceVendor
-    @abstract   Returns the USB Vendor ID (idVendor) of the device of which this interface is a part.
-    @discussion The interface does not have to be open to use this function.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @param      devVendor Pointer to UInt16 to hold the vendorID.
-    @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService.
-	*/
-//	delegate IOReturn GetDeviceVendor (IntPtr self, out UInt16 devVendor);
-
-	/*!
-    @function GetDeviceProduct
-    @abstract   Returns the USB Product ID (idProduct) of the device of which this interface is a part.
-    @discussion The interface does not have to be open to use this function.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @param      devProduct Pointer to UInt16 to hold the ProductID.
-    @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService.
-	*/
-//	delegate IOReturn GetDeviceProduct (IntPtr self, out UInt16 devProduct);
-
-	/*!
-    @function GetDeviceReleaseNumber
-    @abstract   Returns the Device Release Number (bcdDevice) of the device of which this interface is a part.
-    @discussion The interface does not have to be open to use this function.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @param      devRelNum Pointer to UInt16 to hold the Release Number.
-    @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService.
-	*/
-//	delegate IOReturn GetDeviceReleaseNumber (IntPtr self, out UInt16 devRelNum);
-
-	/*!
-    @function GetConfigurationValue
-    @abstract   Returns the current configuration value set in the device (the interface will be part of that configuration.)
-    @discussion The interface does not have to be open to use this function.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @param      configVal Pointer to UInt8 to hold the configuration value.
-    @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService.
-	*/
-	delegate IOReturn GetConfigurationValue (IntPtr self, out UInt8 configVal);
-
-	/*!
-    @function GetInterfaceNumber
-    @abstract   Returns the interface number (zero-based index) of this interface within the current configuration of the device.
-    @discussion The interface does not have to be open to use this function.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @param      intfNumber Pointer to UInt8 to hold the interface number.
-    @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService.
-	*/
-	delegate IOReturn GetInterfaceNumber (IntPtr self, out UInt8 intfNumber);
-
-	/*!
-    @function GetAlternateSetting
-    @abstract   Returns the alternate setting currently selected in this interface.
-    @discussion The interface does not have to be open to use this function.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @param      intfAltSetting Pointer to UInt8 to hold the alternate setting value.
-    @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService.
-	*/
-	delegate IOReturn GetAlternateSetting (IntPtr self, out UInt8 intfAltSetting);
-
-	/*!
-    @function GetNumEndpoints
-    @abstract   Returns the number of endpoints in this interface.
-    @discussion The interface does not have to be open to use this function.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @param      intfNumEndpoints Pointer to UInt8 to hold the number of endpoints.
-    @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService.
-	*/
-	delegate IOReturn GetNumEndpoints (IntPtr self, out UInt8 intfNumEndpoints);
-
-	/*!
-    @function GetLocationID
-    @abstract   Returns the location ID.
-    @discussion The location ID is a 32 bit number which is unique among all USB devices in the system, and which 
-                will not change on a system reboot unless the topology of the bus itself changes.  The interface 
-                does not have to be open to use this function.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @param      locationID Pointer to UInt32 to hold the location ID.
-    @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService.
-	*/
-//	delegate IOReturn GetLocationID (IntPtr self, out UInt32 locationID);
-
-	/*!
-    @function GetDevice
-    @abstract   Returns the device of which this interface is part.
-    @discussion The interface does not have to be open to use this function. The returned device can be used to 
-                create a CFPlugin to talk to the device.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @param      device Pointer to io_service_t to hold the result.
-    @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService.
-	*/
-	delegate IOReturn GetDevice (IntPtr self, out io_service_t device);
-
-	/*!
-    @function SetAlternateInterface
-    @abstract   Changes the AltInterface setting.
-    @discussion The interface must be open to use this function.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @param      alternateSetting The new alternate setting for the interface.
-    @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService,
-                or kIOReturnNotOpen if the interface is not open for exclusive access.
-	*/
-	delegate IOReturn SetAlternateInterface (IntPtr self, UInt8 alternateSetting);
-
-	/*!
-    @function GetBusFrameNumber
-    @abstract   Gets the current frame number of the bus to which the interface and its device are attached.
-    @discussion The interface does not have to be open to use this function.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @param      frame Pointer to UInt64 to hold the frame number.
-    @param      atTime Pointer to an AbsoluteTime, which should be within 1ms of the time when the bus frame 
-                number was attained.
-    @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService.
-	*/
-//	delegate IOReturn GetBusFrameNumber (IntPtr self, out UInt64 frame, out AbsoluteTime atTime);
-
-	/*!
-    @function ControlRequest
-    @abstract   Sends a USB request on a control pipe.
-    @discussion If the request is a standard request which will change the state of the device, the device must 
-                be open, which means you should be using the IOUSBDeviceInterface for this command.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @param      pipeRef Index of the control pipe to use. Use zero for the default control pipe on the device.
-    @param      req Pointer to an IOUSBDevRequest containing the request.
-    @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService,
-				kIOReturnAborted if the thread is interrupted before the call completes, 
-                or kIOReturnNotOpen if the interface is not open for exclusive access.
-	*/
-	delegate IOReturn ControlRequest (IntPtr self, UInt8 pipeRef, ref IOUSBDevRequest req);
-
-	/*!
-    @function ControlRequestAsync
-    @abstract   Sends an asynchronous USB request on a control pipe. 
-    @discussion Use pipeRef=0 for the default device control pipe.  If the request is a standard request which will 
-                change the state of the device, the device must be open, which means you should be using the 
-                IOUSBDeviceInterface for this command.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @param      pipeRef Index of the control pipe to use. Use zero for the default control pipe on the device.
-    @param      req Pointer to an IOUSBDevRequest containing the request.
-	 @param     callback An IOAsyncCallback1 method. Upon completion, the arg0 argument of the AsyncCallback1 will contain the number of bytes that were actually transferred.
-	 			A message addressed to this callback is posted to the Async 
-                port upon completion.
-    @param      refCon Arbitrary pointer which is passed as a parameter to the callback routine.
-    @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService,
-                kIOReturnNotOpen if the interface is not open for exclusive access, or kIOUSBNoAsyncPortErr if no 
-                Async port has been created for this interface.
-	*/
-	delegate IOReturn ControlRequestAsync (IntPtr self, UInt8 pipeRef, [MarshalAs (UnmanagedType.LPStruct)] IOUSBDevRequest req, IOAsyncCallback1 callback, IntPtr refCon);
-
-	/*!
-    @function GetPipeProperties
-    @abstract   Gets the properties for a pipe.
-    @discussion Once an interface is opened, all of the pipes in that interface get created by the kernel. The number
-                of pipes can be retrieved by GetNumEndpoints. The client can then get the properties of any pipe 
-                using an index of 1 to GetNumEndpoints. Pipe 0 is the default control pipe in the device.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @param      pipeRef Index for the desired pipe (1 - GetNumEndpoints).
-    @param      direction Pointer to an UInt8 to get the direction of the pipe.
-    @param      number Pointer to an UInt8 to get the pipe number.
-    @param      transferType Pointer to an UInt8 to get the transfer type of the pipe.
-	@param      maxPacketSize Pointer to an UInt16 to get the maxPacketSize of the pipe. This maxPacketSize is the FULL maxPacketSize, which takes into account the multipler for HS Isoc pipes
-				and the burst and the multiplier for SS Isoc pipes. It could also have been adjusted by SetPipePolicy.
-    @param      interval Pointer to an UInt8 to get the interval for polling the pipe for data (in milliseconds).
-    @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService,
-                or kIOReturnNotOpen if the interface is not open for exclusive access.
-	*/
-	delegate IOReturn GetPipeProperties (IntPtr self, UInt8 pipeRef, out UInt8 direction, out UInt8 number, out UInt8 transferType, out UInt16 maxPacketSize, out UInt8 interval);
-
-	/*!
-    @function GetPipeStatus
-    @abstract   Gets the current status of a pipe.
-    @discussion The interface must be open for the pipe to exist.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @param      pipeRef Index for the desired pipe (1 - GetNumEndpoints).
-    @result     Returns kIOReturnNoDevice if there is no connection to an IOService, or kIOReturnNotOpen
-                if the interface is not open for exclusive access. Otherwise, the status of the pipe is returned. 
-                Returns kIOUSBPipeStalled if the pipe is stalled. See @link //apple_ref/C/instm/IOUSBInterfaceInterface/ClearPipeStall/ ClearPipeStall @/link 
-                or @link //apple_ref/C/instm/IOUSBInterfaceInterface190/ClearPipeStallBothEnds/ ClearPipeStallBothEnds @/link for
-                more information.
-	*/
-	delegate IOReturn GetPipeStatus (IntPtr self, UInt8 pipeRef);
-
-	/*!
-    @function AbortPipe
-    @abstract   Aborts any outstanding transactions on the pipe with status kIOReturnAborted.
-    @discussion If there are outstanding asynchronous transactions on the pipe, the callbacks will happen. 
-                Note that this command will also clear the halted bit on the endpoint
-                in the controller, but will NOT clear the data toggle bit.  If you want to clear the data toggle bit as well, see @link //apple_ref/C/instm/IOUSBInterfaceInterface/ClearPipeStall/ ClearPipeStall @/link or 
-                @link //apple_ref/C/instm/IOUSBInterfaceInterface190/ClearPipeStallBothEnds/ ClearPipeStallBothEnds @/link for more information.  The interface must be open for the pipe to exist.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @param      pipeRef Index for the desired pipe (1 - GetNumEndpoints).
-    @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService,
-                or kIOReturnNotOpen if the interface is not open for exclusive access.
-
-	*/
-	delegate IOReturn AbortPipe (IntPtr self, UInt8 pipeRef);
-
-		/*!
-    @function ResetPipe
-    @abstract   Equivalent to ClearPipeStall.
-    @discussion The interface must be open for the pipe to exist.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @param      pipeRef Index for the desired pipe (1 - GetNumEndpoints).
-    @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService,
-                or kIOReturnNotOpen if the interface is not open for exclusive access.
-	*/
-	delegate IOReturn ResetPipe (IntPtr self, UInt8 pipeRef);
-
-	/*!
-    @function ClearPipeStall
-    @abstract   Clears the halted bit and the data toggle bit on the pipe's endpoint in the controller.
-    @discussion This function also returns any outstanding transactions on the pipe with status kIOUSBTransactionReturned.
-                If there are outstanding asynchronous transactions on the pipe, the callbacks will happen. The data 
-                toggle may need to be resynchronized. The driver may handle this by sending a ClearFeature(ENDPOINT_HALT) 
-                to the default control pipe, specifying the device's endpoint for this pipe. See also 
-                @link //apple_ref/C/instm/IOUSBInterfaceInterface190/ClearPipeStallBothEnds/ ClearPipeStallBothEnds @/link.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @param      pipeRef Index for the desired pipe (1 - GetNumEndpoints).
-    @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService,
-                or kIOReturnNotOpen if the interface is not open for exclusive access.
-	*/
-	delegate IOReturn ClearPipeStall (IntPtr self, UInt8 pipeRef);
-
-	/*!
-    @function ReadPipe
-    @abstract   Reads data on a <b>BULK IN</b> or an <b>INTERRUPT</b> pipe.
-    @discussion The interface must be open for the pipe to exist.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @param      pipeRef Index for the desired pipe (1 - GetNumEndpoints). 
-    @param      buf Buffer to hold the data.
-    @param      size On entry: a pointer to the size of the buffer pointed to by buf.
-                On exit: a pointer to the number of bytes actually read from the device.
-    @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService,
-                or kIOReturnNotOpen if the interface is not open for exclusive access.
-	*/
-	delegate IOReturn ReadPipe (IntPtr self, UInt8 pipeRef, [MarshalAs (UnmanagedType.LPArray, SizeParamIndex = 3)] byte[] buf, ref UInt32 size);
-
-	/*!
-    @function WritePipe
-    @abstract   Writes data on a <b>BULK OUT</b> or <b>INTERRUPT OUT</b> pipe.
-    @discussion The interface must be open for the pipe to exist.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @param      pipeRef Index for the desired pipe (1 - GetNumEndpoints).
-    @param      buf Buffer to hold the data.
-    @param      size The size of the data buffer.
-    @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService,
-				kIOReturnAborted if the thread is interrupted before the call completes, 
-                or kIOReturnNotOpen if the interface is not open for exclusive access.
-	*/
-	delegate IOReturn WritePipe (IntPtr self, UInt8 pipeRef, [MarshalAs (UnmanagedType.LPArray, SizeParamIndex = 3)] byte[] buf, UInt32 size);
-
-	/*!
-    @function ReadPipeAsync
-    @abstract   Performs an asynchronous read on a <b>BULK IN</b> or an <b>INTERRUPT</b> pipe.
-    @discussion The interface must be open for the pipe to exist.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @param      pipeRef Index for the desired pipe (1 - GetNumEndpoints).
-    @param      buf Buffer to hold the data.
-    @param      size The size of the buffer pointed to by buf.
-	@param      callback An IOAsyncCallback1 method. Upon completion, the arg0 argument of the AsyncCallback1 will contain the number of bytes that were actually read.
-	 			A message addressed to this callback is posted to the Async 
-                port upon completion.
-    @param      refcon Arbitrary pointer which is passed as a parameter to the callback routine.
-    @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService,
-				kIOReturnAborted if the thread is interrupted before the call completes, 
-                or kIOReturnNotOpen if the interface is not open for exclusive access.
-	*/
-	delegate IOReturn ReadPipeAsync (IntPtr self, UInt8 pipeRef, [MarshalAs (UnmanagedType.LPArray, SizeParamIndex = 3)] byte[] buf, UInt32 size, IOAsyncCallback1 callback, IntPtr refcon);
-
-		/*!
-    @function WritePipeAsync
-    @abstract   Performs an asynchronous write on a <b>BULK OUT</b> or <b>INTERRUPT OUT</b> pipe.
-    @discussion The interface must be open for the pipe to exist.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @param      pipeRef Index for the desired pipe (1 - GetNumEndpoints).
-    @param      buf Buffer to hold the data.
-    @param      size The size of the buffer pointed to by buf.
-    @param      callback An IOAsyncCallback1 method. Upon completion, the arg0 argument of the AsyncCallback1 will contain the number of bytes that were actually written.
-	 			A message addressed to this callback is posted to the Async 
-                port upon completion.
-    @param      refcon Arbitrary pointer which is passed as a parameter to the callback routine.
-    @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService,
-                or kIOReturnNotOpen if the interface is not open for exclusive access.
-	*/
-	delegate IOReturn WritePipeAsync (IntPtr self, UInt8 pipeRef, [MarshalAs (UnmanagedType.LPArray, SizeParamIndex = 3)] byte[] buf, UInt32 size, IOAsyncCallback1 callback, IntPtr refcon);
-
-	/*!
-    @function ReadIsochPipeAsync
-    @abstract   Performs a read on an <b>ISOCHRONOUS</b> pipe.
-    @discussion The interface must be open for the pipe to exist.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @param      pipeRef Index for the desired pipe (1 - GetNumEndpoints).
-    @param      buf Buffer to hold the data.
-    @param      frameStart The bus frame number on which to start the read (obtained from GetBusFrameNumber).
-    @param      numFrames The number of frames for which to transfer data.
-    @param      frameList A pointer to an array of IOUSBIsocFrame structures describing the frames.
-    @param      callback An IOAsyncCallback1 method. Upon completion, the arg0 argument of the AsyncCallback1 will contain the framelist pointer, which can be used to associate the completion with a particular request.
-	 			A message addressed to this callback is posted to the Async port upon completion.
-    @param      refcon Arbitrary pointer which is passed as a parameter to the callback routine.
-    @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService,
-                or kIOReturnNotOpen if the interface is not open for exclusive access.
-	*/
-	delegate IOReturn ReadIsochPipeAsync (IntPtr self, UInt8 pipeRef, IntPtr buf, UInt64 frameStart, UInt32 numFrames,
-	                                      [MarshalAs (UnmanagedType.LPArray, SizeParamIndex = 4)] IOUSBIsocFrame[] frameList,
-	                                      IOAsyncCallback1 callback, IntPtr refcon);
-
-	/*!
-    @function WriteIsochPipeAsync
-    @abstract   Performs an asynchronous write on an <b>ISOCHRONOUS</b> pipe.
-    @discussion The interface must be open for the pipe to exist.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @param      pipeRef Index for the desired pipe (1 - GetNumEndpoints).
-    @param      buf Buffer to hold the data.
-    @param      frameStart The bus frame number on which to start the write (obtained from GetBusFrameNumber).
-    @param      numFrames The number of frames for which to transfer data.
-    @param      frameList A pointer to an array of IOUSBIsocFrame structures describing the frames.
-    @param      callback An IOAsyncCallback1 method. Upon completion, the arg0 argument of the AsyncCallback1 will contain the framelist pointer, which can be used to associate the completion with a particular request.
-	 			A message addressed to this callback is posted to the Async 
-                port upon completion.
-    @param      refcon Arbitrary pointer which is passed as a parameter to the callback routine.
-    @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService,
-                or kIOReturnNotOpen if the interface is not open for exclusive access.
-	*/
-	delegate IOReturn WriteIsochPipeAsync (IntPtr self, UInt8 pipeRef, IntPtr buf, UInt64 frameStart, UInt32 numFrames,
-	                                       [MarshalAs (UnmanagedType.LPArray, SizeParamIndex = 4)] IOUSBIsocFrame[] frameList,
-	                                       IOAsyncCallback1 callback, IntPtr refcon);
-
-	/*!
-    @interface IOUSBInterfaceInterface182
-    @abstract   The object you use to access a USB device interface from user space, returned by the IOUSBFamily
-                version 1.8.2 and above.
-    @discussion The functions listed here include all of the functions defined for the IOUSBInterfaceInterface and
-                some new functions that are available on Mac OS X version 10.0.4 and later.
-    @super  IOUSBInterfaceInterface
-	*/
-
-	/*!
-    @function ControlRequestTO
-    @abstract   Sends a USB request on a control pipe.
-    @discussion The IOUSBDevRequestTO structure allows the client to specify timeout values for this request.  If 
-                the request is a standard request which will change the state of the device, the device must be open,
-                which means you should be using the IOUSBDeviceInterface for this command.
-    @availability This function is only available with IOUSBInterfaceInterface182 and above.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @param      pipeRef Index of the control pipe to use. Use zero for the default control pipe on the device.
-    @param      req Pointer to an IOUSBDevRequestTO containing the request.
-    @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService, or
-				kIOReturnAborted if the thread is interrupted before the call completes, 
-                kIOReturnNotOpen if the interface is not open for exclusive access.
-	*/
-	delegate IOReturn ControlRequestTO (IntPtr self, UInt8 pipeRef, ref IOUSBDevRequestTO req);
-
-	/*!
-    @function ControlRequestAsyncTO
-    @abstract   Sends an asynchronous USB request on a control pipe.
-    @discussion The IOUSBDevRequestTO structure allows the client to specify timeout values for this request. Use 
-                pipeRef=0 for the default device control pipe.  If the request is a standard request which will 
-                change the state of the device, the device must be open, which means you should be using the 
-                IOUSBDeviceInterface for this command.
-    @availability This function is only available with IOUSBInterfaceInterface182 and above.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @param      pipeRef Index of the control pipe to use. Use zero for the default control pipe on the device.
-    @param      req Pointer to an IOUSBDevRequestTO containing the request.
-    @param      callback An IOAsyncCallback1 method. Upon completion, the arg0 argument of the AsyncCallback1 will contain the number of bytes that were actually transferred.
-	 			A message addressed to this callback is posted to the Async 
-                port upon completion.
-    @param      refCon Arbitrary pointer which is passed as a parameter to the callback routine.
-    @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService, or
-                kIOReturnNotOpen if the interface is not open for exclusive access.
-	*/
-	delegate IOReturn ControlRequestAsyncTO (IntPtr self, UInt8 pipeRef, [MarshalAs (UnmanagedType.LPStruct)] IOUSBDevRequestTO req, IOAsyncCallback1 callback, IntPtr refCon);
-
-	/*!
-    @function ReadPipeTO
-    @abstract   Performs a read on a <b>BULK IN</b> pipe, specifying timeout values.
-    @discussion The interface must be open for the pipe to exist.
-    
-                If a timeout is specified and the request times out, the driver may need to resynchronize the data 
-                toggle. See @link //apple_ref/C/instm/IOUSBInterfaceInterface/ClearPipeStall/ ClearPipeStall @/link 
-                or @link //apple_ref/C/instm/IOUSBInterfaceInterface190/ClearPipeStallBothEnds/ ClearPipeStallBothEnds @/link.
-
-                Timeouts do not apply to interrupt pipes, so you should use the ReadPipe API to perform a read from 
-                an interrupt pipe.
-    @availability This function is only available with IOUSBInterfaceInterface182 and above.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @param      pipeRef Index for the desired pipe (1 - GetNumEndpoints).
-    @param      buf Buffer to hold the data.
-    @param      size Pointer to the size of the buffer pointed to by buf.
-    @param      noDataTimeout Specifies a time value in milliseconds. Once the request is queued on the bus, if no 
-                data is transferred in this amount of time, the request will be aborted and returned.
-    @param      completionTimeout Specifies a time value in milliseconds. Once the request is queued on the bus, if 
-                the entire request is not completed in this amount of time, the request will be aborted and returned.
-    @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService,
-				kIOReturnAborted if the thread is interrupted before the call completes, or
-                kIOReturnNotOpen if the interface is not open for exclusive access.  Returns kIOReturnBadArgument if timeout 
-                values are specified for an interrupt pipe.  If an error is returned, the size parameter is not updated and the buffer will
-				NOT contain any valid data.
-	*/
-	delegate IOReturn ReadPipeTO (IntPtr self, UInt8 pipeRef, [MarshalAs (UnmanagedType.LPArray, SizeParamIndex = 3)] byte[] buf, ref UInt32 size, UInt32 noDataTimeout, UInt32 completionTimeout);
-
-	/*!
-    @function WritePipeTO
-    @abstract   Performs a write on a <b>BULK OUT</b> pipe, with specified timeout values.
-    @discussion The interface must be open for the pipe to exist.
-    
-                If a timeout is specified and the request times out, the driver may need to resynchronize the data 
-                toggle. See @link //apple_ref/C/instm/IOUSBInterfaceInterface/ClearPipeStall/ ClearPipeStall @/link 
-                or @link //apple_ref/C/instm/IOUSBInterfaceInterface190/ClearPipeStallBothEnds/ ClearPipeStallBothEnds @/link.
-    @availability This function is only available with IOUSBInterfaceInterface182 and above.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @param      pipeRef Index for the desired pipe (1 - GetNumEndpoints).
-    @param      buf Buffer to hold the data.
-    @param      size The size of the buffer pointed to by buf.
-    @param      noDataTimeout Specifies a time value in milliseconds. Once the request is queued on the bus, if no 
-                data is transferred in this amount of time, the request will be aborted and returned.
-    @param      completionTimeout Specifies a time value in milliseconds. Once the request is queued on the bus, if 
-                the entire request is not completed in this amount of time, the request will be aborted and returned.
-    @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService,
-				kIOReturnAborted if the thread is interrupted before the call completes, or
-                kIOReturnNotOpen if the interface is not open for exclusive access.
-	*/
-	delegate IOReturn WritePipeTO (IntPtr self, UInt8 pipeRef, [MarshalAs (UnmanagedType.LPArray, SizeParamIndex = 3)] byte[] buf, UInt32 size, UInt32 noDataTimeout, UInt32 completionTimeout);
-
-	/*!
-    @function ReadPipeAsyncTO
-    @abstract   Performs an asynchronous read on a <b>BULK IN </b>pipe, with specified timeout values.
-    @discussion The interface must be open for the pipe to exist.
-    
-                If a timeout is specified and the request times out, the driver may need to resynchronize the data 
-                toggle. See @link //apple_ref/C/instm/IOUSBInterfaceInterface/ClearPipeStall/ ClearPipeStall @/link 
-                or @link //apple_ref/C/instm/IOUSBInterfaceInterface190/ClearPipeStallBothEnds/ ClearPipeStallBothEnds @/link.
-                
-                Timeouts do not apply to interrupt pipes, so you should use the ReadPipeAsync API to perform an 
-                asynchronous read from an interrupt pipe.
-    @availability This function is only available with IOUSBInterfaceInterface182 and above.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @param      pipeRef Index for the desired pipe (1 - GetNumEndpoints).
-    @param      buf Buffer to hold the data.
-    @param      size The size of the buffer pointed to by buf.
-    @param      noDataTimeout Specifies a time value in milliseconds. Once the request is queued on the bus, if no 
-                data is transferred in this amount of time, the request will be aborted and returned.
-    @param      completionTimeout Specifies a time value in milliseconds. Once the request is queued on the bus, if 
-                the entire request is not completed in this amount of time, the request will be aborted and returned.
-    @param      callback An IOAsyncCallback1 method. Upon completion, the arg0 argument of the AsyncCallback1 will contain the number of bytes that were actually read.
-	 			A message addressed to this callback is posted to the Async port 
-                upon completion.
-    @param      refcon Arbitrary pointer which is passed as a parameter to the callback routine.
-    @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService, or
-                kIOReturnNotOpen if the interface is not open for exclusive access.  Returns kIOReturnBadArgument if timeout 
-	 values are specified for an interrupt pipe.  If an error is returned, the size parameter is not updated and the buffer will
-	 NOT contain any valid data.
-	*/
-	delegate IOReturn ReadPipeAsyncTO (IntPtr self, UInt8 pipeRef, [MarshalAs (UnmanagedType.LPArray, SizeParamIndex = 3)] byte[] buf, UInt32 size, UInt32 noDataTimeout, UInt32 completionTimeout, IOAsyncCallback1 callback, IntPtr refcon);
-
-	/*!
-    @function WritePipeAsyncTO
-    @abstract   Performs an asynchronous write on a <b>BULK OUT</b> pipe, with specified timeout values.
-    @discussion The interface must be open for the pipe to exist.
-    
-                If a timeout is specified and the request times out, the driver may need to resynchronize the data 
-                toggle. See @link //apple_ref/C/instm/IOUSBInterfaceInterface/ClearPipeStall/ ClearPipeStall @/link 
-                or @link //apple_ref/C/instm/IOUSBInterfaceInterface190/ClearPipeStallBothEnds/ ClearPipeStallBothEnds @/link.
-    @availability This function is only available with IOUSBInterfaceInterface182 and above.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @param      pipeRef Index for the desired pipe (1 - GetNumEndpoints).
-    @param      buf Buffer to hold the data.
-    @param      size The size of the buffer pointed to by buf.
-    @param      noDataTimeout Specifies a time value in milliseconds. Once the request is queued on the bus, if no 
-                data is transferred in this amount of time, the request will be aborted and returned.
-    @param      completionTimeout Specifies a time value in milliseconds. Once the request is queued on the bus, if 
-                the entire request is not completed in this amount of time, the request will be aborted and returned.
-    @param      callback An IOAsyncCallback1 method. Upon completion, the arg0 argument of the AsyncCallback1 will contain the number of bytes that were actually written.
-	   			A message addressed to this callback is posted to the Async port 
-                upon completion.
-    @param      refcon Arbitrary pointer which is passed as a parameter to the callback routine.
-    @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService, or
-                kIOReturnNotOpen if the interface is not open for exclusive access.
-	*/
-	delegate IOReturn WritePipeAsyncTO (IntPtr self, UInt8 pipeRef, [MarshalAs (UnmanagedType.LPArray, SizeParamIndex = 3)] byte[] buf, UInt32 size, UInt32 noDataTimeout, UInt32 completionTimeout, IOAsyncCallback1 callback, IntPtr refcon);
-
-	/*!
-    @function USBInterfaceGetStringIndex
-    @abstract   Returns the string index in the interface descriptor.
-    @discussion The interface does not have to be open to use this function.
-    @availability This function is only available with IOUSBInterfaceInterface182 and above.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @param      si Pointer to UInt8 to hold the string index.
-    @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService.
-	*/
-	delegate IOReturn USBInterfaceGetStringIndex (IntPtr self, out UInt8 si);
-
-	/*!
-    @interface IOUSBInterfaceInterface183
-    @abstract   The object you use to access a USB device interface from user space, returned by the IOUSBFamily
-                version 1.8.3 and above.
-    @discussion The functions listed here include all of the functions defined for the IOUSBInterfaceInterface, 
-                IOUSBInterfaceInterface182, and some new functions that are available on Mac OS X version 10.1 
-                and later.
-    @super IOUSBInterfaceInterface182
-	*/
-
-	/*!
-    @function USBInterfaceOpenSeize
-    @abstract   Opens the IOUSBInterface for exclusive access.
-    @discussion If another client has the device open, an attempt is made to get that client to close it before 
-                returning.
-                
-                Before the client can issue commands that change the state of the device, it must have succeeded 
-                in opening the device. This establishes an exclusive link between the clients task and the actual 
-                device.
-    @availability This function is only available with IOUSBInterfaceInterface183 and above.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @result     Returns kIOReturnExclusiveAccess if some other task has the interface open already and refuses to 
-                close it, kIOReturnError if the connection with the kernel cannot be established or kIOReturnSuccess
-                if successful.
-	*/
-	delegate IOReturn USBInterfaceOpenSeize (IntPtr self);
-
-	/*!
-    @interface IOUSBInterfaceInterface190
-    @abstract   The object you use to access a USB device interface from user space, returned by the IOUSBFamily
-                version 1.9 and above.
-    @discussion The functions listed here include all of the functions defined for the IOUSBInterfaceInterface, 
-                IOUSBInterfaceInterface182, IOUSBInterfaceInterface183, and some new functions that are available 
-                on Mac OS X version 10.2 and later.
-    @super IOUSBInterfaceInterface183
-	*/
-
-	/*!
-    @function ClearPipeStallBothEnds
-    @abstract   Equivalent to ClearPipeStall.
-    @discussion This function is equivalent to ClearPipeStall except that it also attempts to clear the halt and
-                toggle bits on the device's endpoint for the pipe by sending a ClearFeature(ENDPOINT_HALT) to the 
-                default control pipe in the device, specifying the endpoint for the pipe represented by pipeRef. For
-                most devices, this resynchronizes the data toggle between the two endpoints to ensure that there is 
-                no loss of data.
-    @availability This function is only available with IOUSBInterfaceInterface190 and above.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @param      pipeRef Index for the desired pipe (1 - GetNumEndpoints).
-    @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService, or
-                kIOReturnNotOpen if the interface is not open for exclusive access.
-	*/
-	delegate IOReturn ClearPipeStallBothEnds (IntPtr self, UInt8 pipeRef);
-
-	/*!
-    @function SetPipePolicy
-    @abstract   Changes the amount of bandwidth of an isochronous pipe or interrupt pipe, or the polling interval of an interrupt pipe.
-    @discussion A pipe may be made smaller or larger (up to the maxPacketSize specified in the endpoint descriptor).
-                When an interface is first opened, all pipes are created with their descriptor-supplied maxPacketSize.
-                For isochronous or interrupt pipes, if there is not enough bandwidth on the bus to allocate to the pipe, the pipe
-                is created with a reserved bandwidth of zero. Any attempts to transfer data on a pipe with zero 
-                bandwidth will result in a kIOReturnNoBandwidth error. The pipe must first be given some bandwidth 
-                using this call.  This can also be used to return bandwidth for an isochronous or an interrupt pipe.  If the driver
-				knows that the device will not be sending the maxPacketSize data, it can use this call to return that unused bandwidth to the
-				system.  If an interrupt pipe wants to change the polling interval, it can do so with this call.
-                
-                The interface must be open for the pipe to exist.
-    @availability This function is only available with IOUSBInterfaceInterface190 and above.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @param      pipeRef Index for the desired pipe (1 - GetNumEndpoints).
-    @param      maxPacketSize The desired size for the isochronous or interrupt pipe. Valid values are 0 through the maxPacketSize 
-                defined in the endpoint descriptor.   
-	@param      maxInterval  the desired polling interval in milliseconds, up to a maximum of 128 ms.  The
-				system can only poll devices powers of 2 (1, 2, 4, 8, 16, 32, 64, or 128 ms).  A value of 0 is illegal.
-    @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService, or
-                kIOReturnNotOpen if the interface is not open for exclusive access.  May also return kIOReturnNoBandwidth 
-                if there is not enough bandwidth available on the bus, or kIOReturnBadArgument if the desired 
-                maxPacketSize is outside of the allowed range.
-	*/
-	delegate IOReturn SetPipePolicy (IntPtr self, UInt8 pipeRef, UInt16 maxPacketSize, UInt8 maxInterval);
-
-	/*!
-    @function GetBandwidthAvailable
-    @abstract   Returns the amount of bandwidth available on the bus for allocation to 
-                isochronous pipes.  If the device is a high speed device, it will be the number of bytes per microframe (125 µsecs). If it is a full
-				speed device, it will be the number of bytes per frame (1ms)
-    @discussion This function is useful for determining the correct AltInterface setting as well as for using 
-                SetPipePolicy.
-                
-                The interface does not have to be open to use this function.
-    @availability This function is only available with IOUSBInterfaceInterface190 and above.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @param      bandwidth Pointer to UInt32 to hold the amount of bandwidth available (in bytes per 1ms frame).
-    @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService.
-	*/
-	delegate IOReturn GetBandwidthAvailable (IntPtr self, out UInt32 bandwidth);
-
-		/*!
-    @function GetEndpointProperties
-    @abstract   Returns the transfer type, max packet size, and interval of a specified endpoint, whether or not 
-                the endpoint has a pipe currently established.
-    @discussion This function may be useful for determining which alternate interface to select when trying to 
-                balance bandwidth allocations among isochronous pipes.
-                
-                The interface does not have to be open to use this function.
-    @availability This function is only available with IOUSBInterfaceInterface190 and above.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @param      alternateSetting Specifies the alternate setting within the current interface.
-    @param      endpointNumber Specifies the desired endpoint number.
-    @param      direction Specifies the desired direction.
-    @param      transferType Pointer to UInt8 to hold the endpoint's transfer type (kUSBControl, kUSBIsoc, etc).
-    @param      maxPacketSize Pointer to UInt16 to hold the maxPacketSize of the endpoint.
-    @param      interval Pointer to UInt8 to hold the polling interval for interrupt endpoints.
-    @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService.
-	*/
-	delegate IOReturn GetEndpointProperties (IntPtr self, UInt8 alternateSetting, UInt8 endpointNumber, UInt8 direction, out UInt8 transferType, out UInt16 maxPacketSize, out UInt8 interval);
-
-	/*!
-    @interface IOUSBInterfaceInterface192
-    @abstract   The object you use to access a USB device interface from user space, returned by the IOUSBFamily
-                version 1.9.2 and above.
-    @discussion The functions listed here include all of the functions defined for the IOUSBInterfaceInterface, 
-                IOUSBInterfaceInterface182, IOUSBInterfaceInterface183, IOUSBInterfaceInterface190, and some new 
-                functions that are available on Mac OS X version 10.2.3 and later.
-    @super IOUSBInterfaceInterface190
-	*/
-
-	/*!
-    @function LowLatencyReadIsochPipeAsync
-    @abstract   Performs an asynchronous read on a isochronous pipe and updates the frame list at primary interrupt time.
-    @discussion The LowLatencyReadIsochPipeAsync() and LowLatencyWriteIsochPipeAsync() 
-                calls are analogous to ReadIsochPipeAsync() and WriteIsochPipeAsync(). They differ in that the frame
-                list data is updated at <em>primary interrupt time</em>. This means that the client can inspect the
-                frStatus and frActCount fields as soon as the transaction completes, without having to wait for the 
-                callback to happen (depending on the value of updateFrequency). The callback will still happen when 
-                all the frames have been received.
-                
-                The client can specify how often the USB stack should update the frame list data by specifying the 
-                updateFrequency: this value can range from 0 - 8. If the value is between 1 and 8, the 
-                frame list will be updated every updateFrequency milliseconds. If the value is 0, the 
-                frame list will only be updated once all the frames in the transfer have been received. For example,
-                consider a transfer with numFrames equal to 64. If the update frequency is 4, the frame 
-                list data will be updated every 4 milliseconds. If the update frequency is 0, the frame list will 
-                only be updated at the end of the transfer, after the 64 frames have been sent or received. The 
-                difference between using an update frequency of 0 and using the non-low latency isoch calls is that 
-                in the former case, the frame list will be updated at primary interrupt time, while in the latter, 
-                it will be updated at secondary interrupt time. Regardless of the value of updateFrequency, 
-                the frame list will <em>always</em> be updated on the last frame of a transfer.
-                
-                The rationale for adding this call is that because completion routines run on the USB Workloop, they 
-                can be scheduled to run a number of milliseconds after the USB transfer has finished. This latency 
-                is variable and depends on what other higher priority threads are running on the system. This latency 
-                presents a problem for applications, such as audio processing, that depend on receiving data, 
-                processing it, and sending it back out, and need to do this as fast as possible. Since applications 
-                that use isochronous data know when the data should be available, they can look at the frame list at 
-                the expected time and note the frActCount and frStatus (and frTimeStamp
-                if needed) and determine how many valid bytes are in their data buffer and whether there was an 
-                error. They can then access their data buffer and process the actual data.
-                
-                In order to update the frame list at primary interrupt time and to allow the client to see that 
-                update, the frame list buffer needs to be shared between the kernel and user space. The same thing 
-                applies to the data buffer. This is a difference between the low latency isoch calls and the regular 
-                isoch calls. The LowLatencyCreateBuffer() call is used to pre-allocate the buffers. The 
-                client <em>must</em> use that call to allocate the data and the frame list buffers. The client can 
-                pass a portion of the buffer that was previously allocated. The USB stack will range-check the data 
-                and frame list buffers to make sure they are within the ranges of the buffers previously allocated. 
-                This allows the client, if it so desires, to allocate a large data buffer and pass portions of it to 
-                the read or write calls. The same applies to the frame list buffers. Of course, the client can also 
-                pre-allocate several data buffers and several frame list buffers and use those for each transfer. 
-                Once the transfer completes, the buffers can be reused in subsequent calls. When all transfers are 
-                finished, the client needs to call LowLatencyDestroyBuffer() for each buffer that was 
-                created with LowLatencyCreateBuffer().
-                
-                The interface must be open for the pipe to exist. The buf pointer and the frameList 
-                pointer need to be pre-allocated using LowLatencyCreateBuffer(). 
-                After using them, they should be freed using LowLatencyDestroyBuffer().
-    @availability This function is only available with IOUSBInterfaceInterface192 and above.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @param      pipeRef Index for the desired pipe (1 - GetNumEndpoints).
-    @param      buf Buffer to hold the data, previously allocated with LowLatencyCreateBuffer() 
-                using a kUSBLowLatencyReadBuffer type.
-    @param      frameStart The bus frame number on which to start the read (obtained from GetBusFrameNumber).
-    @param      numFrames The number of frames for which to transfer data.
-    @param      updateFrequency Specifies how often, in milliseconds, the frame list data should be updated. Valid 
-                range is 0 - 8. If 0, it means that the framelist should be updated at the end of the transfer.
-    @param      frameList A pointer to an array of IOUSBLowLatencyIsocFrame structures describing the frames.
-    @param      callback An IOAsyncCallback1 method. Upon completion, the arg0 argument of the AsyncCallback1 will contain the framelist pointer, which can be used to associate the completion with a particular request.
-	 			A message addressed to this callback is posted to 
-                the Async port upon completion.
-    @param      refcon Arbitrary pointer which is passed as a parameter to the callback routine.
-    @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService, or
-                kIOReturnNotOpen if the interface is not open for exclusive access.  Will return kIOUSBLowLatencyBufferNotPreviouslyAllocated 
-                or kIOUSBLowLatencyFrameListNotPreviouslyAllocated if the buffer or the frameList were 
-                not previously allocated using LowLatencyCreateBuffer().
-	*/
-	delegate IOReturn LowLatencyReadIsochPipeAsync (IntPtr self, UInt8 pipeRef, IntPtr buf, UInt64 frameStart, UInt32 numFrames, UInt32 updateFrequency,
-	                                                [MarshalAs (UnmanagedType.LPArray, SizeParamIndex = 4)] IOUSBLowLatencyIsocFrame[] frameList,
-		                                            IOAsyncCallback1 callback, IntPtr refcon);
-
-	/*!
-    @function LowLatencyWriteIsochPipeAsync
-    @abstract   Performs an asynchronous write on an isochronous pipe and updates the frame list at primary interrupt time.
-    @discussion The LowLatencyReadIsochPipeAsync() and LowLatencyWriteIsochPipeAsync() 
-                calls are analogous to ReadIsochPipeAsync() and WriteIsochPipeAsync(). 
-                They differ in that the frame list data is updated at <em>primary interrupt time</em>. This means that 
-                the client can inspect the frStatus and frActCount fields as soon as the 
-                transaction completes, without having to wait for the callback to happen (depending on the value of 
-                updateFrequency). The callback will still happen when the all the frames have been received.
-                
-                The client can specify how often the USB stack should update the frame list data by specifying the 
-                updateFrequency: this value can range from 0 - 8. If the value is between 1 and 8, the 
-                frame list will be updated every updateFrequency milliseconds. If the value is 0, the 
-                frame list will only be updated once all the frames in the transfer have been received. For example, 
-                consider a transfer with numFrames equal to 64. If the update frequency is 4, the frame 
-                list data will be updated every 4 milliseconds. If the update frequency is 0, the frame list will 
-                only be updated at the end of the transfer, after the 64 frames have been sent or received. The 
-                difference between using an update frequency of 0 and using the non-low latency isoch calls is that 
-                in the former case, the frame list will be updated at primary interrupt time, while in the latter, 
-                it will be updated at secondary interrupt time. Regardless of the value of updateFrequency, 
-                the frame list will <em>always</em> be updated on the last frame of a transfer.
-                
-                The rationale for adding this call is that because completion routines run on the USB Workloop, 
-                they can be scheduled to run a number of milliseconds after the USB transfer has finished. This 
-                latency is variable and depends on what other higher priority threads are running on the system. 
-                This latency presents a problem for applications, such as audio processing, that depend on receiving 
-                data, processing it, and sending it back out, and need to do this as fast as possible. Since applications 
-                that use isochronous data know when the data should be available, they can look at the frame list at 
-                the expected time and note the frActCount and frStatus (and frTimeStamp 
-                if needed) and determine how many valid bytes are in their data buffer and whether there was an error. 
-                They can then access their data buffer and process the actual data.
-                
-                In order to update the frame list at primary interrupt time and to allow the client to see that 
-                update, the frame list buffer needs to be shared between the kernel and user space. The same thing 
-                applies to the data buffer. This is a difference between the low latency isoch calls and the regular 
-                isoch calls. The LowLatencyCreateBuffer() call is used to pre-allocate the buffers. The 
-                <em>client</em> must use that call to allocate the data and the frame list buffers. The client can 
-                pass a portion of the buffer that was previously allocated. The USB stack will range-check the data 
-                and frame list buffers to make sure they are within the ranges of the buffers previously allocated. 
-                This allows the client, if it so desires, to allocate a large data buffer and pass portions of it to 
-                the read or write calls. The same applies to the frame list buffers. Of course, the client can also 
-                pre-allocate several data buffers and several frame list buffers and use those for each transfer. 
-                Once the transfer completes, the buffers can be reused in subsequent calls. When all transfers are 
-                finished, the client needs to call LowLatencyDestroyBuffer() for each buffer that was 
-                created with LowLatencyCreateBuffer().
-                
-                 The interface must be open for the pipe to exist. The buf pointer and the frameList 
-                pointer need to be pre-allocated using LowLatencyCreateBuffer(). After using them, they 
-                should be freed using LowLatencyDestroyBuffer().
-    @availability This function is only available with IOUSBInterfaceInterface192 and above.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @param      pipeRef Index for the desired pipe (1 - GetNumEndpoints).
-    @param      buf Buffer to hold the data, previously allocated with LowLatencyCreateBuffer() 
-                using a kUSBLowLatencyWriteBuffer type.
-    @param      frameStart The bus frame number on which to start the write (obtained from GetBusFrameNumber).
-    @param      numFrames The number of frames for which to transfer data.
-    @param      updateFrequency Specifies how often, in milliseconds, should the frame list data be updated. Valid 
-                range is 0 - 8. If 0, it means that the framelist should be updated at the end of the transfer.
-    @param      frameList A pointer to an array of IOUSBLowLatencyIsocFrame structures describing the frames.
-    @param      callback An IOAsyncCallback1 method. Upon completion, the arg0 argument of the AsyncCallback1 will contain the framelist pointer, which can be used to associate the completion with a particular request.
-	 			A message addressed to this callback is posted to 
-                the Async port upon completion.
-    @param      refcon Arbitrary pointer which is passed as a parameter to the callback routine.
-    @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService, or
-                kIOReturnNotOpen if the interface is not open for exclusive access.  Will return kIOUSBLowLatencyBufferNotPreviouslyAllocated 
-                or kIOUSBLowLatencyFrameListNotPreviouslyAllocated if the buffer or the frameList were 
-                not previously allocated using LowLatencyCreateBuffer().
-	*/
-	delegate IOReturn LowLatencyWriteIsochPipeAsync (IntPtr self, UInt8 pipeRef, IntPtr buf, UInt64 frameStart, UInt32 numFrames, UInt32 updateFrequency,
-	                                                 [MarshalAs (UnmanagedType.LPArray, SizeParamIndex = 4)] IOUSBLowLatencyIsocFrame[] frameList,
-		                                             IOAsyncCallback1 callback, IntPtr refcon);
-
-	/*!
-    @function LowLatencyCreateBuffer
-    @abstract   Allocates a buffer of type bufferType.
-    @discussion This function allocates a buffer of type bufferType. The buffer can then be used with 
-                the LowLatencyIsochReadPipeAsync() or LowLatencyIsochWritePipeAsync() calls.
-                
-                The LowLatencyIsochReadPipeAsync() or LowLatencyIsochWritePipeAsync() calls 
-                require the clients to pre-allocate the data buffer and the frame list buffer parameters. This call 
-                is used to allocate those buffers. After the client is done using the buffers, they need to be 
-                released through the LowLatencyDestroyBuffer() call.
-                
-                If the buffer is to be used for reading data, the type passed in should be kUSBLowLatencyReadBuffer.
-                If the buffer is to be used for writing data, the type should be kUSBLowLatencyWriteBuffer. For
-                frame list data, the type should be kUSBLowLatencyFrameListBuffer.
-                
-                The client can create multiple data and frame list buffers, or it can allocate a large buffer and 
-                then use only a portion of the buffer in calls to LowLatencyReadIsochPipeAsync() 
-                or LowLatencyWriteIsochPipeAsync().
-                
-                The interface must be open for the pipe to exist.
-    @availability This function is only available with IOUSBInterfaceInterface192 and above.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @param      buffer Pointer to a pointer that will receive the pointer to the buffer created by this call.
-    @param      size The size of the buffer to be created in bytes.
-    @param      bufferType Type of buffer: one of kUSBLowLatencyWriteBuffer, kUSBLowLatencyReadBuffer, 
-                or kUSBLowLatencyFrameListBuffer. See the documentation for USB.h.
-    @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService, or
-                kIOReturnNotOpen if the interface is not open for exclusive access.  If the buffer can't be allocated, 
-                it will return kIOReturnNoMemory.
-	*/
-	delegate IOReturn LowLatencyCreateBuffer (IntPtr self, out IntPtr buffer, IOByteCount size, UInt32 bufferType);
-
-	/*!
-    @function LowLatencyDestroyBuffer
-    @abstract   Releases a buffer that was previously allocated using LowLatencyCreateBuffer().
-    @discussion The interface must be open for the pipe to exist.
-    @availability This function is only available with IOUSBInterfaceInterface192 and above.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @param      buffer Pointer to the buffer previously allocated using LowLatencyCreateBuffer().
-    @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService, or
-                kIOReturnNotOpen if the interface is not open for exclusive access.  If the buffer was not previously 
-                allocated using LowLatencyCreateBuffer() it will return kIOReturnBadArgument. 
-	*/
-	delegate IOReturn LowLatencyDestroyBuffer (IntPtr self, IntPtr buffer);
-
-	/*!
-    @interface IOUSBInterfaceInterface197
-    @abstract   The object you use to access a USB device interface from user space, returned by the IOUSBFamily
-                version 1.9.7 and above.
-    @discussion The functions listed here include all of the functions defined for the IOUSBInterfaceInterface, 
-                IOUSBInterfaceInterface182, IOUSBInterfaceInterface183, IOUSBInterfaceInterface190, IOUSBInterfaceInterface192, 
-                and some new functions that are available on Mac OS X version 10.2.5 and later.
-    @super IOUSBInterfaceInterface192
-	*/
-
-	/*!
-    @function GetBusMicroFrameNumber
-    @abstract   Gets the current micro frame number of the bus to which the interface and its device are attached.
-    @discussion The interface does not have to be open to use this function.
-    @availability This function is only available with IOUSBInterfaceInterface197 and above.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @param      microFrame Pointer to UInt64 to hold the microrame number.
-    @param      atTime Pointer to an AbsoluteTime, which should be within 1ms of the time when the bus frame number 
-                was attained.
-    @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService.
-	*/
-	//	delegate IOReturn GetBusMicroFrameNumber (IntPtr self, oFor SuperSpeed interrupt and isoc endpoints, this is the wBytesPerInterval from the SuperSpeed Endpoint Companion Descriptor. For High Speed High Bandwidth isoc endpoints, this will be equal to wMaxPacketSize * (bMult+1).ut UInt64 microFrame, out AbsoluteTime atTime);
-
-	/*!
-    @function GetFrameListTime
-    @abstract   Returns the number of microseconds in each USB Frame.
-    @discussion This function can be used to determine whether the device is functioning in full speed or a high 
-                speed. In the case of a full speed device, the returned value will be kUSBFullSpeedMicrosecondsInFrame.  
-                In the case of a high speed device, the return value will be kUSBHighSpeedMicrosecondsInFrame.  
-                (This API should really be called GetUSBFrameTime).
-                
-                The interface does not have to be open to use this function.
-    @availability This function is only available with IOUSBInterfaceInterface197 and above.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @param      microsecondsInFrame Pointer to UInt32 to hold the number of microseconds in each USB frame.
-    @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService.
-	*/
-	delegate IOReturn GetFrameListTime (IntPtr self, out UInt32 microsecondsInFrame);
-
-	/*!
-    @function GetIOUSBLibVersion
-    @abstract   Returns the version of the IOUSBLib and the version of the IOUSBFamily.
-    @discussion The interface does not have to be open to use this function.
-    @availability This function is only available with IOUSBInterfaceInterface197 and above.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @param      ioUSBLibVersion Pointer to a NumVersion structure that on return will contain 
-                the version of the IOUSBLib.
-    @param      usbFamilyVersion Pointer to a NumVersion structure that on return will contain 
-                the version of the IOUSBFamily.
-    @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService.
-	*/
-//	delegate IOReturn GetIOUSBLibVersion (IntPtr self, out NumVersion ioUSBLibVersion, out NumVersion usbFamilyVersion);
-
-	/*!
-     @function FindNextAssociatedDescriptor
-     @abstract   Find the next descriptor of the requested type associated with the interface.
-     @discussion The interface does not have to be open to use this function.
-     @availability This function is only available with IOUSBInterfaceInterface220 and above.
-     @param self Pointer to the IOUSBInterfaceInterface.
-     @param currentDescriptor Descriptor to start searching from, NULL to start from beginning of list.
-     @param descriptorType Descriptor type to search for, or kUSBAnyDesc to return any descriptor type.
-     @result Pointer to the descriptor, or NULL if no matching descriptors found.
-     */
-	delegate /*IOUSBDescriptorHeader*/ IntPtr FindNextAssociatedDescriptor (IntPtr self, [In]IntPtr currentDescriptor, UInt8 descriptorType);
-
-	/*!
-     @function FindNextAltInterface
-     @discussion return alternate interface descriptor satisfying the requirements specified in request, or NULL if there aren't any.
-     discussion request is updated with the properties of the returned interface.
-     @param self Pointer to the IOUSBInterfaceInterface.
-     @param current interface descriptor to start searching from, NULL to start at alternate interface 0.
-     @param request specifies what properties an interface must have to match.
-     @result Pointer to a matching interface descriptor, or NULL if none match.
-     */
-
-	delegate /*IOUSBDescriptorHeader*/ IntPtr FindNextAltInterface (IntPtr self, [In]IntPtr current,
-	                                                                [MarshalAs (UnmanagedType.LPStruct)] IOUSBFindInterfaceRequest request);
-
-	/* IOUSBInterfaceStruct245 */
-
-	/* IOUSBInterfaceStruct300 */
-
-	/*!
-    @function GetBusFrameNumberWithTime
-    @abstract   Gets a recent frame number of the bus to which the device is attached, along with a system time corresponding to the start of that frame
-    @discussion The device does not have to be open to use this function.
-    @availability This function is only available with IOUSBInterfaceInterface300 and above.
-    @param      self Pointer to the IOUSBInterfaceInterface.
-    @param      frame Pointer to UInt64 to hold the frame number.
-    @param      atTime Pointer to a returned AbsoluteTime, which is the system time ("wall time") as close as possible to the beginning of that USB frame. The jitter on this value may be as much as 200 microseconds.
-	@result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService, or kIOReturnUnsupported is the bus doesn't support this function.
-	*/
-//	delegate IOReturn GetBusFrameNumberWithTime (IntPtr self, out UInt64 frame,
-//	                                             out AbsoluteTime atTime);
-
-	/* IOUSBInterfaceStruct500 */
-
-	/*!
-	 @function GetPipePropertiesV2
-	 @abstract   This function is deprecated. See GetPipePropertiesV3
-	 */
-	delegate IOReturn GetPipePropertiesV2 (IntPtr self, UInt8 pipeRef, out UInt8 direction,
-	                                       out UInt8 number, out UInt8 transferType,
-	                                       out UInt16 maxPacketSize, out UInt8 interval,
-	                                       out UInt8 maxBurst, out UInt8 mult,
-	                                       out UInt16 bytesPerInterval);
-
-	/* IOUSBInterfaceStruct550 */
-
-	/*!
-	 @function GetPipePropertiesV3
-	 @abstract   Gets the different properties for a pipe.  This API uses a pointer to IOUSBEndpointProperties to return all the different properties.
-	 @discussion Once an interface is opened, all of the pipes in that interface get created by the kernel. The number
-	 of pipes can be retrieved by GetNumEndpoints. The client can then get the properties of any pipe
-	 using an index of 1 to GetNumEndpoints. Pipe 0 is the default control pipe in the device.
-	 @param      pipeRef Index for the desired pipe (1 - GetNumEndpoints).
-	 @param properties  pointer to a IOUSBEndpointProperties that will contain all the endpoint parameters.  Initialize the bVersion field with the appropriate version.  (See USBGetEndpointVersion in USB.h).  The bMaxStreams
-	 field, if valid, is the actual number of streams that are supported for this pipe (e.g. it takes into account what the USB controller supports, as well as what the endpoint supports). The wMaxPacketSize is the 
-	 current FULL maxPacketSize for this pipe, which includes both the mult and the burst. It may have been changed by SetPipePolicy, or it could be 0 as a result of a lack of bandwidth.
-	 @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService,
-	 or kIOReturnNotOpen if the interface is not open for exclusive access.
-	 */
-	delegate IOReturn GetPipePropertiesV3 (IntPtr self, UInt8 pipeRef, ref IOUSBEndpointProperties properties);
-
-	/*!
-	 @function GetEndpointPropertiesV3
-	 @abstract Returns the properties of an endpoint, possibly in an alternate interface, including any information from the SuperSpeed Companion Descriptor
-	 @param properties  pointer to a IOUSBEndpointProperties that will contain all the endpoint parameters.  Initialize the bVersion field with the appropriate version.  (See USBGetEndpointVersion in USB.h).  Initialize
-	       the bAlternateSetting, bEndpointNumber, and bDirection fields of the structure with the desired values for the endpoint.
-	 @param properties  pointer to a IOUSBEndpointProperties that will contain all the endpoint parameters.  Initialize the bVersion field with the appropriate version.  (See USBGetEndpointVersion in USB.h).  You also NEED
-		to initialize the bAlternateSetting, the bDirection (kUSBIn or kUSBOut), and the bEndPointNumber with the desired values for the endpoint. The bMaxStreams field, if valid, is the number of streams found in the Super Speed
-		Companion Descriptor. The wMaxPacketSize is the BASE maxPacketSize as found in the endpoint descriptor, and has not been multiplied to take into account burst and mult.
-	 @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService,
-	 or kIOReturnNotOpen if the interface is not open for exclusive access.
-	 */
-	delegate IOReturn GetEndpointPropertiesV3 (IntPtr self, ref IOUSBEndpointProperties properties);
-
-	/*!
-	 @function SupportsStreams
-	 @abstract   Returns non zero if the pipe supports streams, nonZero for the maximum supported streams
-	 @discussion The interface does not have to be open to use this function.
-	 @param      self Pointer to the IOUSBInterfaceInterface.
-	 @param      pipeRef Index for the desired pipe (1 - GetNumEndpoints).
-	 @param		 supportsStreams 0 if streams not supported, non-zero value indicates maximum stream number
-	 @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService.
-	 */
-	delegate IOReturn SupportsStreams (IntPtr self, UInt8 pipeRef, out UInt32 supportsStreams);
-
-	/*!
-	 @function CreateStreams
-	 @abstract   Creates the streams for the pipe
-	 @discussion The interface does not have to be open to use this function.
-	 @param      self Pointer to the IOUSBInterfaceInterface.
-	 @param      pipeRef Index for the desired pipe (1 - GetNumEndpoints).
-	 @param		 streamID pass 0 if you want to destroy all streams, non-zero value indicates streamID of the highest stream to create
-	 @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService.
-	 */
-	delegate IOReturn CreateStreams (IntPtr self, UInt8 pipeRef, UInt32 streamID);
-
-	/*!
-	 @function GetConfiguredStreams
-	 @abstract   Get the number of streams which have been configured for the endpoint with CreateStreams
-	 @discussion The interface does not have to be open to use this function.
-	 @param      self Pointer to the IOUSBInterfaceInterface.
-	 @param      pipeRef Index for the desired pipe (1 - GetNumEndpoints).
-	 @param		 configuredStreams  Number of streams that have been configured with CreateStreams
-	 @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService.
-	 */
-	delegate IOReturn GetConfiguredStreams (IntPtr self, UInt8 pipeRef, out UInt32 configuredStreams);
-
-	/*!
-	 @function ReadStreamsPipeTO
-	 @abstract   Performs a read on a stream in a <b>BULK IN</b> pipe, specifying timeout values.
-	 @discussion The interface must be open for the pipe to exist.
-	 
-	 If a timeout is specified and the request times out, the driver may need to resynchronize the data
-	 toggle. See @link //apple_ref/C/instm/IOUSBInterfaceInterface/ClearPipeStall/ ClearPipeStall @/link
-	 or @link //apple_ref/C/instm/IOUSBInterfaceInterface190/ClearPipeStallBothEnds/ ClearPipeStallBothEnds @/link.
-	 
-	 
-	 Timeouts do not apply to interrupt pipes, so you should use the ReadPipe API to perform a read from
-	 an interrupt pipe.
-	 @availability This function is only available with IOUSBInterfaceInterface182 and above.
-	 @param      self Pointer to the IOUSBInterfaceInterface.
-	 @param      pipeRef Index for the desired pipe (1 - GetNumEndpoints).
-     @param 	 streamID ID of the stream to read from
-	 @param      buf Buffer to hold the data.
-	 @param      size Pointer to the size of the buffer pointed to by buf.
-	 @param      noDataTimeout Specifies a time value in milliseconds. Once the request is queued on the bus, if no
-	 data is transferred in this amount of time, the request will be aborted and returned.
-	 @param      completionTimeout Specifies a time value in milliseconds. Once the request is queued on the bus, if
-	 the entire request is not completed in this amount of time, the request will be aborted and returned.
-	 @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService,
-	 kIOReturnAborted if the thread is interrupted before the call completes, or
-	 kIOReturnNotOpen if the interface is not open for exclusive access.  Returns kIOReturnBadArgument if timeout
-	 values are specified for an interrupt pipe.  If an error is returned, the size parameter is not updated and the buffer will
-	 NOT contain any valid data.
-	 */
-	delegate IOReturn ReadStreamsPipeTO (IntPtr self, UInt8 pipeRef, UInt32 streamID,
-	                                     [MarshalAs (UnmanagedType.LPArray, SizeParamIndex = 4)] byte[] buf,
-	                                     ref UInt32 size, UInt32 noDataTimeout,
-	                                     UInt32 completionTimeout);
-
-		/*!
-	 @function WriteStreamsPipeTO
-	 @abstract   Performs an write on a stream on a<b>BULK OUT</b> pipe, with specified timeout values.
-	 @discussion The interface must be open for the pipe to exist.
-	 
-	 If a timeout is specified and the request times out, the driver may need to resynchronize the data
-	 toggle. See @link //apple_ref/C/instm/IOUSBInterfaceInterface/ClearPipeStall/ ClearPipeStall @/link
-	 or @link //apple_ref/C/instm/IOUSBInterfaceInterface190/ClearPipeStallBothEnds/ ClearPipeStallBothEnds @/link.
-	 @availability This function is only available with IOUSBInterfaceInterface182 and above.
-	 @param      self Pointer to the IOUSBInterfaceInterface.
-	 @param      pipeRef Index for the desired pipe (1 - GetNumEndpoints).
-     @param 	 streamID ID of the stream to write to
-	 @param      buf Buffer to hold the data.
-	 @param      size The size of the buffer pointed to by buf.
-	 @param      noDataTimeout Specifies a time value in milliseconds. Once the request is queued on the bus, if no
-	 data is transferred in this amount of time, the request will be aborted and returned.
-	 @param      completionTimeout Specifies a time value in milliseconds. Once the request is queued on the bus, if
-	 the entire request is not completed in this amount of time, the request will be aborted and returned.
-	 @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService,
-	 kIOReturnAborted if the thread is interrupted before the call completes, or
-	 kIOReturnNotOpen if the interface is not open for exclusive access.
-	 */
-	delegate IOReturn WriteStreamsPipeTO (IntPtr self, UInt8 pipeRef, UInt32 streamID,
-	                                      [MarshalAs (UnmanagedType.LPArray, SizeParamIndex = 4)] byte[] buf,
-	                                      UInt32 size, UInt32 noDataTimeout,
-	                                      UInt32 completionTimeout);
-
-	/*!
-	 @function ReadPipeAsyncTO
-	 @abstract   Performs an asynchronous read on a stream on a <b>BULK IN </b>pipe, with specified timeout values.
-	 @discussion The interface must be open for the pipe to exist.
-	 
-	 If a timeout is specified and the request times out, the driver may need to resynchronize the data
-	 toggle. See @link //apple_ref/C/instm/IOUSBInterfaceInterface/ClearPipeStall/ ClearPipeStall @/link
-	 or @link //apple_ref/C/instm/IOUSBInterfaceInterface190/ClearPipeStallBothEnds/ ClearPipeStallBothEnds @/link.
-	 
-	 Timeouts do not apply to interrupt pipes, so you should use the ReadPipeAsync API to perform an
-	 asynchronous read from an interrupt pipe.
-	 @availability This function is only available with IOUSBInterfaceInterface182 and above.
-	 @param      self Pointer to the IOUSBInterfaceInterface.
-	 @param      pipeRef Index for the desired pipe (1 - GetNumEndpoints).
-     @param 	 streamID ID of the stream to read from
-	 @param      buf Buffer to hold the data.
-	 @param      size The size of the buffer pointed to by buf.
-	 @param      noDataTimeout Specifies a time value in milliseconds. Once the request is queued on the bus, if no
-	 data is transferred in this amount of time, the request will be aborted and returned.
-	 @param      completionTimeout Specifies a time value in milliseconds. Once the request is queued on the bus, if
-	 the entire request is not completed in this amount of time, the request will be aborted and returned.
-	 @param      callback An IOAsyncCallback1 method. Upon completion, the arg0 argument of the AsyncCallback1 will contain the number of bytes that were actually read.
-	 A message addressed to this callback is posted to the Async port
-	 upon completion.
-	 @param      refcon Arbitrary pointer which is passed as a parameter to the callback routine.
-	 @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService, or
-	 kIOReturnNotOpen if the interface is not open for exclusive access.  Returns kIOReturnBadArgument if timeout
-	 values are specified for an interrupt pipe.  If an error is returned, the size parameter is not updated and the buffer will
-	 NOT contain any valid data.
-	 */
-	delegate IOReturn ReadStreamsPipeAsyncTO (IntPtr self, UInt8 pipeRef, UInt32 streamID,
-	                                          [MarshalAs (UnmanagedType.LPArray, SizeParamIndex = 4)] byte[] buf,
-	                                          UInt32 size, UInt32 noDataTimeout,
-	                                          UInt32 completionTimeout, IOAsyncCallback1 callback,
-	                                          IntPtr refcon);
-
-	/*!
-	 @function WritePipeAsyncTO
-	 @abstract   Performs an asynchronous write on a stream on a <b>BULK OUT</b> pipe, with specified timeout values.
-	 @discussion The interface must be open for the pipe to exist.
-	 
-	 If a timeout is specified and the request times out, the driver may need to resynchronize the data
-	 toggle. See @link //apple_ref/C/instm/IOUSBInterfaceInterface/ClearPipeStall/ ClearPipeStall @/link
-	 or @link //apple_ref/C/instm/IOUSBInterfaceInterface190/ClearPipeStallBothEnds/ ClearPipeStallBothEnds @/link.
-	 @availability This function is only available with IOUSBInterfaceInterface182 and above.
-	 @param      self Pointer to the IOUSBInterfaceInterface.
-	 @param      pipeRef Index for the desired pipe (1 - GetNumEndpoints).
-     @param 	 streamID ID of the stream to write to
-	 @param      buf Buffer to hold the data.
-	 @param      size The size of the buffer pointed to by buf.
-	 @param      noDataTimeout Specifies a time value in milliseconds. Once the request is queued on the bus, if no
-	 data is transferred in this amount of time, the request will be aborted and returned.
-	 @param      completionTimeout Specifies a time value in milliseconds. Once the request is queued on the bus, if
-	 the entire request is not completed in this amount of time, the request will be aborted and returned.
-	 @param      callback An IOAsyncCallback1 method. Upon completion, the arg0 argument of the AsyncCallback1 will contain the number of bytes that were actually written.
-	 A message addressed to this callback is posted to the Async port
-	 upon completion.
-	 @param      refcon Arbitrary pointer which is passed as a parameter to the callback routine.
-	 @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService, or
-	 kIOReturnNotOpen if the interface is not open for exclusive access.
-	 */
-	delegate IOReturn WriteStreamsPipeAsyncTO (IntPtr self, UInt8 pipeRef, UInt32 streamID,
-	                                           [MarshalAs (UnmanagedType.LPArray, SizeParamIndex = 4)] byte[] buf,
-	                                           UInt32 size, UInt32 noDataTimeout,
-	                                           UInt32 completionTimeout, IOAsyncCallback1 callback,
-	                                           IntPtr refcon);
-
-	/*!
-	 @function AbortStreamsPipe
-	 @abstract   This method causes all outstanding I/O on a stream of a pipe to complete with return code kIOReturnAborted.
-	 @discussion If there are outstanding asynchronous transactions on the pipe, the callbacks will happen.
-	 Note that this command will also clear the halted bit on the endpoint
-	 in the controller, but will NOT clear the data toggle bit.  If you want to clear the data toggle bit as well, see @link //apple_ref/C/instm/IOUSBInterfaceInterface/ClearPipeStall/ ClearPipeStall @/link or
-	 @link //apple_ref/C/instm/IOUSBInterfaceInterface190/ClearPipeStallBothEnds/ ClearPipeStallBothEnds @/link for more information.  The interface must be open for the pipe to exist.
-	 @param      self Pointer to the IOUSBInterfaceInterface.
-	 @param      pipeRef Index for the desired pipe (1 - GetNumEndpoints).
-     @param streamID ID of the stream to abort
-	 @result     Returns kIOReturnSuccess if successful, kIOReturnNoDevice if there is no connection to an IOService,
-	 or kIOReturnNotOpen if the interface is not open for exclusive access.	 
-	 */
-	delegate IOReturn AbortStreamsPipe (IntPtr self, UInt8 pipeRef, UInt32 streamID);
 }
 
