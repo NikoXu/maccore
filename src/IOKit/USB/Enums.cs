@@ -27,7 +27,7 @@ using System;
 
 namespace MonoMac.IOKit.USB
 {
-	public enum EndpointType : byte
+	public enum EndpointTransferType : byte
 	{
 		Control     = 0,
 		Isoc        = 1,
@@ -77,14 +77,29 @@ namespace MonoMac.IOKit.USB
 		SetSel			= 48,
 		SetIsochDelay	= 49
 	}
+#if COREBUILD
+	public enum DescriptorType
+	{
+		Temp = 1;
+	}
 
+	public enum DeviceCapabilityType
+	{
+		Temp = 1;
+	}
+#else
 	public enum DescriptorType : byte
 	{
+		[DescriptorClass (typeof(IOUSBDescriptorHeader))]
 		Any                         = 0,
+		[DescriptorClass (typeof(IOUSBDeviceDescriptor))]
 		Device                      = 1,
+		[DescriptorClass (typeof(IOUSBConfigurationDescriptor))]
 		Configuration               = 2,
 		String                      = 3,
+		[DescriptorClass (typeof(IOUSBInterfaceDescriptor))]
 		Interface                   = 4,
+		[DescriptorClass (typeof(IOUSBEndpointDescriptor))]
 		Endpoint                    = 5,
 		DeviceQualifier             = 6,
 		OtherSpeedConfiguration     = 7,
@@ -92,8 +107,11 @@ namespace MonoMac.IOKit.USB
 		OnTheGo	                    = 9,
 		Debug                       = 10,
 		InterfaceAssociation        = 11,
-		OS                          = 15,
+		[DescriptorClass (typeof(IOUSBBOSDescriptor))]
+		BOS                          = 15,
+		[DescriptorClass (typeof(IOUSBDeviceCapabilityDescriptorHeader))]
 		DeviceCapability            = 16,
+		[DescriptorClass (typeof(IOUSBSuperSpeedEndpointCompanionDescriptor))]
 		SuperSpeedEndpointCompanion = 48,
 		ThreeHUB                    = 0x2A,
 		HID                         = 0x21,
@@ -102,13 +120,45 @@ namespace MonoMac.IOKit.USB
 		HUB                         = 0x29,
 	}
 
-	public enum DeviceCapabilityTypes : byte
+	public enum DeviceCapabilityType : byte
 	{
 		WirelessUSB     = 1,
+		[DescriptorClass (typeof(IOUSBDeviceCapabilityUSB2Extension))]
 		USB20Extension  = 2,
+		[DescriptorClass (typeof(IOUSBDeviceCapabilitySuperSpeedUSB))]
 		SuperSpeedUSB   = 3,
+		[DescriptorClass (typeof(IOUSBDeviceCapabilityContainerID))]
 		ContainerID     = 4
 	}
+
+	public static class DescriptorTypeExtensions
+	{
+		public static Type GetClassType (this DescriptorType value)
+		{
+			var fieldInfo = typeof(DescriptorType).GetField (value.ToString ());
+			var attribute = (DescriptorClassAttribute)Attribute.GetCustomAttribute (fieldInfo, typeof(DescriptorClassAttribute));
+			return attribute.Type;
+		}
+
+		public static Type GetClassType (this DeviceCapabilityType value)
+		{
+			var fieldInfo = typeof(DeviceCapabilityType).GetField (value.ToString ());
+			var attribute = (DescriptorClassAttribute)Attribute.GetCustomAttribute (fieldInfo, typeof(DescriptorClassAttribute));
+			return attribute.Type;
+		}
+	}
+
+	[AttributeUsage (AttributeTargets.Field, Inherited = false, AllowMultiple = false)]
+	public sealed class DescriptorClassAttribute : Attribute
+	{
+		public Type Type { get; private set; }
+
+		public DescriptorClassAttribute (Type type)
+		{
+			this.Type = type;
+		}
+	}
+#endif
 
 	public enum FeatureSelectors : byte
 	{
@@ -288,6 +338,15 @@ namespace MonoMac.IOKit.USB
 		Full  = 1,
 		High  = 2,
 		Super = 3
+	}
+
+	[Flags]
+	public enum SupportedDeviceSpeeds
+	{
+		Low   = 1 << 0,
+		Full  = 1 << 1,
+		High  = 1 << 2,
+		Gen1  = 1 << 3
 	}
 
 	[Flags]

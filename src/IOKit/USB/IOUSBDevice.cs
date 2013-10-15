@@ -39,6 +39,7 @@ using USBDeviceAddress = System.UInt16;
 using io_iterator_t = System.IntPtr;
 using mach_port_t = System.IntPtr;
 using System.Threading.Tasks;
+using System.Text;
 
 namespace MonoMac.IOKit.USB
 {
@@ -228,35 +229,35 @@ namespace MonoMac.IOKit.USB
 		}
 
 		[Since (0,4)]
-		public byte ManufacturerStringIndex {
+		public string ManufacturerName {
 			get {
 				ThrowIfDisposed ();
 				byte index;
 				var result = DeviceInterface.USBGetManufacturerStringIndex (DeviceInterfaceRef, out index);
 				IOObject.ThrowIfError (result);
-				return index;
+				return GetStringDescriptor (index);
 			}
 		}
 
 		[Since (0,4)]
-		public byte ProductStringIndex {
+		public string ProductName {
 			get {
 				ThrowIfDisposed ();
 				byte index;
 				var result = DeviceInterface.USBGetProductStringIndex (DeviceInterfaceRef, out index);
 				IOObject.ThrowIfError (result);
-				return index;
+				return GetStringDescriptor (index);
 			}
 		}
 
 		[Since (0,4)]
-		public byte SerialNumberStringIndex {
+		public string SerialNumber {
 			get  {
 				ThrowIfDisposed ();
 				byte index;
 				var result = DeviceInterface.USBGetSerialNumberStringIndex (DeviceInterfaceRef, out index);
 				IOObject.ThrowIfError (result);
-				return index;
+				return GetStringDescriptor (index);
 			}
 		}
 
@@ -344,6 +345,31 @@ namespace MonoMac.IOKit.USB
 			var result = DeviceInterface.GetConfigurationDescriptorPtr (DeviceInterfaceRef, index , out configDescriptorRef);
 			IOObject.ThrowIfError (result);
 			return (IOUSBConfigurationDescriptor)Marshal.PtrToStructure (configDescriptorRef, typeof(IOUSBConfigurationDescriptor));
+		}
+
+		public string GetStringDescriptor (byte index) {
+			ThrowIfDisposed ();
+			if (index == 0)
+				return null;
+			// based on http://oroboro.com/usb-serial-number-osx/
+			var buffer = Marshal.AllocHGlobal (64);
+			try {
+				var request = new IOUSBDevRequest () {
+					Direction = EndpointDirection.In,
+					DeviceRequestType = DeviceRequestType.Standard,
+					Recipient = DeviceRequestRecipient.Device,
+					RequestType = RequestType.RqGetDescriptor,
+					Value = (ushort)((byte)DescriptorType.String << 8 | index),
+					Index = 0x409, // english
+					DataLength = 64,
+					Data = buffer
+				};
+				var result = DeviceInterface.DeviceRequest (DeviceInterfaceRef, ref request);
+				var header = (IOUSBDescriptorHeader)Marshal.PtrToStructure (buffer, typeof(IOUSBDescriptorHeader));
+				return Marshal.PtrToStringUni (buffer + 2, (header.Length - 1) / 2);
+			} finally {
+				Marshal.FreeHGlobal (buffer);
+			}
 		}
 
 		public ulong GetBusFrameNumber (out ulong atTime) {
@@ -500,13 +526,77 @@ namespace MonoMac.IOKit.USB
 	[StructLayout (LayoutKind.Sequential)]
 	public struct IOUSBDevRequest
 	{
-		public DeviceRequestType RequestType;
-		public UInt8 Request;
-		public UInt16 Value;
-		public UInt16 Index;
-		public UInt16 Length;
-		public IntPtr Data;
-		public UInt32 LengthOnDone;
+		UInt8       bmRequestType;
+		UInt8       bRequest;
+		UInt16      wValue;
+		UInt16      wIndex;
+		UInt16      wLength;
+		IntPtr      pData;
+		UInt32      wLenDone;
+
+		public EndpointDirection Direction {
+			get {
+				return (EndpointDirection)(bmRequestType >> 7 & 0x01);
+			}
+			set {
+				bmRequestType &= 0x7F;
+				bmRequestType = (byte)(bmRequestType | (((int)value & 0x01) << 7));
+			}
+		}
+
+		public DeviceRequestRecipient Recipient {
+			get {
+					return (DeviceRequestRecipient)(bmRequestType >> 5 & 0x03);
+			}
+			set {
+				bmRequestType &= 0x9F;
+				bmRequestType = (byte)(bmRequestType | (((int)value & 0x03) << 5));
+			}
+		}
+
+		public DeviceRequestType DeviceRequestType {
+			get {
+				return (DeviceRequestType)(bmRequestType & 0x1F);
+			}
+			set {
+				bmRequestType &= 0xE0;
+				bmRequestType = (byte)(bmRequestType | (((int)value & 0x1F)));
+			}
+		}
+
+		public RequestType RequestType {
+			get {
+				return (RequestType)bRequest;
+			}
+			set {
+				bRequest = (byte)value;
+			}
+		}
+
+		public ushort Value {
+			get { return wValue; }
+			set { wValue = value; }
+		}
+
+		public ushort Index {
+			get { return wIndex; }
+			set { wIndex = value; }
+		}
+
+		public int DataLength {
+			get { return (int)wLength; }
+			set { wLength = (ushort)value; }
+		}
+
+		public IntPtr Data {
+			get { return pData; }
+			set { pData = value; }
+		}
+
+		public int DataLengthOnReturn {
+			get { return (int)wLenDone; }
+				set { wLenDone = (uint)value; }
+		}
 	}
 
 	[StructLayout (LayoutKind.Sequential)]

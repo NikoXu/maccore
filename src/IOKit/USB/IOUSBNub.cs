@@ -28,6 +28,7 @@ using System;
 using System.Runtime.InteropServices;
 
 using UInt8 = System.Byte;
+using MonoMac.CoreFoundation;
 
 namespace MonoMac.IOKit.USB
 {
@@ -40,40 +41,129 @@ namespace MonoMac.IOKit.USB
 
 	public interface IIOUSBDescriptor
 	{
-		byte Length { get; }
+		int Length { get; }
 		DescriptorType DescriptorType { get; }
 	}
 
 	[StructLayout (LayoutKind.Sequential)]
-	struct IOUSBDescriptorHeader : IIOUSBDescriptor
+	public class IOUSBDescriptorHeader : IIOUSBDescriptor
 	{
-		UInt8 length;
-		public byte Length { get { return length; } }
+		UInt8 bLength;
+		UInt8 bDescriptorType;
 
-		public DescriptorType descriptorType;
-		public DescriptorType DescriptorType { get { return descriptorType; } }
+		public int Length { get { return (int)bLength; } }
+
+		public DescriptorType DescriptorType {
+			get { return (DescriptorType)bDescriptorType; }
+		}
 	}
 
 	[StructLayout (LayoutKind.Sequential)]
-	public struct IOUSBConfigurationDescriptor : IIOUSBDescriptor
+	public class IOUSBDeviceDescriptor : IOUSBDescriptorHeader
 	{
-		UInt8 length;
-		public byte Length { get { return length; } }
+		UInt16  bcdUSB;
+		UInt8  bDeviceClass;
+		UInt8  bDeviceSubClass;
+		UInt8  bDeviceProtocol;
+		UInt8  bMaxPacketSize0;
+		UInt16 idVendor;
+		UInt16 idProduct;
+		UInt16 bcdDevice;
+		UInt8  iManufacturer;
+		UInt8  iProduct;
+		UInt8  iSerialNumber;
+		UInt8  bNumConfigurations;
+	}
 
-		DescriptorType descriptorType;
-		public DescriptorType DescriptorType { get { return descriptorType; } }
+	[StructLayout (LayoutKind.Sequential)]
+	public class IOUSBBOSDescriptor : IOUSBDescriptorHeader
+	{
+		UInt16 			wTotalLength;
+		UInt8 			bNumDeviceCaps;
 
-		UInt16 totalLength;
-		public ushort TotalLength {
-			get { return (ushort)IOUSB.USBToHostOrder ((short)totalLength); }
+		public int TotalLength {
+			get { return (int)IOUSB.USBToHostOrder ((short)wTotalLength); }
 		}
 
-		public UInt8 InterfaceCount;
-		public UInt8 ConfigurationValue;
-		public UInt8 ConfigurationIndex;
-		public PowerAttributes PowerAttributes;
+		public int DeviceCapabilityCount { get { return (int)bNumDeviceCaps; } }
+	}
 
-		UInt8 maxPower;
+	[StructLayout (LayoutKind.Sequential)]
+	public class IOUSBDeviceCapabilityDescriptorHeader : IOUSBDescriptorHeader
+	{
+		UInt8 			bDevCapabilityType;
+
+		public DeviceCapabilityType DeviceCapabilityType {
+			get { return (DeviceCapabilityType)bDevCapabilityType; }
+		}
+	}
+
+	[StructLayout (LayoutKind.Sequential)]
+	public class IOUSBDeviceCapabilityUSB2Extension : IOUSBDeviceCapabilityDescriptorHeader
+	{
+		UInt32 			bmAttributes;
+
+		public bool SupportsLPM { get { return (bmAttributes & 0x02) == 0x02; } }
+	}
+
+	[StructLayout (LayoutKind.Sequential)]
+	public class IOUSBDeviceCapabilitySuperSpeedUSB : IOUSBDeviceCapabilityDescriptorHeader
+	{
+		UInt8 			bmAttributes;
+		UInt16			wSpeedsSupported;
+		UInt8			bFunctionalitySupport;
+		UInt8			bU1DevExitLat;
+		UInt16			wU2DevExitLat;
+
+		public bool SupportsLPM { get { return (bmAttributes & 0x02) == 0x02; } }
+
+		public SupportedDeviceSpeeds SupportedSpeeds {
+			get { return (SupportedDeviceSpeeds)(wSpeedsSupported & 0x0F); }
+		}
+
+		public DeviceSpeed DeviceSpeed {
+			get { return (DeviceSpeed)(bFunctionalitySupport & 0x0F); }
+		}
+
+		public byte U1DevExitLat { get { return bU1DevExitLat; } }
+
+		public ushort U2DevExitLat { get { return wU2DevExitLat; } }
+	}
+
+	[StructLayout (LayoutKind.Sequential)]
+	public class IOUSBDeviceCapabilityContainerID : IOUSBDescriptorHeader
+	{
+		UInt8			bReservedID;
+		[MarshalAs (UnmanagedType.LPArray, SizeConst = 16)]
+		UInt8[]			containerID;
+
+		public CFUUID ID { get { return new CFUUID (containerID); } }
+	}
+
+	[StructLayout (LayoutKind.Sequential)]
+	public class IOUSBConfigurationDescriptor : IOUSBDescriptorHeader
+	{
+		UInt16 wTotalLength;
+		UInt8  bNumInterfaces;
+		UInt8  bConfigurationValue;
+		UInt8  iConfiguration;
+		UInt8  bmAttributes;
+		UInt8  maxPower;
+
+		public int TotalLength {
+			get { return (int)IOUSB.USBToHostOrder ((short)wTotalLength); }
+		}
+
+		public int InterfaceCount { get { return bNumInterfaces; } }
+
+		public byte ConfigurationValue { get { return bConfigurationValue; } }
+
+		public byte ConfigurationIndex { get { return iConfiguration; } }
+
+		public PowerAttributes PowerAttributes {
+			get { return (PowerAttributes)bmAttributes; }
+		}
+
 		public int MaxPower {
 			get {
 				// TODO: check for Gen X mode
@@ -82,6 +172,93 @@ namespace MonoMac.IOKit.USB
 				return maxPower * 2;
 			}
 		}
+	}
+
+	[StructLayout (LayoutKind.Sequential)]
+	public class IOUSBInterfaceDescriptor : IOUSBDescriptorHeader
+	{
+		UInt8 bInterfaceNumber;
+		UInt8 bAlternateSetting;
+		UInt8 bNumEndpoints;
+		UInt8 bInterfaceClass;
+		UInt8 bInterfaceSubClass;
+		UInt8 bInterfaceProtocol;
+		UInt8 iInterface;
+
+		public byte InterfaceNumber { get { return bInterfaceNumber; } }
+
+		public byte AlternateSetting { get { return bAlternateSetting; } }
+
+		public int EndpointCount { get { return (int)bNumEndpoints; } }
+
+		public InterfaceClass InterfaceClass {
+			get { return (InterfaceClass)bInterfaceClass; }
+		}
+
+		public InterfaceSubClass InterfaceSubClass {
+			get { return (InterfaceSubClass)bInterfaceSubClass; }
+		}
+
+		public InterfaceProtocol InterfaceProtocol {
+			get { return (InterfaceProtocol)bInterfaceProtocol; }
+		}
+
+		public byte InterfaceIndex { get { return iInterface; } }
+	}
+
+	[StructLayout (LayoutKind.Sequential)]
+	public class IOUSBEndpointDescriptor : IOUSBDescriptorHeader
+	{
+		UInt8  bEndpointAddress;
+		UInt8  bmAttributes;
+		UInt16 wMaxPacketSize;
+		UInt8  bInterval;
+
+		public byte Address {
+			get { return (byte)(bEndpointAddress & 0x0F); }
+		}
+
+		public EndpointDirection Direction {
+			get { return (EndpointDirection)(bEndpointAddress >> 7); }
+		}
+
+		public EndpointTransferType TransferType {
+			get { return (EndpointTransferType)(bmAttributes & 0x03); }
+		}
+
+		public InterruptUsageType InterruptUsageType {
+			get { return (InterruptUsageType)(bmAttributes >> 4 & 0x03); }
+		}
+
+		public IsocSyncType IsocSyncType {
+			get { return (IsocSyncType)(bmAttributes >> 2 & 0x03); }
+		}
+
+		public IsocUsageType IsocUsageType {
+			get { return (IsocUsageType)(bmAttributes >> 4 & 0x03); }
+		}
+
+		public int MaxPacketSize { get { return (int)wMaxPacketSize; } }
+
+		public int Interval { get { return bInterval; } }
+	}
+
+	[StructLayout (LayoutKind.Sequential)]
+	public class IOUSBSuperSpeedEndpointCompanionDescriptor : IOUSBDescriptorHeader
+	{
+		UInt8  bMaxBurst;
+		UInt8  bmAttributes;
+		UInt16 wBytesPerInterval;
+
+		public int MaxBurst { get { return (int)bMaxBurst; } }
+
+		public int MaxStreams { get { return (int)(bmAttributes & 0x1F); } }
+
+		public int Mult { get { return (int)(bmAttributes & 0x2); } }
+
+		public bool SspIsoCompanion { get { return (bmAttributes & 0x80) != 0; } }
+
+		public int BytesPerInterval { get { return (int)wBytesPerInterval; } }
 	}
 }
 

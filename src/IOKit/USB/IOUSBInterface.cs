@@ -45,59 +45,63 @@ namespace MonoMac.IOKit.USB
 {
 	public class IOUSBInterface : IOUSBNub
 	{
-		Lazy<IOCFPlugin<IOUSBInterfaceUserClientType>> pluginInterface;
-		Lazy<IIOCFPlugin<IOUSBInterfaceInterface>> interfaceInterface;
+		IIOCFPlugin<IOUSBInterfaceInterface> @interface;
 		Lazy<PipeCollection> pipes;
 
 		internal IOUSBInterface (IntPtr handle, bool owns) : base (handle, owns)
 		{
-			pluginInterface = new Lazy<IOCFPlugin<IOUSBInterfaceUserClientType>>
-				(() => IOCFPlugin.CreateInterfaceForService<IOUSBInterfaceUserClientType> (this));
+			using (var pluginInterface = IOCFPlugin.CreateInterfaceForService<IOUSBInterfaceUserClientType> (this)) {
 
-			var bundleVersion = IOUSB.BundleVersion;
-			if (bundleVersion >= new Version ("5.5.0"))
-				interfaceInterface = new Lazy<IIOCFPlugin<IOUSBInterfaceInterface>>
-					(() =>	pluginInterface.Value.QueryInterface<IOUSBInterfaceInterface550> ());
-			else if (bundleVersion >= new Version ("5.0.0"))
-				interfaceInterface = new Lazy<IIOCFPlugin<IOUSBInterfaceInterface>>
-					(() =>	pluginInterface.Value.QueryInterface<IOUSBInterfaceInterface500> ());
-			else if (bundleVersion >= new Version ("3.0.0"))
-				interfaceInterface = new Lazy<IIOCFPlugin<IOUSBInterfaceInterface>>
-					(() =>	pluginInterface.Value.QueryInterface<IOUSBInterfaceInterface300> ());
-			else if (bundleVersion >= new Version ("2.4.5"))
-				interfaceInterface = new Lazy<IIOCFPlugin<IOUSBInterfaceInterface>>
-					(() =>	pluginInterface.Value.QueryInterface<IOUSBInterfaceInterface245> ());
-			else if (bundleVersion >= new Version ("2.2.0"))
-				interfaceInterface = new Lazy<IIOCFPlugin<IOUSBInterfaceInterface>>
-					(() =>	pluginInterface.Value.QueryInterface<IOUSBInterfaceInterface220> ());
-			else if (bundleVersion >= new Version ("1.9.7"))
-				interfaceInterface = new Lazy<IIOCFPlugin<IOUSBInterfaceInterface>>
-					(() =>	pluginInterface.Value.QueryInterface<IOUSBInterfaceInterface197> ());
-			else if (bundleVersion >= new Version ("1.9.2"))
-				interfaceInterface = new Lazy<IIOCFPlugin<IOUSBInterfaceInterface>>
-					(() =>	pluginInterface.Value.QueryInterface<IOUSBInterfaceInterface192> ());
-			else if (bundleVersion >= new Version ("1.9.0"))
-				interfaceInterface = new Lazy<IIOCFPlugin<IOUSBInterfaceInterface>>
-					(() =>	pluginInterface.Value.QueryInterface<IOUSBInterfaceInterface190> ());
-			else if (bundleVersion >= new Version ("1.8.3"))
-				interfaceInterface = new Lazy<IIOCFPlugin<IOUSBInterfaceInterface>>
-					(() =>	pluginInterface.Value.QueryInterface<IOUSBInterfaceInterface183> ());
-			else if (bundleVersion >= new Version ("1.8.2"))
-				interfaceInterface = new Lazy<IIOCFPlugin<IOUSBInterfaceInterface>>
-					(() =>	pluginInterface.Value.QueryInterface<IOUSBInterfaceInterface182> ());
-			else
-				interfaceInterface = new Lazy<IIOCFPlugin<IOUSBInterfaceInterface>>
-					(() =>	pluginInterface.Value.QueryInterface<IOUSBInterfaceInterface> ());
-
+				var bundleVersion = IOUSB.BundleVersion;
+				if (bundleVersion >= new Version ("5.5.0"))
+					@interface = pluginInterface.QueryInterface<IOUSBInterfaceInterface550> ();
+				else if (bundleVersion >= new Version ("5.0.0"))
+					@interface = pluginInterface.QueryInterface<IOUSBInterfaceInterface500> ();
+				else if (bundleVersion >= new Version ("3.0.0"))
+					@interface = pluginInterface.QueryInterface<IOUSBInterfaceInterface300> ();
+				else if (bundleVersion >= new Version ("2.4.5"))
+					@interface = pluginInterface.QueryInterface<IOUSBInterfaceInterface245> ();
+				else if (bundleVersion >= new Version ("2.2.0"))
+					@interface = pluginInterface.QueryInterface<IOUSBInterfaceInterface220> ();
+				else if (bundleVersion >= new Version ("1.9.7"))
+					@interface = pluginInterface.QueryInterface<IOUSBInterfaceInterface197> ();
+				else if (bundleVersion >= new Version ("1.9.2"))
+					@interface = pluginInterface.QueryInterface<IOUSBInterfaceInterface192> ();
+				else if (bundleVersion >= new Version ("1.9.0"))
+					@interface = pluginInterface.QueryInterface<IOUSBInterfaceInterface190> ();
+				else if (bundleVersion >= new Version ("1.8.3"))
+					@interface = pluginInterface.QueryInterface<IOUSBInterfaceInterface183> ();
+				else if (bundleVersion >= new Version ("1.8.2"))
+					@interface = pluginInterface.QueryInterface<IOUSBInterfaceInterface182> ();
+				else
+					@interface = pluginInterface.QueryInterface<IOUSBInterfaceInterface> ();
+			}
 			pipes = new Lazy<PipeCollection>(() => new PipeCollection (this));
 		}
 
+		~IOUSBInterface ()
+		{
+			Dispose (false);
+		}
+
+		protected override void Dispose (bool disposing)
+		{
+			if (pipes.IsValueCreated) {
+				foreach (var pipe in pipes.Value)
+					pipe.Dispose ();
+				pipes = null;
+			}
+			@interface = null;
+			base.Dispose (disposing);
+		}
+
+
 		IntPtr InterfaceRef {
-			get { return interfaceInterface.Value.Handle; }
+			get { return @interface.Handle; }
 		}
 
 		IOUSBInterfaceInterface Interface {
-			get { return interfaceInterface.Value.Interface; }
+			get { return @interface.Interface; }
 		}
 
 		public CFRunLoopSource AsyncEventSource {
@@ -238,8 +242,6 @@ namespace MonoMac.IOKit.USB
 			}
 		}
 
-		public PipeCollection Pipes { get { return pipes.Value; } }
-
 		[Since (2,0)]
 		public uint BandwidthAvailible {
 			get {
@@ -326,7 +328,7 @@ namespace MonoMac.IOKit.USB
 			                                              out maxPacketSize, out interval);
 			IOObject.ThrowIfError (result);
 			return new EndpointProperties () {
-				TransferType = (EndpointType) transferType,
+				TransferType = (EndpointTransferType) transferType,
 				MaxPacketSize = maxPacketSize,
 				Interval = (Interval)interval
 			};
@@ -365,12 +367,8 @@ namespace MonoMac.IOKit.USB
 			if (result == IntPtr.Zero)
 				return null;
 			var header = (IOUSBDescriptorHeader)Marshal.PtrToStructure (result, typeof(IOUSBDescriptorHeader));
-			switch (header.DescriptorType) {
-			case DescriptorType.Configuration:
-				return (IOUSBConfigurationDescriptor)Marshal.PtrToStructure (result, typeof(IOUSBConfigurationDescriptor));
-			default:
-				throw new NotImplementedException ();
-			}
+			var descriptorType = header.DescriptorType.GetClassType ();
+			return (IIOUSBDescriptor)Marshal.PtrToStructure (result, descriptorType);
 		}
 
 		[Since (4,0)]
@@ -428,23 +426,7 @@ namespace MonoMac.IOKit.USB
 			return properties;
 		}
 
-		protected override void Dispose (bool disposing)
-		{
-			if (pluginInterface.IsValueCreated) {
-				pluginInterface.Value.Dispose ();
-				pluginInterface = null;
-			}
-			if (interfaceInterface.IsValueCreated) {
-				//interfaceInterface.Value.Dispose ();
-				interfaceInterface = null;
-			}
-			if (pipes.IsValueCreated) {
-				foreach (var pipe in pipes.Value)
-					pipe.Dispose ();
-				pipes = null;
-			}
-			base.Dispose (disposing);
-		}
+		public PipeCollection Pipes { get { return pipes.Value; } }
 
 		public class Pipe : IDisposable
 		{
@@ -505,7 +487,7 @@ namespace MonoMac.IOKit.USB
 					return new PipeProperties () {
 						Direction = (EndpointDirection)direction,
 						Number = number,
-						TransferType = (EndpointType)transferType,
+						TransferType = (EndpointTransferType)transferType,
 						MaxPacketSize = maxPacketSize,
 						Interval = (Interval)interval
 					};
@@ -743,7 +725,7 @@ namespace MonoMac.IOKit.USB
 					return new PipePropertiesV2 () {
 						Direction = (EndpointDirection)direction,
 						Number = number,
-						TransferType = (EndpointType)transferType,
+						TransferType = (EndpointTransferType)transferType,
 						MaxPacketSize = maxPacketSize,
 						Interval = (Interval)interval,
 						MaxBurst = maxBurst,
@@ -1165,7 +1147,7 @@ namespace MonoMac.IOKit.USB
 	{
 		public EndpointDirection Direction;
 		public UInt8 Number;
-		public EndpointType TransferType;
+		public EndpointTransferType TransferType;
 		public UInt16 MaxPacketSize;
 		public Interval Interval;
 	}
@@ -1174,7 +1156,7 @@ namespace MonoMac.IOKit.USB
 	{
 		public EndpointDirection Direction;
 		public UInt8 Number;
-		public EndpointType TransferType;
+		public EndpointTransferType TransferType;
 		public UInt16 MaxPacketSize;
 		public Interval Interval;
 		public UInt8 MaxBurst;
@@ -1206,7 +1188,7 @@ namespace MonoMac.IOKit.USB
 		public UInt8 AlternateSetting;
 		public EndpointDirection Direction;
 		public UInt8 EndpointNumber;
-		public EndpointType TransferType;
+		public EndpointTransferType TransferType;
 		public UInt8 UsageType;
 		public IsocSyncType SyncType;
 		public Interval Interval;
@@ -1219,7 +1201,7 @@ namespace MonoMac.IOKit.USB
 
 	public struct EndpointProperties
 	{
-		public EndpointType TransferType;
+		public EndpointTransferType TransferType;
 		public ushort MaxPacketSize;
 		public Interval Interval;
 	}
