@@ -134,7 +134,6 @@ namespace MonoMac.CoreFoundation {
 
 			if (Handle == IntPtr.Zero)
 				throw new NotSupportedException ();
-			Register ();
 		}
 
 		delegate void ScheduleCallback (IntPtr info, IntPtr runLoop, IntPtr mode);
@@ -146,12 +145,7 @@ namespace MonoMac.CoreFoundation {
 			var loop = GetCFObject<CFRunLoop> (runLoop);
 			var mstring = GetCFObject<CFString> (mode);
 
-			try {
-				source.OnSchedule (loop, (string)mstring);
-			} finally {
-				loop.Dispose ();
-				mstring.Dispose ();
-			}
+			source.OnSchedule (loop, (string)mstring);
 		}
 
 		protected abstract void OnSchedule (CFRunLoop loop, string mode);
@@ -165,12 +159,7 @@ namespace MonoMac.CoreFoundation {
 			var loop = GetCFObject<CFRunLoop> (runLoop);
 			var mstring = GetCFObject<CFString> (mode);
 
-			try {
-				source.OnCancel (loop, (string)mstring);
-			} finally {
-				loop.Dispose ();
-				mstring.Dispose ();
-			}
+			source.OnCancel (loop, (string)mstring);
 		}
 
 		protected abstract void OnCancel (CFRunLoop loop, string mode);
@@ -233,7 +222,7 @@ namespace MonoMac.CoreFoundation {
 		
 		static public CFRunLoop Main {
 			get {
-				return new CFRunLoop (CFRunLoopGetMain ());
+				return GetCFObject<CFRunLoop> (CFRunLoopGetMain ());
 			}
 		}
 
@@ -262,6 +251,7 @@ namespace MonoMac.CoreFoundation {
 		extern static int CFRunLoopIsWaiting (IntPtr loop);
 		public bool IsWaiting {
 			get {
+				ThrowIfDisposed ();
 				return CFRunLoopIsWaiting (Handle) != 0;
 			}
 		}

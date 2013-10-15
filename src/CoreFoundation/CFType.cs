@@ -11,9 +11,9 @@ using System.Reflection;
 namespace MonoMac.CoreFoundation {
 	public abstract class CFType : INativeObject, IDisposable
 	{
+		static object lockObject = new object ();
 		static Dictionary<IntPtr, WeakReference> objectMap =
 			new Dictionary<IntPtr, WeakReference> ();
-		static object lockObj = new object ();
 
 		protected CFType ()
 		{
@@ -22,12 +22,11 @@ namespace MonoMac.CoreFoundation {
 		[Preserve (Conditional = true)]
 		internal CFType (IntPtr handle, bool owns)
 		{
-			if (handle == IntPtr.Zero)
-				throw new ArgumentNullException ("handle");
 			if (!owns)
 				Retain (handle);
 			Handle = handle;
-			Register ();
+			if (Handle != IntPtr.Zero)
+				Register ();
 		}
 
 		public IntPtr Handle { get; internal set; }
@@ -52,36 +51,40 @@ namespace MonoMac.CoreFoundation {
 				return s.ToString ();
 		}
 
+		public string Description {
+			get {
+				ThrowIfDisposed ();
+				return GetTypeDescription (Handle);
+			}
+		}
+
 		protected void Register ()
 		{
 			ThrowIfDisposed ();
-			if (objectMap.ContainsKey (Handle) && objectMap [Handle].IsAlive)
-				throw new Exception ("Managed object already exists for this handle.");
-			lock (lockObj)
+			lock (lockObject) {
+				if (objectMap.ContainsKey (Handle) && objectMap [Handle].IsAlive)
+					throw new InvalidOperationException ("Object is already registered with this handle");
 				objectMap [Handle] = new WeakReference (this);
+			}
 		}
 
 		protected void Unregister ()
 		{
-			lock (lockObj)
+			lock (lockObject)
 				objectMap.Remove (Handle);
 		}
 
 		public static T GetCFObject<T> (IntPtr handle) where T : CFType
 		{
-			if (objectMap.ContainsKey (handle) && objectMap [handle].IsAlive)
-				return (T)objectMap [handle].Target;
-			return (T)Activator.CreateInstance (typeof(T),
-			                                    BindingFlags.Instance | BindingFlags.NonPublic,
-			                                    null,
-			                                    new object[] { handle, false },
-			                                    null);
-		}
-
-		public string Description {
-			get {
-				ThrowIfDisposed ();
-				return GetTypeDescription (Handle);
+			lock (lockObject) {
+				WeakReference reference;
+				if (objectMap.TryGetValue (handle, out reference) && reference.IsAlive)
+					return (T)reference.Target;
+				return (T)Activator.CreateInstance (typeof(T),
+				                                    BindingFlags.NonPublic | BindingFlags.Instance,
+				                                    null,
+				                                    new object[] { handle, false },
+				                                    null);
 			}
 		}
 
