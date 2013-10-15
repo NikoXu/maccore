@@ -48,7 +48,6 @@ namespace MonoMac.IOKit.USB
 		Lazy<IOCFPlugin<IOUSBInterfaceUserClientType>> pluginInterface;
 		Lazy<IIOCFPlugin<IOUSBInterfaceInterface>> interfaceInterface;
 		Lazy<PipeCollection> pipes;
-		Lazy<CFRunLoopSource> interfaceAsyncEventSource;
 
 		internal IOUSBInterface (IntPtr handle, bool owns) : base (handle, owns)
 		{
@@ -90,7 +89,6 @@ namespace MonoMac.IOKit.USB
 				interfaceInterface = new Lazy<IIOCFPlugin<IOUSBInterfaceInterface>>
 					(() =>	pluginInterface.Value.QueryInterface<IOUSBInterfaceInterface> ());
 
-			interfaceAsyncEventSource = new Lazy<CFRunLoopSource> (CreateAsyncEventSource);
 			pipes = new Lazy<PipeCollection>(() => new PipeCollection (this));
 		}
 
@@ -103,7 +101,16 @@ namespace MonoMac.IOKit.USB
 		}
 
 		public CFRunLoopSource AsyncEventSource {
-			get { return interfaceAsyncEventSource.Value; }
+			get {
+				ThrowIfDisposed ();
+				IntPtr runLoopSourceRef = Interface.GetInterfaceAsyncEventSource (InterfaceRef);
+				if (runLoopSourceRef == IntPtr.Zero) {
+					var result = Interface.CreateInterfaceAsyncEventSource (InterfaceRef, out runLoopSourceRef);
+					IOObject.ThrowIfError (result);
+					return new CFRunLoopSource (runLoopSourceRef, true);
+				}
+				return new CFRunLoopSource (runLoopSourceRef, false);
+			}
 		}
 
 		public InterfaceClass Class {
@@ -277,17 +284,6 @@ namespace MonoMac.IOKit.USB
 			}
 		}
 
-		CFRunLoopSource CreateAsyncEventSource ()
-		{
-			ThrowIfDisposed ();
-			IntPtr runLoopSourceRef;
-			var result = Interface.CreateInterfaceAsyncEventSource (InterfaceRef, out runLoopSourceRef);
-			IOObject.ThrowIfError (result);
-			var runLoopSource = new CFRunLoopSource (runLoopSourceRef, false);
-			CFType.Release (runLoopSourceRef);
-			return runLoopSource;
-		}
-
 		public void Open ()
 		{
 			ThrowIfDisposed ();
@@ -434,10 +430,20 @@ namespace MonoMac.IOKit.USB
 
 		protected override void Dispose (bool disposing)
 		{
-			base.Dispose (disposing);
-			if (pipes.IsValueCreated)
+			if (pluginInterface.IsValueCreated) {
+				pluginInterface.Value.Dispose ();
+				pluginInterface = null;
+			}
+			if (interfaceInterface.IsValueCreated) {
+				//interfaceInterface.Value.Dispose ();
+				interfaceInterface = null;
+			}
+			if (pipes.IsValueCreated) {
 				foreach (var pipe in pipes.Value)
 					pipe.Dispose ();
+				pipes = null;
+			}
+			base.Dispose (disposing);
 		}
 
 		public class Pipe : IDisposable

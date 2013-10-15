@@ -233,7 +233,7 @@ namespace MonoMac.IOKit.HID
 				var devices = new IOHIDDevice[deviceSet.Count];
 				int i = 0;
 				foreach (var devicePtr in deviceSet.Values)
-					devices [i++] = GetCFObject<IOHIDDevice> (devicePtr);
+					devices [i++] = new IOHIDDevice (devicePtr, true);
 				return devices;
 			}
 		}

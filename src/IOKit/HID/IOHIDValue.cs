@@ -118,7 +118,7 @@ namespace MonoMac.IOKit.HID
 				var elementRef = IOHIDValueGetElement (Handle);
 				if (elementRef == IntPtr.Zero)
 					return null;
-				return GetCFObject<IOHIDElement> (elementRef);
+				return new IOHIDElement (elementRef, false);
 			}
 		}
 

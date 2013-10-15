@@ -124,7 +124,7 @@ namespace MonoMac.IOKit.HID
 				var deviceRef = IOHIDElementGetDevice (Handle);
 				if (deviceRef == IntPtr.Zero)
 					return null;
-				return GetCFObject<IOHIDDevice> (deviceRef);
+				return new IOHIDDevice (deviceRef, false);
 			}
 		}
 
@@ -137,7 +137,7 @@ namespace MonoMac.IOKit.HID
 				var elementRef = IOHIDElementGetParent (Handle);
 				if (elementRef == IntPtr.Zero)
 					return null;
-				return GetCFObject<IOHIDElement> (elementRef);
+				return new IOHIDElement (elementRef, false);
 			}
 		}
 		[DllImport (Constants.IOKitLibrary)]
@@ -152,7 +152,7 @@ namespace MonoMac.IOKit.HID
 				using (var array = new CFArray (elementArrayRef, false)) {
 					var managedArray = new IOHIDElement [array.Count];
 					for (int i = 0; i < array.Count; i++)
-						managedArray [i] = GetCFObject<IOHIDElement> (array.GetValue (i));
+						managedArray [i] = new IOHIDElement (array.GetValue (i), false);
 					return managedArray;
 				}
 			}
@@ -190,7 +190,7 @@ namespace MonoMac.IOKit.HID
 				using (var array = new CFArray (elementArrayRef, true)) {
 					var managedArray = new IOHIDElement [array.Count];
 					for (int i = 0; i < array.Count; i++)
-						managedArray [i] = GetCFObject<IOHIDElement> (array.GetValue (i));
+						managedArray [i] = new IOHIDElement (array.GetValue (i), true);
 					return managedArray;
 				}
 			}

@@ -350,7 +350,7 @@ namespace MonoMac.IOKit.HID
 			using (var array = new CFArray (arrayRef, true)) {
 				var elements = new IOHIDElement[array.Count];
 				for (int i = 0; i < elements.Length; i++)
-					elements [i] = GetCFObject<IOHIDElement> (array.GetValue (i));
+					elements [i] = new IOHIDElement(array.GetValue (i), true);
 				return elements;
 			}
 		}
@@ -363,7 +363,7 @@ namespace MonoMac.IOKit.HID
 			using (var array = new CFArray (arrayRef, true)) {
 				var elements = new IOHIDElement[array.Count];
 				for (int i = 0; i < elements.Length; i++)
-					elements [i] = GetCFObject<IOHIDElement> (array.GetValue (i));
+					elements [i] = new IOHIDElement (array.GetValue (i), true);
 				return elements;
 			}
 		}
@@ -576,7 +576,7 @@ namespace MonoMac.IOKit.HID
 			IntPtr[] keyRefs, valueRefs;
 			multiple.GetKeysAndValues (out keyRefs, out valueRefs);
 			for (int i = 0; i < multiple.Count; i++)
-				dict.Add (GetCFObject<IOHIDElement> (keyRefs [i]), GetCFObject<IOHIDValue> (valueRefs [i]));
+				dict.Add (new IOHIDElement (keyRefs [i], true), new IOHIDValue (valueRefs [i], true));
 			CFType.Release (multiple.Handle);
 			return dict;
 		}
