@@ -113,7 +113,7 @@ namespace MonoMac.IOKit.USB
 					IOObject.ThrowIfError (result);
 					return new CFRunLoopSource (runLoopSourceRef, true);
 				}
-				return new CFRunLoopSource (runLoopSourceRef, false);
+				return CFType.GetCFObject<CFRunLoopSource> (runLoopSourceRef);
 			}
 		}
 
@@ -187,7 +187,7 @@ namespace MonoMac.IOKit.USB
 			}
 		}
 
-		public int InterfaceNumber {
+		public int Index {
 			get {
 				ThrowIfDisposed ();
 				byte number;
@@ -239,6 +239,17 @@ namespace MonoMac.IOKit.USB
 				var result = Interface.GetDevice (InterfaceRef, out deviceRef);
 				IOObject.ThrowIfError (result);
 				return new IOUSBDevice (deviceRef, true);
+			}
+		}
+
+		[Since (0,4)]
+		public string Name {
+			get {
+				ThrowIfDisposed ();
+				byte index;
+				var result = Interface.USBInterfaceGetStringIndex (InterfaceRef, out index);
+				IOObject.ThrowIfError (result);
+				return Device.GetStringDescriptor (index);
 			}
 		}
 
@@ -345,13 +356,17 @@ namespace MonoMac.IOKit.USB
 		}
 
 		[Since (4,0)]
-		public IIOUSBDescriptor FindFirstAssociatedDescriptor (DescriptorType type = DescriptorType.Any)
+		public IEnumerable<IIOUSBDescriptor> FindAssociatedDescriptors (DescriptorType type = DescriptorType.Any)
 		{
-			return FindNextAssociatedDescriptor (null, type);
+			var descriptor = FindNextAssociatedDescriptor (null, type);
+			if (descriptor != null) {
+				yield return descriptor;
+				while ((descriptor = FindNextAssociatedDescriptor (descriptor, type)) != null)
+					yield return descriptor;
+			}
 		}
 
-		[Since (4,0)]
-		public IIOUSBDescriptor FindNextAssociatedDescriptor (IIOUSBDescriptor current, DescriptorType type = DescriptorType.Any)
+		IIOUSBDescriptor FindNextAssociatedDescriptor (IIOUSBDescriptor current, DescriptorType type = DescriptorType.Any)
 		{
 			ThrowIfDisposed ();
 			IntPtr currentRef;
@@ -372,13 +387,17 @@ namespace MonoMac.IOKit.USB
 		}
 
 		[Since (4,0)]
-		public IIOUSBDescriptor FindFirstAlternateInterface (IOUSBFindInterfaceRequest request)
+		public IEnumerable<IIOUSBDescriptor> FindAlternateInterfaces (IOUSBFindInterfaceRequest request)
 		{
-			return FindNextAlternateInterface (null, request);
+			var descriptor = FindNextAlternateInterface (null, request);
+			if (descriptor != null) {
+				yield return descriptor;
+				while ((descriptor = FindNextAlternateInterface (descriptor, request)) != null)
+					yield return descriptor;
+			}
 		}
 
-		[Since (4,0)]
-		public IIOUSBDescriptor FindNextAlternateInterface (IIOUSBDescriptor current, IOUSBFindInterfaceRequest request)
+		IIOUSBDescriptor FindNextAlternateInterface (IIOUSBDescriptor current, IOUSBFindInterfaceRequest request)
 		{
 			ThrowIfDisposed ();
 			IntPtr currentRef;
@@ -394,12 +413,8 @@ namespace MonoMac.IOKit.USB
 			if (result == IntPtr.Zero)
 				return null;
 			var header = (IOUSBDescriptorHeader)Marshal.PtrToStructure (result, typeof(IOUSBDescriptorHeader));
-			switch (header.DescriptorType) {
-			case DescriptorType.Configuration:
-				return (IOUSBConfigurationDescriptor)Marshal.PtrToStructure (result, typeof(IOUSBConfigurationDescriptor));
-			default:
-				throw new NotImplementedException ();
-			}
+			var descriptorType = header.DescriptorType.GetClassType ();
+			return (IIOUSBDescriptor)Marshal.PtrToStructure (result, descriptorType);
 		}
 
 		[Since (5,0)]
