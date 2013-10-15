@@ -61,21 +61,21 @@ namespace MonoMac.IOKit.USB
 
 	public enum RequestType : byte
 	{
-		RqGetStatus     = 0,
-		RqClearFeature  = 1,
-		RqGetState      = 2,
-		RqSetFeature    = 3,
-		RqReserved2     = 4,
-		RqSetAddress    = 5,
-		RqGetDescriptor = 6,
-		RqSetDescriptor = 7,
-		RqGetConfig     = 8,
-		RqSetConfig     = 9,
-		RqGetInterface  = 10,
-		RqSetInterface  = 11,
-		RqSyncFrame     = 12,
-		SetSel			= 48,
-		SetIsochDelay	= 49
+		GetStatus     = 0,
+		ClearFeature  = 1,
+		GetState      = 2,
+		SetFeature    = 3,
+		Reserved2     = 4,
+		SetAddress    = 5,
+		GetDescriptor = 6,
+		SetDescriptor = 7,
+		GetConfig     = 8,
+		SetConfig     = 9,
+		GetInterface  = 10,
+		SetInterface  = 11,
+		SyncFrame     = 12,
+		SetSel        = 48,
+		SetIsochDelay = 49
 	}
 #if COREBUILD
 	public enum DescriptorType

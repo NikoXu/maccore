@@ -446,7 +446,7 @@ namespace MonoMac.IOKit.USB
 				Dispose (false);
 			}
 			
-			void SendControlRequest (ref IOUSBDevRequest request)
+			void SendControlRequest (ref IOUSBDeviceRequest request)
 			{
 				ThrowIfDisposed ();
 				var result = instance.Interface.ControlRequest
@@ -454,7 +454,7 @@ namespace MonoMac.IOKit.USB
 				IOObject.ThrowIfError (result);
 			}
 
-			public Task<int> SendControlRequestAsync (IOUSBDevRequest request)
+			public Task<int> SendControlRequestAsync (IOUSBDeviceRequest request)
 			{
 				ThrowIfDisposed ();
 				var completionSource = new TaskCompletionSource<int> ();
@@ -1534,8 +1534,8 @@ namespace MonoMac.IOKit.USB
 		public delegate IOReturn _GetDevice (IntPtr self, out io_service_t device);
 		public delegate IOReturn _SetAlternateInterface (IntPtr self, UInt8 alternateSetting);
 		public delegate IOReturn _GetBusFrameNumber (IntPtr self, out UInt64 frame, out AbsoluteTime atTime);
-		public delegate IOReturn _ControlRequest (IntPtr self, UInt8 pipeRef, ref IOUSBDevRequest req);
-		public delegate IOReturn _ControlRequestAsync (IntPtr self, UInt8 pipeRef, [MarshalAs (UnmanagedType.LPStruct)] IOUSBDevRequest req, IOAsyncCallback1 callback, IntPtr refCon);
+		public delegate IOReturn _ControlRequest (IntPtr self, UInt8 pipeRef, ref IOUSBDeviceRequest req);
+		public delegate IOReturn _ControlRequestAsync (IntPtr self, UInt8 pipeRef, [MarshalAs (UnmanagedType.LPStruct)] IOUSBDeviceRequest req, IOAsyncCallback1 callback, IntPtr refCon);
 		public delegate IOReturn _GetPipeProperties (IntPtr self, UInt8 pipeRef, out UInt8 direction, out UInt8 number, out UInt8 transferType, out UInt16 maxPacketSize, out UInt8 interval);
 		public delegate IOReturn _GetPipeStatus (IntPtr self, UInt8 pipeRef);
 		public delegate IOReturn _AbortPipe (IntPtr self, UInt8 pipeRef);

@@ -25,12 +25,17 @@
 // THE SOFTWARE.
 
 using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
+using System.Threading.Tasks;
 using MonoMac.CoreFoundation;
-using MonoMac.Kernel.Mach;
-
 using MonoMac.Foundation;
+using MonoMac.Kernel.Mach;
 using MonoMac.ObjCRuntime;
+
 using AbsoluteTime = System.UInt64;
 using CFRunLoopSourceRef = System.IntPtr;
 using IOUSBConfigurationDescriptorPtr = System.IntPtr;
@@ -38,75 +43,73 @@ using UInt8 = System.Byte;
 using USBDeviceAddress = System.UInt16;
 using io_iterator_t = System.IntPtr;
 using mach_port_t = System.IntPtr;
-using System.Threading.Tasks;
-using System.Text;
 
 namespace MonoMac.IOKit.USB
 {
 	public class IOUSBDevice : IOUSBNub
 	{
-		Lazy<IOCFPlugin<IOUSBDeviceUserClientType>> pluginInterface;
-		Lazy<IIOCFPlugin<IOUSBDeviceInterface>> deviceInterface;
-
-		Lazy<CFRunLoopSource> deviceAsyncEventSource;
-		Lazy<Port> deviceAsyncPort;
+		IIOCFPlugin<IOUSBDeviceInterface> @interface;
 
 		internal IOUSBDevice (IntPtr handle, bool owns) : base (handle, owns)
 		{
-			pluginInterface = new Lazy<IOCFPlugin<IOUSBDeviceUserClientType>>
-				(() => IOCFPlugin.CreateInterfaceForService<IOUSBDeviceUserClientType> (this));
-
-			var bundleVersion = IOUSB.BundleVersion;
-			if (bundleVersion >= new Version ("5.5.0"))
-				deviceInterface = new Lazy<IIOCFPlugin<IOUSBDeviceInterface>>
-					(() =>	pluginInterface.Value.QueryInterface<IOUSBDeviceInterface550> ());
-			else if (bundleVersion >= new Version ("3.2.0"))
-				deviceInterface = new Lazy<IIOCFPlugin<IOUSBDeviceInterface>>
-					(() =>	pluginInterface.Value.QueryInterface<IOUSBDeviceInterface320> ());
-			else if (bundleVersion >= new Version ("3.0.0"))
-				deviceInterface = new Lazy<IIOCFPlugin<IOUSBDeviceInterface>>
-					(() =>	pluginInterface.Value.QueryInterface<IOUSBDeviceInterface300> ());
-			else if (bundleVersion >= new Version ("2.4.5"))
-				deviceInterface = new Lazy<IIOCFPlugin<IOUSBDeviceInterface>>
-					(() =>	pluginInterface.Value.QueryInterface<IOUSBDeviceInterface245> ());
-			else if (bundleVersion >= new Version ("1.9.7"))
-				deviceInterface = new Lazy<IIOCFPlugin<IOUSBDeviceInterface>>
-					(() =>	pluginInterface.Value.QueryInterface<IOUSBDeviceInterface197> ());
-			else if (bundleVersion >= new Version ("1.8.7"))
-				deviceInterface = new Lazy<IIOCFPlugin<IOUSBDeviceInterface>>
-					(() =>	pluginInterface.Value.QueryInterface<IOUSBDeviceInterface187> ());
-			else if (bundleVersion >= new Version ("1.8.2"))
-				deviceInterface = new Lazy<IIOCFPlugin<IOUSBDeviceInterface>>
-					(() =>	pluginInterface.Value.QueryInterface<IOUSBDeviceInterface182> ());
-			else
-				deviceInterface = new Lazy<IIOCFPlugin<IOUSBDeviceInterface>>
-					(() =>	pluginInterface.Value.QueryInterface<IOUSBDeviceInterface> ());
-
-			deviceAsyncEventSource = new Lazy<CFRunLoopSource> (CreateAsyncEventSource);
-			deviceAsyncPort = new Lazy<Port> (CreateAsyncPort);
+			using (var pluginInterface = IOCFPlugin.CreateInterfaceForService<IOUSBDeviceUserClientType> (this)) {
+				var bundleVersion = IOUSB.BundleVersion;
+				if (bundleVersion >= new Version ("5.5.0"))
+					@interface = pluginInterface.QueryInterface<IOUSBDeviceInterface550> ();
+				else if (bundleVersion >= new Version ("3.2.0"))
+					@interface = pluginInterface.QueryInterface<IOUSBDeviceInterface320> ();
+				else if (bundleVersion >= new Version ("3.0.0"))
+					@interface = pluginInterface.QueryInterface<IOUSBDeviceInterface300> ();
+				else if (bundleVersion >= new Version ("2.4.5"))
+					@interface = pluginInterface.QueryInterface<IOUSBDeviceInterface245> ();
+				else if (bundleVersion >= new Version ("1.9.7"))
+					@interface = pluginInterface.QueryInterface<IOUSBDeviceInterface197> ();
+				else if (bundleVersion >= new Version ("1.8.7"))
+					@interface = pluginInterface.QueryInterface<IOUSBDeviceInterface187> ();
+				else if (bundleVersion >= new Version ("1.8.2"))
+					@interface = pluginInterface.QueryInterface<IOUSBDeviceInterface182> ();
+				else
+					@interface = pluginInterface.QueryInterface<IOUSBDeviceInterface> ();
+			}
 		}
 
-		IntPtr DeviceInterfaceRef {
-			get { return deviceInterface.Value.Handle; }
+		IntPtr InterfaceRef {
+			get { return @interface.Handle; }
 		}
 
-		IOUSBDeviceInterface DeviceInterface {
-			get { return deviceInterface.Value.Interface; }
+		IOUSBDeviceInterface Interface {
+			get { return @interface.Interface; }
 		}
 
 		public CFRunLoopSource AsyncEventSource {
-			get { return deviceAsyncEventSource.Value; }
+			get {
+				ThrowIfDisposed ();
+				IntPtr runLoopSourceRef = Interface.GetDeviceAsyncEventSource (InterfaceRef);
+				if (runLoopSourceRef != IntPtr.Zero)
+					return CFType.GetCFObject<CFRunLoopSource> (runLoopSourceRef);
+				var result = Interface.CreateDeviceAsyncEventSource (InterfaceRef, out runLoopSourceRef);
+				IOObject.ThrowIfError (result);
+				return new CFRunLoopSource (runLoopSourceRef, true);
+			}
 		}
 
 		public Port AsyncPort {
-			get { return deviceAsyncPort.Value; }
+			get {
+				ThrowIfDisposed ();
+				IntPtr portRef = Interface.GetDeviceAsyncPort (InterfaceRef);
+				if (portRef != IntPtr.Zero)
+					return new Port(portRef);
+				var result = Interface.CreateDeviceAsyncPort (InterfaceRef, out portRef);
+				IOObject.ThrowIfError (result);
+				return new Port (portRef);
+			}
 		}
 
 		public DeviceClass Class {
 			get {
 				ThrowIfDisposed ();
 				byte deviceClass;
-				var result = DeviceInterface.GetDeviceClass (DeviceInterfaceRef, out deviceClass);
+				var result = Interface.GetDeviceClass (InterfaceRef, out deviceClass);
 				IOObject.ThrowIfError (result);
 				return (DeviceClass)deviceClass;
 			}
@@ -116,7 +119,7 @@ namespace MonoMac.IOKit.USB
 			get {
 				ThrowIfDisposed ();
 				byte deviceSubClass;
-				var result = DeviceInterface.GetDeviceSubClass (DeviceInterfaceRef, out deviceSubClass);
+				var result = Interface.GetDeviceSubClass (InterfaceRef, out deviceSubClass);
 				IOObject.ThrowIfError (result);
 				return deviceSubClass;
 			}
@@ -126,7 +129,7 @@ namespace MonoMac.IOKit.USB
 			get {
 				ThrowIfDisposed ();
 				byte protocol;
-				var result = DeviceInterface.GetDeviceProtocol (DeviceInterfaceRef, out protocol);
+				var result = Interface.GetDeviceProtocol (InterfaceRef, out protocol);
 				IOObject.ThrowIfError (result);
 				return (InterfaceProtocol)protocol;
 			}
@@ -136,7 +139,7 @@ namespace MonoMac.IOKit.USB
 			get {
 				ThrowIfDisposed ();
 				ushort vendor;
-				var result = DeviceInterface.GetDeviceVendor (DeviceInterfaceRef, out vendor);
+				var result = Interface.GetDeviceVendor (InterfaceRef, out vendor);
 				IOObject.ThrowIfError (result);
 				return vendor;
 			}
@@ -146,7 +149,7 @@ namespace MonoMac.IOKit.USB
 			get {
 				ThrowIfDisposed ();
 				ushort product;
-				var result = DeviceInterface.GetDeviceProduct (DeviceInterfaceRef, out product);
+				var result = Interface.GetDeviceProduct (InterfaceRef, out product);
 				IOObject.ThrowIfError (result);
 				return product;
 			}
@@ -156,7 +159,7 @@ namespace MonoMac.IOKit.USB
 			get {
 				ThrowIfDisposed ();
 				ushort releaseNumber;
-				var result = DeviceInterface.GetDeviceReleaseNumber (DeviceInterfaceRef, out releaseNumber);
+				var result = Interface.GetDeviceReleaseNumber (InterfaceRef, out releaseNumber);
 				// TODO: does this need to be translated from BDC?
 				IOObject.ThrowIfError (result);
 				return releaseNumber;
@@ -167,7 +170,7 @@ namespace MonoMac.IOKit.USB
 			get {
 				ThrowIfDisposed ();
 				ushort address;
-				var result = DeviceInterface.GetDeviceAddress (DeviceInterfaceRef, out address);
+				var result = Interface.GetDeviceAddress (InterfaceRef, out address);
 				IOObject.ThrowIfError (result);
 				return address;
 			}
@@ -177,7 +180,7 @@ namespace MonoMac.IOKit.USB
 			get {
 				ThrowIfDisposed ();
 				uint busPowerAvailible;
-				var result = DeviceInterface.GetDeviceBusPowerAvailable (DeviceInterfaceRef, out busPowerAvailible);
+				var result = Interface.GetDeviceBusPowerAvailable (InterfaceRef, out busPowerAvailible);
 				IOObject.ThrowIfError (result);
 				return busPowerAvailible * 2;
 			}
@@ -187,7 +190,7 @@ namespace MonoMac.IOKit.USB
 			get {
 				ThrowIfDisposed ();
 				byte speed;
-				var result = DeviceInterface.GetDeviceSpeed (DeviceInterfaceRef, out speed);
+				var result = Interface.GetDeviceSpeed (InterfaceRef, out speed);
 				IOObject.ThrowIfError (result);
 				return (DeviceSpeed)speed;
 			}
@@ -197,7 +200,7 @@ namespace MonoMac.IOKit.USB
 			get {
 				ThrowIfDisposed ();
 				byte count;
-				var result = DeviceInterface.GetNumberOfConfigurations (DeviceInterfaceRef, out count);
+				var result = Interface.GetNumberOfConfigurations (InterfaceRef, out count);
 				IOObject.ThrowIfError (result);
 				return count;
 			}
@@ -207,7 +210,7 @@ namespace MonoMac.IOKit.USB
 			get {
 				ThrowIfDisposed ();
 				uint locationId;
-				var result = DeviceInterface.GetLocationID (DeviceInterfaceRef, out locationId);
+				var result = Interface.GetLocationID (InterfaceRef, out locationId);
 				IOObject.ThrowIfError (result);
 				return locationId;
 			}
@@ -217,13 +220,13 @@ namespace MonoMac.IOKit.USB
 			get {
 				ThrowIfDisposed ();
 				byte configuration;
-				var result = DeviceInterface.GetConfiguration (DeviceInterfaceRef, out configuration);
+				var result = Interface.GetConfiguration (InterfaceRef, out configuration);
 				IOObject.ThrowIfError (result);
 				return configuration;
 			}
 			set {
 				ThrowIfDisposed ();
-				var result = DeviceInterface.SetConfiguration (DeviceInterfaceRef, value);
+				var result = Interface.SetConfiguration (InterfaceRef, value);
 				IOObject.ThrowIfError (result);
 			}
 		}
@@ -233,7 +236,7 @@ namespace MonoMac.IOKit.USB
 			get {
 				ThrowIfDisposed ();
 				byte index;
-				var result = DeviceInterface.USBGetManufacturerStringIndex (DeviceInterfaceRef, out index);
+				var result = Interface.USBGetManufacturerStringIndex (InterfaceRef, out index);
 				IOObject.ThrowIfError (result);
 				return GetStringDescriptor (index);
 			}
@@ -244,7 +247,7 @@ namespace MonoMac.IOKit.USB
 			get {
 				ThrowIfDisposed ();
 				byte index;
-				var result = DeviceInterface.USBGetProductStringIndex (DeviceInterfaceRef, out index);
+				var result = Interface.USBGetProductStringIndex (InterfaceRef, out index);
 				IOObject.ThrowIfError (result);
 				return GetStringDescriptor (index);
 			}
@@ -255,7 +258,7 @@ namespace MonoMac.IOKit.USB
 			get  {
 				ThrowIfDisposed ();
 				byte index;
-				var result = DeviceInterface.USBGetSerialNumberStringIndex (DeviceInterfaceRef, out index);
+				var result = Interface.USBGetSerialNumberStringIndex (InterfaceRef, out index);
 				IOObject.ThrowIfError (result);
 				return GetStringDescriptor (index);
 			}
@@ -266,7 +269,7 @@ namespace MonoMac.IOKit.USB
 			get  {
 				ThrowIfDisposed ();
 				NumVersion ioUSBLibVersion, usbFamilyVersion;
-				var result = DeviceInterface.GetIOUSBLibVersion (DeviceInterfaceRef, out ioUSBLibVersion, out usbFamilyVersion);
+				var result = Interface.GetIOUSBLibVersion (InterfaceRef, out ioUSBLibVersion, out usbFamilyVersion);
 				IOObject.ThrowIfError (result);
 				return ioUSBLibVersion;
 			}
@@ -277,7 +280,7 @@ namespace MonoMac.IOKit.USB
 			get  {
 				ThrowIfDisposed ();
 				NumVersion ioUSBLibVersion, usbFamilyVersion;
-				var result = DeviceInterface.GetIOUSBLibVersion (DeviceInterfaceRef, out ioUSBLibVersion, out usbFamilyVersion);
+				var result = Interface.GetIOUSBLibVersion (InterfaceRef, out ioUSBLibVersion, out usbFamilyVersion);
 				IOObject.ThrowIfError (result);
 				return usbFamilyVersion;
 			}
@@ -288,7 +291,7 @@ namespace MonoMac.IOKit.USB
 			get  {
 				ThrowIfDisposed ();
 				uint info;
-				var result = DeviceInterface.GetUSBDeviceInformation (DeviceInterfaceRef, out info);
+				var result = Interface.GetUSBDeviceInformation (InterfaceRef, out info);
 				IOObject.ThrowIfError (result);
 				return (DeviceInformation)info;
 			}
@@ -299,28 +302,17 @@ namespace MonoMac.IOKit.USB
 			get  {
 				ThrowIfDisposed ();
 				uint bandwidth;
-				var result = DeviceInterface.GetBandwidthAvailableForDevice (DeviceInterfaceRef, out bandwidth);
+				var result = Interface.GetBandwidthAvailableForDevice (InterfaceRef, out bandwidth);
 				IOObject.ThrowIfError (result);
 				return bandwidth;
 			}
-		}
-
-		public CFRunLoopSource CreateAsyncEventSource ()
-		{
-			ThrowIfDisposed ();
-			IntPtr runLoopSourceRef;
-			var result = DeviceInterface.CreateDeviceAsyncEventSource (DeviceInterfaceRef, out runLoopSourceRef);
-			IOObject.ThrowIfError (result);
-			var runLoopSource = new CFRunLoopSource (runLoopSourceRef, false);
-			CFType.Release (runLoopSourceRef);
-			return runLoopSource;
 		}
 
 		public Port CreateAsyncPort ()
 		{
 			ThrowIfDisposed ();
 			IntPtr portRef;
-			var result = DeviceInterface.CreateDeviceAsyncPort (DeviceInterfaceRef, out portRef);
+			var result = Interface.CreateDeviceAsyncPort (InterfaceRef, out portRef);
 			IOObject.ThrowIfError (result);
 			return new Port (portRef);
 		}
@@ -328,45 +320,77 @@ namespace MonoMac.IOKit.USB
 		public void Open ()
 		{
 			ThrowIfDisposed ();
-			var result = DeviceInterface.USBDeviceOpen (DeviceInterfaceRef);
+			var result = Interface.USBDeviceOpen (InterfaceRef);
 			IOObject.ThrowIfError (result);
 		}
 
 		public void Close ()
 		{
 			ThrowIfDisposed ();
-			var result = DeviceInterface.USBDeviceClose (DeviceInterfaceRef);
+			var result = Interface.USBDeviceClose (InterfaceRef);
 			IOObject.ThrowIfError (result);
 		}
 
-		public IOUSBConfigurationDescriptor GetConfigurationDescriptor (byte index) {
+		public IOUSBConfigurationDescriptor GetConfigurationDescriptor (int index) {
 			ThrowIfDisposed ();
 			IntPtr configDescriptorRef;
-			var result = DeviceInterface.GetConfigurationDescriptorPtr (DeviceInterfaceRef, index , out configDescriptorRef);
+			var result = Interface.GetConfigurationDescriptorPtr (InterfaceRef, (byte)(index - 1) , out configDescriptorRef);
 			IOObject.ThrowIfError (result);
 			return (IOUSBConfigurationDescriptor)Marshal.PtrToStructure (configDescriptorRef, typeof(IOUSBConfigurationDescriptor));
+		}
+
+		public IEnumerable<CultureInfo> SupportedLanguages {
+			get {
+				var languages = GetStringDescriptor (0, 0);
+				foreach (int langID in languages) {
+					CultureInfo info;
+					try {
+						info = CultureInfo.GetCultureInfo (langID);
+					} catch (Exception) {
+						continue;
+					}
+					yield return info;
+				}
+			}
 		}
 
 		public string GetStringDescriptor (byte index) {
 			ThrowIfDisposed ();
 			if (index == 0)
 				return null;
+			return new string (GetStringDescriptor (index, SupportedLanguages.First ().LCID));
+		}
+
+		public string GetStringDescriptor (byte index, CultureInfo language) {
+			ThrowIfDisposed ();
+			if (index == 0)
+				return null;
+			return new string (GetStringDescriptor (index, language.LCID));
+		}
+
+		char[] GetStringDescriptor (byte index, int language)
+		{
 			// based on http://oroboro.com/usb-serial-number-osx/
-			var buffer = Marshal.AllocHGlobal (64);
+			const int maxUsbStringLength = 255;
+			var buffer = Marshal.AllocHGlobal (maxUsbStringLength);
 			try {
-				var request = new IOUSBDevRequest () {
+				var request = new IOUSBDeviceRequest () {
 					Direction = EndpointDirection.In,
 					DeviceRequestType = DeviceRequestType.Standard,
 					Recipient = DeviceRequestRecipient.Device,
-					RequestType = RequestType.RqGetDescriptor,
+					RequestType = RequestType.GetDescriptor,
 					Value = (ushort)((byte)DescriptorType.String << 8 | index),
-					Index = 0x409, // english
-					DataLength = 64,
+					Index = (ushort)language,
+					DataLength = maxUsbStringLength,
 					Data = buffer
 				};
-				var result = DeviceInterface.DeviceRequest (DeviceInterfaceRef, ref request);
+				var result = Interface.DeviceRequest (InterfaceRef, ref request);
+				ThrowIfError (result);
 				var header = (IOUSBDescriptorHeader)Marshal.PtrToStructure (buffer, typeof(IOUSBDescriptorHeader));
-				return Marshal.PtrToStringUni (buffer + 2, (header.Length - 1) / 2);
+				var dataLength = (header.Length - 1) / 2;
+				var data = new char[dataLength];
+				Marshal.Copy (buffer + 2, data, 0, dataLength);
+				return data;
 			} finally {
 				Marshal.FreeHGlobal (buffer);
 			}
@@ -375,7 +399,7 @@ namespace MonoMac.IOKit.USB
 		public ulong GetBusFrameNumber (out ulong atTime) {
 			ThrowIfDisposed ();
 			ulong frame;
-			var result = DeviceInterface.GetBusFrameNumber (DeviceInterfaceRef, out frame, out atTime);
+			var result = Interface.GetBusFrameNumber (InterfaceRef, out frame, out atTime);
 			IOObject.ThrowIfError (result);
 			return (ulong)IOUSB.USBToHostOrder ((long)frame);
 		}
@@ -383,18 +407,18 @@ namespace MonoMac.IOKit.USB
 		public void Reset ()
 		{
 			ThrowIfDisposed ();
-			var result = DeviceInterface.ResetDevice (DeviceInterfaceRef);
+			var result = Interface.ResetDevice (InterfaceRef);
 			IOObject.ThrowIfError (result);
 		}
 
-		public void SendRequest (ref IOUSBDevRequest request)
+		public void SendRequest (ref IOUSBDeviceRequest request)
 		{
 			ThrowIfDisposed ();
-			var result = DeviceInterface.DeviceRequest (DeviceInterfaceRef, ref request);
+			var result = Interface.DeviceRequest (InterfaceRef, ref request);
 			IOObject.ThrowIfError (result);
 		}
 
-		public Task<int> SendRequestAsync (IOUSBDevRequest request)
+		public Task<int> SendRequestAsync (IOUSBDeviceRequest request)
 		{
 			ThrowIfDisposed ();
 			var completionSource = new TaskCompletionSource<int> ();
@@ -407,7 +431,7 @@ namespace MonoMac.IOKit.USB
 				completionSource.TrySetException (new IOReturnException (callbackResult));
 			};
 			callbackHandle = GCHandle.Alloc (callback, GCHandleType.Pinned);
-			var result = DeviceInterface.DeviceRequestAsync (DeviceInterfaceRef, request, callback, IntPtr.Zero);
+			var result = Interface.DeviceRequestAsync (InterfaceRef, request, callback, IntPtr.Zero);
 			IOObject.ThrowIfError (result);
 			return completionSource.Task;
 		}
@@ -415,7 +439,7 @@ namespace MonoMac.IOKit.USB
 		public IOIterator<IOUSBInterface> CreateInterfaceIterator (IOUSBFindInterfaceRequest request) {
 			ThrowIfDisposed ();
 			IntPtr iteratorRef;
-			var result = DeviceInterface.CreateInterfaceIterator (DeviceInterfaceRef, request, out iteratorRef);
+			var result = Interface.CreateInterfaceIterator (InterfaceRef, request, out iteratorRef);
 			IOObject.ThrowIfError (result);
 			return new IOIterator<IOUSBInterface> (iteratorRef, true);
 		}
@@ -424,7 +448,7 @@ namespace MonoMac.IOKit.USB
 		public void OpenSeize ()
 		{
 			ThrowIfDisposed ();
-			var result = DeviceInterface.USBDeviceOpenSeize (DeviceInterfaceRef);
+			var result = Interface.USBDeviceOpenSeize (InterfaceRef);
 			IOObject.ThrowIfError (result);
 		}
 
@@ -432,7 +456,7 @@ namespace MonoMac.IOKit.USB
 		public void RequestTimeout (ref IOUSBDevRequestTO request)
 		{
 			ThrowIfDisposed ();
-			var result = DeviceInterface.DeviceRequestTO (DeviceInterfaceRef, ref request);
+			var result = Interface.DeviceRequestTO (InterfaceRef, ref request);
 			IOObject.ThrowIfError (result);
 		}
 
@@ -450,7 +474,7 @@ namespace MonoMac.IOKit.USB
 					completionSource.TrySetException (new IOReturnException (callbackResult));
 			};
 			callbackHandle = GCHandle.Alloc (callback, GCHandleType.Pinned);
-			var result = DeviceInterface.DeviceRequestAsyncTO (DeviceInterfaceRef, request, callback, IntPtr.Zero);
+			var result = Interface.DeviceRequestAsyncTO (InterfaceRef, request, callback, IntPtr.Zero);
 			IOObject.ThrowIfError (result);
 			return completionSource.Task;
 		}
@@ -459,7 +483,7 @@ namespace MonoMac.IOKit.USB
 		public void Suspend (bool suspend)
 		{
 			ThrowIfDisposed ();
-			var result = DeviceInterface.USBDeviceSuspend (DeviceInterfaceRef, suspend);
+			var result = Interface.USBDeviceSuspend (InterfaceRef, suspend);
 			IOObject.ThrowIfError (result);
 		}
 
@@ -467,7 +491,7 @@ namespace MonoMac.IOKit.USB
 		public void AbortPipeZero ()
 		{
 			ThrowIfDisposed ();
-			var result = DeviceInterface.USBDeviceAbortPipeZero (DeviceInterfaceRef);
+			var result = Interface.USBDeviceAbortPipeZero (InterfaceRef);
 			IOObject.ThrowIfError (result);
 		}
 
@@ -475,7 +499,7 @@ namespace MonoMac.IOKit.USB
 		public void ReEnumerate (uint options)
 		{
 			ThrowIfDisposed ();
-			var result = DeviceInterface.USBDeviceReEnumerate (DeviceInterfaceRef, options);
+			var result = Interface.USBDeviceReEnumerate (InterfaceRef, options);
 			IOObject.ThrowIfError (result);
 		}
 
@@ -483,7 +507,7 @@ namespace MonoMac.IOKit.USB
 		public ulong GetBusMicroFrameNumber (out ulong atTime) {
 			ThrowIfDisposed ();
 			ulong frame;
-			var result = DeviceInterface.GetBusMicroFrameNumber (DeviceInterfaceRef, out frame, out atTime);
+			var result = Interface.GetBusMicroFrameNumber (InterfaceRef, out frame, out atTime);
 			IOObject.ThrowIfError (result);
 			return (ulong)IOUSB.USBToHostOrder ((long)frame);
 		}
@@ -492,7 +516,7 @@ namespace MonoMac.IOKit.USB
 		public ulong GetBusFrameNumberWithTime (out AbsoluteTime atTime) {
 			ThrowIfDisposed ();
 			ulong frame;
-			var result = DeviceInterface.GetBusFrameNumberWithTime (DeviceInterfaceRef, out frame, out atTime);
+			var result = Interface.GetBusFrameNumberWithTime (InterfaceRef, out frame, out atTime);
 			IOObject.ThrowIfError (result);
 			return (ulong)IOUSB.USBToHostOrder ((long)frame);
 		}
@@ -501,7 +525,7 @@ namespace MonoMac.IOKit.USB
 		public uint RequestExtraPower (PowerRequestType type, uint requestedPower) {
 			ThrowIfDisposed ();
 			uint powerAvailable;
-			var result = DeviceInterface.RequestExtraPower (DeviceInterfaceRef, (uint)type, requestedPower, out powerAvailable);
+			var result = Interface.RequestExtraPower (InterfaceRef, (uint)type, requestedPower, out powerAvailable);
 			IOObject.ThrowIfError (result);
 			return powerAvailable;
 		}
@@ -509,7 +533,7 @@ namespace MonoMac.IOKit.USB
 		[Since (5,4)]
 		public void ReturnExtraPower (PowerRequestType type, uint powerReturned) {
 			ThrowIfDisposed ();
-			var result = DeviceInterface.ReturnExtraPower (DeviceInterfaceRef, (uint)type, powerReturned);
+			var result = Interface.ReturnExtraPower (InterfaceRef, (uint)type, powerReturned);
 			IOObject.ThrowIfError (result);
 		}
 
@@ -517,14 +541,14 @@ namespace MonoMac.IOKit.USB
 		public uint ExtraPowerAllocated (PowerRequestType type) {
 			ThrowIfDisposed ();
 			uint powerAllocated;
-			var result = DeviceInterface.GetExtraPowerAllocated (DeviceInterfaceRef, (uint)type, out powerAllocated);
+			var result = Interface.GetExtraPowerAllocated (InterfaceRef, (uint)type, out powerAllocated);
 			IOObject.ThrowIfError (result);
 			return powerAllocated;
 		}
 	}
 
 	[StructLayout (LayoutKind.Sequential)]
-	public struct IOUSBDevRequest
+	public struct IOUSBDeviceRequest
 	{
 		UInt8       bmRequestType;
 		UInt8       bRequest;
@@ -662,242 +686,285 @@ namespace MonoMac.IOKit.USB
 	[StructLayout (LayoutKind.Sequential)]
 	class IOUSBDeviceInterface : IUnknown
 	{
-		CreateDeviceAsyncEventSource createDeviceAsyncEventSource;
-		GetDeviceAsyncEventSource getDeviceAsyncEventSource;
-		CreateDeviceAsyncPort createDeviceAsyncPort;
-		GetDeviceAsyncPort getDeviceAsyncPort;
-		USBDeviceOpen usbDeviceOpen;
-		USBDeviceClose usbDeviceClose;
-		GetDeviceClass getDeviceClass;
-		GetDeviceSubClass getDeviceSubClass;
-		GetDeviceProtocol getDeviceProtocol;
-		GetDeviceVendor getDeviceVendor;
-		GetDeviceProduct getDeviceProduct;
-		GetDeviceReleaseNumber getDeviceReleaseNumber;
-		GetDeviceAddress getDeviceAddress;
-		GetDeviceBusPowerAvailable getDeviceBusPowerAvailable;
-		GetDeviceSpeed getDeviceSpeed;
-		GetNumberOfConfigurations getNumberOfConfigurations;
-		GetLocationID getLocationID;
-		GetConfigurationDescriptorPtr getConfigurationDescriptorPtr;
-		GetConfiguration getConfiguration;
-		SetConfiguration setConfiguration;
-		GetBusFrameNumber getBusFrameNumber;
-		ResetDevice resetDevice;
-		DeviceRequest deviceRequest;
-		DeviceRequestAsync deviceRequestAsync;
-		CreateInterfaceIterator createInterfaceIterator;
+		_CreateDeviceAsyncEventSource createDeviceAsyncEventSource;
+		_GetDeviceAsyncEventSource getDeviceAsyncEventSource;
+		_CreateDeviceAsyncPort createDeviceAsyncPort;
+		_GetDeviceAsyncPort getDeviceAsyncPort;
+		_USBDeviceOpen usbDeviceOpen;
+		_USBDeviceClose usbDeviceClose;
+		_GetDeviceClass getDeviceClass;
+		_GetDeviceSubClass getDeviceSubClass;
+		_GetDeviceProtocol getDeviceProtocol;
+		_GetDeviceVendor getDeviceVendor;
+		_GetDeviceProduct getDeviceProduct;
+		_GetDeviceReleaseNumber getDeviceReleaseNumber;
+		_GetDeviceAddress getDeviceAddress;
+		_GetDeviceBusPowerAvailable getDeviceBusPowerAvailable;
+		_GetDeviceSpeed getDeviceSpeed;
+		_GetNumberOfConfigurations getNumberOfConfigurations;
+		_GetLocationID getLocationID;
+		_GetConfigurationDescriptorPtr getConfigurationDescriptorPtr;
+		_GetConfiguration getConfiguration;
+		_SetConfiguration setConfiguration;
+		_GetBusFrameNumber getBusFrameNumber;
+		_ResetDevice resetDevice;
+		_DeviceRequest deviceRequest;
+		_DeviceRequestAsync deviceRequestAsync;
+		_CreateInterfaceIterator createInterfaceIterator;
 
-		public CreateDeviceAsyncEventSource CreateDeviceAsyncEventSource {
+		public _CreateDeviceAsyncEventSource CreateDeviceAsyncEventSource {
 			get { return createDeviceAsyncEventSource; }
 		}
 
-		public GetDeviceAsyncEventSource GetDeviceAsyncEventSource {
+		public _GetDeviceAsyncEventSource GetDeviceAsyncEventSource {
 			get { return getDeviceAsyncEventSource; }
 		}
 
-		public CreateDeviceAsyncPort CreateDeviceAsyncPort {
+		public _CreateDeviceAsyncPort CreateDeviceAsyncPort {
 			get { return createDeviceAsyncPort; }
 		}
 
-		public GetDeviceAsyncPort GetDeviceAsyncPort {
+		public _GetDeviceAsyncPort GetDeviceAsyncPort {
 			get { return getDeviceAsyncPort; }
 		}
 
-		public USBDeviceOpen USBDeviceOpen {
+		public _USBDeviceOpen USBDeviceOpen {
 			get { return usbDeviceOpen; }
 		}
 
-		public USBDeviceClose USBDeviceClose {
+		public _USBDeviceClose USBDeviceClose {
 			get { return usbDeviceClose; }
 		}
 
-		public GetDeviceClass GetDeviceClass {
+		public _GetDeviceClass GetDeviceClass {
 			get { return getDeviceClass; }
 		}
 
-		public GetDeviceSubClass GetDeviceSubClass{
+		public _GetDeviceSubClass GetDeviceSubClass{
 			get { return getDeviceSubClass; }
 		}
-		public GetDeviceProtocol GetDeviceProtocol {
+		public _GetDeviceProtocol GetDeviceProtocol {
 			get { return getDeviceProtocol; }
 		}
 
-		public GetDeviceVendor GetDeviceVendor {
+		public _GetDeviceVendor GetDeviceVendor {
 			get { return getDeviceVendor; }
 		}
 
-		public GetDeviceProduct GetDeviceProduct {
+		public _GetDeviceProduct GetDeviceProduct {
 			get { return getDeviceProduct; }
 		}
 
-		public GetDeviceReleaseNumber GetDeviceReleaseNumber {
+		public _GetDeviceReleaseNumber GetDeviceReleaseNumber {
 			get { return getDeviceReleaseNumber; }
 		}
 
-		public GetDeviceAddress GetDeviceAddress {
+		public _GetDeviceAddress GetDeviceAddress {
 			get { return getDeviceAddress; }
 		}
 
-		public GetDeviceBusPowerAvailable GetDeviceBusPowerAvailable {
+		public _GetDeviceBusPowerAvailable GetDeviceBusPowerAvailable {
 			get { return getDeviceBusPowerAvailable; }
 		}
 
-		public GetDeviceSpeed GetDeviceSpeed {
+		public _GetDeviceSpeed GetDeviceSpeed {
 			get { return getDeviceSpeed; }
 		}
 
-		public GetNumberOfConfigurations GetNumberOfConfigurations {
+		public _GetNumberOfConfigurations GetNumberOfConfigurations {
 			get { return getNumberOfConfigurations; }
 		}
 
-		public GetLocationID GetLocationID {
+		public _GetLocationID GetLocationID {
 			get { return getLocationID; }
 		}
 
-		public GetConfigurationDescriptorPtr GetConfigurationDescriptorPtr {
+		public _GetConfigurationDescriptorPtr GetConfigurationDescriptorPtr {
 			get { return getConfigurationDescriptorPtr; }
 		}
 
-		public GetConfiguration GetConfiguration {
+		public _GetConfiguration GetConfiguration {
 			get { return getConfiguration; }
 		}
 
-		public SetConfiguration SetConfiguration {
+		public _SetConfiguration SetConfiguration {
 			get { return setConfiguration; }
 		}
 
-		public GetBusFrameNumber GetBusFrameNumber {
+		public _GetBusFrameNumber GetBusFrameNumber {
 			get { return getBusFrameNumber; }
 		}
 
-		public ResetDevice ResetDevice {
+		public _ResetDevice ResetDevice {
 			get { return resetDevice; }
 		}
 
-		public DeviceRequest DeviceRequest {
+		public _DeviceRequest DeviceRequest {
 			get { return deviceRequest; }
 		}
 
-		public DeviceRequestAsync DeviceRequestAsync {
+		public _DeviceRequestAsync DeviceRequestAsync {
 			get { return deviceRequestAsync; }
 		}
 
-		public CreateInterfaceIterator CreateInterfaceIterator {
+		public _CreateInterfaceIterator CreateInterfaceIterator {
 			get { return createInterfaceIterator; }
 		}
 
-		public virtual USBDeviceOpenSeize USBDeviceOpenSeize {
+		public virtual _USBDeviceOpenSeize USBDeviceOpenSeize {
 			get { throw new NotImplementedException (); }
 		}
 
-		public virtual DeviceRequestTO DeviceRequestTO {
+		public virtual _DeviceRequestTO DeviceRequestTO {
 			get { throw new NotImplementedException (); }
 		}
 
-		public virtual DeviceRequestAsyncTO DeviceRequestAsyncTO {
+		public virtual _DeviceRequestAsyncTO DeviceRequestAsyncTO {
 			get { throw new NotImplementedException (); }
 		}
 
-		public virtual USBDeviceSuspend USBDeviceSuspend {
+		public virtual _USBDeviceSuspend USBDeviceSuspend {
 			get { throw new NotImplementedException (); }
 		}
 
-		public virtual USBDeviceAbortPipeZero USBDeviceAbortPipeZero {
+		public virtual _USBDeviceAbortPipeZero USBDeviceAbortPipeZero {
 			get { throw new NotImplementedException (); }
 		}
 
-		public virtual USBGetManufacturerStringIndex USBGetManufacturerStringIndex {
+		public virtual _USBGetManufacturerStringIndex USBGetManufacturerStringIndex {
 			get { throw new NotImplementedException (); }
 		}
 
-		public virtual USBGetProductStringIndex USBGetProductStringIndex {
+		public virtual _USBGetProductStringIndex USBGetProductStringIndex {
 			get { throw new NotImplementedException (); }
 		}
 
-		public virtual USBGetSerialNumberStringIndex USBGetSerialNumberStringIndex {
+		public virtual _USBGetSerialNumberStringIndex USBGetSerialNumberStringIndex {
 			get { throw new NotImplementedException (); }
 		}
 
-		public virtual USBDeviceReEnumerate USBDeviceReEnumerate {
+		public virtual _USBDeviceReEnumerate USBDeviceReEnumerate {
 			get { throw new NotImplementedException (); }
 		}
 
-		public virtual GetBusMicroFrameNumber GetBusMicroFrameNumber {
+		public virtual _GetBusMicroFrameNumber GetBusMicroFrameNumber {
 			get { throw new NotImplementedException (); }
 		}
 
-		public virtual GetIOUSBLibVersion GetIOUSBLibVersion {
+		public virtual _GetIOUSBLibVersion GetIOUSBLibVersion {
 			get { throw new NotImplementedException (); }
 		}
 
-		public virtual GetBusFrameNumberWithTime GetBusFrameNumberWithTime {
+		public virtual _GetBusFrameNumberWithTime GetBusFrameNumberWithTime {
 			get { throw new NotImplementedException (); }
 		}
 
-		public virtual GetUSBDeviceInformation GetUSBDeviceInformation {
+		public virtual _GetUSBDeviceInformation GetUSBDeviceInformation {
 			get { throw new NotImplementedException (); }
 		}
 
-		public virtual RequestExtraPower RequestExtraPower {
+		public virtual _RequestExtraPower RequestExtraPower {
 			get { throw new NotImplementedException (); }
 		}
 
-		public virtual ReturnExtraPower ReturnExtraPower {
+		public virtual _ReturnExtraPower ReturnExtraPower {
 			get { throw new NotImplementedException (); }
 		}
 
-		public virtual GetExtraPowerAllocated GetExtraPowerAllocated {
+		public virtual _GetExtraPowerAllocated GetExtraPowerAllocated {
 			get { throw new NotImplementedException (); }
 		}
 
-		public virtual GetBandwidthAvailableForDevice GetBandwidthAvailableForDevice {
+		public virtual _GetBandwidthAvailableForDevice GetBandwidthAvailableForDevice {
 			get { throw new NotImplementedException (); }
 		}
+
+		public delegate IOReturn _CreateDeviceAsyncEventSource (IntPtr self, out CFRunLoopSourceRef source);
+		public delegate CFRunLoopSourceRef _GetDeviceAsyncEventSource (IntPtr self);
+		public delegate IOReturn _CreateDeviceAsyncPort (IntPtr self, out mach_port_t port); 
+		public delegate mach_port_t _GetDeviceAsyncPort (IntPtr self);
+		public delegate IOReturn _USBDeviceOpen (IntPtr self);
+		public delegate IOReturn _USBDeviceClose (IntPtr self);
+		public delegate IOReturn _GetDeviceClass (IntPtr self, out UInt8 devClass);
+		public delegate IOReturn _GetDeviceSubClass (IntPtr self, out UInt8 devSubClass);
+		public delegate IOReturn _GetDeviceProtocol (IntPtr self, out UInt8 devProtocol);
+		public delegate IOReturn _GetDeviceVendor (IntPtr self, out UInt16 devVendor);
+		public delegate IOReturn _GetDeviceProduct (IntPtr self, out UInt16 devProduct);
+		public delegate IOReturn _GetDeviceReleaseNumber (IntPtr self, out UInt16 devRelNum);
+		public delegate IOReturn _GetDeviceAddress (IntPtr self, out USBDeviceAddress addr);
+		public delegate IOReturn _GetDeviceBusPowerAvailable (IntPtr self, out UInt32 powerAvailable);
+		public delegate IOReturn _GetDeviceSpeed (IntPtr self, out UInt8 devSpeed);
+		public delegate IOReturn _GetNumberOfConfigurations (IntPtr self, out UInt8 numConfig);
+		public delegate IOReturn _GetLocationID (IntPtr self, out UInt32 locationID);
+		public delegate IOReturn _GetConfigurationDescriptorPtr (IntPtr self, UInt8 configIndex, out IOUSBConfigurationDescriptorPtr desc);
+		public delegate IOReturn _GetConfiguration (IntPtr self, out UInt8 configNum);
+		public delegate IOReturn _SetConfiguration (IntPtr self, UInt8 configNum);
+		public delegate IOReturn _GetBusFrameNumber (IntPtr self, out UInt64 frame, out AbsoluteTime atTime);
+		public delegate IOReturn _ResetDevice (IntPtr self);
+		public delegate IOReturn _DeviceRequest (IntPtr self, ref IOUSBDeviceRequest req);
+		public delegate IOReturn _DeviceRequestAsync (IntPtr self, [MarshalAs (UnmanagedType.LPStruct)] IOUSBDeviceRequest req, IOAsyncCallback1 callback, IntPtr refCon);
+		public delegate IOReturn _CreateInterfaceIterator (IntPtr self, [MarshalAs (UnmanagedType.LPStruct)] IOUSBFindInterfaceRequest req, out io_iterator_t iter);
+		public delegate IOReturn _USBDeviceOpenSeize (IntPtr self);
+		public delegate IOReturn _DeviceRequestTO (IntPtr self, ref IOUSBDevRequestTO req);
+		public delegate IOReturn _DeviceRequestAsyncTO (IntPtr self, [MarshalAs (UnmanagedType.LPStruct)] IOUSBDevRequestTO req, IOAsyncCallback1 callback, IntPtr refCon);
+		public delegate IOReturn _USBDeviceSuspend (IntPtr self, Boolean suspend);
+		public delegate IOReturn _USBDeviceAbortPipeZero (IntPtr self);
+		public delegate IOReturn _USBGetManufacturerStringIndex (IntPtr self, out UInt8 msi);
+		public delegate IOReturn _USBGetProductStringIndex (IntPtr self, out UInt8 psi);
+		public delegate IOReturn _USBGetSerialNumberStringIndex (IntPtr self, out UInt8 snsi);
+		public delegate IOReturn _USBDeviceReEnumerate (IntPtr self, UInt32 options);
+		public delegate IOReturn _GetBusMicroFrameNumber (IntPtr self, out UInt64 microFrame, out AbsoluteTime atTime);
+		public delegate IOReturn _GetIOUSBLibVersion (IntPtr self, out NumVersion ioUSBLibVersion, out NumVersion usbFamilyVersion);
+		public delegate IOReturn _GetBusFrameNumberWithTime (IntPtr self, out UInt64 frame, out AbsoluteTime atTime);
+		public delegate IOReturn _GetUSBDeviceInformation (IntPtr self, out UInt32 info);
+		public delegate IOReturn _RequestExtraPower (IntPtr self, UInt32 type, UInt32 requestedPower, out UInt32 powerAvailable);
+		public delegate IOReturn _ReturnExtraPower (IntPtr self, UInt32 type, UInt32 powerReturned);
+		public delegate IOReturn _GetExtraPowerAllocated (IntPtr self, UInt32 type, out UInt32 powerAllocated);
+		public delegate IOReturn _GetBandwidthAvailableForDevice (IntPtr self, out UInt32 bandwidth);
 	}
 
 	[Guid ("152FC496-4891-11D5-9D52-000A27801E86")]
 	[StructLayout (LayoutKind.Sequential)]
 	class IOUSBDeviceInterface182 : IOUSBDeviceInterface
 	{
-		USBDeviceOpenSeize usbDeviceOpenSeize;
-		DeviceRequestTO deviceRequestTO;
-		DeviceRequestAsyncTO deviceRequestAsyncTO;
-		USBDeviceSuspend usbDeviceSuspend;
-		USBDeviceAbortPipeZero usbeviceAbortPipeZero;
-		USBGetManufacturerStringIndex usbGetManufacturerStringIndex;
-		USBGetProductStringIndex usbGetProductStringIndex;
-		USBGetSerialNumberStringIndex usbGetSerialNumberStringIndex;
+		_USBDeviceOpenSeize usbDeviceOpenSeize;
+		_DeviceRequestTO deviceRequestTO;
+		_DeviceRequestAsyncTO deviceRequestAsyncTO;
+		_USBDeviceSuspend usbDeviceSuspend;
+		_USBDeviceAbortPipeZero usbeviceAbortPipeZero;
+		_USBGetManufacturerStringIndex usbGetManufacturerStringIndex;
+		_USBGetProductStringIndex usbGetProductStringIndex;
+		_USBGetSerialNumberStringIndex usbGetSerialNumberStringIndex;
 
-		public override USBDeviceOpenSeize USBDeviceOpenSeize {
+		public override _USBDeviceOpenSeize USBDeviceOpenSeize {
 			get { return usbDeviceOpenSeize; }
 		}
 
-		public override DeviceRequestTO DeviceRequestTO {
+		public override _DeviceRequestTO DeviceRequestTO {
 			get { return deviceRequestTO; }
 		}
 
-		public override DeviceRequestAsyncTO DeviceRequestAsyncTO {
+		public override _DeviceRequestAsyncTO DeviceRequestAsyncTO {
 			get { return deviceRequestAsyncTO; }
 		}
 
-		public override USBDeviceSuspend USBDeviceSuspend {
+		public override _USBDeviceSuspend USBDeviceSuspend {
 			get { return usbDeviceSuspend; }
 		}
 
-		public override USBDeviceAbortPipeZero USBDeviceAbortPipeZero {
+		public override _USBDeviceAbortPipeZero USBDeviceAbortPipeZero {
 			get { return usbeviceAbortPipeZero; }
 		}
 
-		public override USBGetManufacturerStringIndex USBGetManufacturerStringIndex {
+		public override _USBGetManufacturerStringIndex USBGetManufacturerStringIndex {
 			get { return usbGetManufacturerStringIndex; }
 		}
 
-		public override USBGetProductStringIndex USBGetProductStringIndex {
+		public override _USBGetProductStringIndex USBGetProductStringIndex {
 			get { return usbGetProductStringIndex; }
 		}
 
-		public override USBGetSerialNumberStringIndex USBGetSerialNumberStringIndex {
+		public override _USBGetSerialNumberStringIndex USBGetSerialNumberStringIndex {
 			get { return usbGetSerialNumberStringIndex; }
 		}
 	}
@@ -906,9 +973,9 @@ namespace MonoMac.IOKit.USB
 	[StructLayout (LayoutKind.Sequential)]
 	class IOUSBDeviceInterface187 : IOUSBDeviceInterface182
 	{
-		USBDeviceReEnumerate usbDeviceReEnumerate;
+		_USBDeviceReEnumerate usbDeviceReEnumerate;
 
-		public override USBDeviceReEnumerate USBDeviceReEnumerate {
+		public override _USBDeviceReEnumerate USBDeviceReEnumerate {
 			get { return usbDeviceReEnumerate; }
 		}
 	}
@@ -917,14 +984,14 @@ namespace MonoMac.IOKit.USB
 	[StructLayout (LayoutKind.Sequential)]
 	class IOUSBDeviceInterface197 : IOUSBDeviceInterface187
 	{
-		GetBusMicroFrameNumber getBusMicroFrameNumber;
-		GetIOUSBLibVersion getIOUSBLibVersion;
+		_GetBusMicroFrameNumber getBusMicroFrameNumber;
+		_GetIOUSBLibVersion getIOUSBLibVersion;
 
-		public override GetBusMicroFrameNumber GetBusMicroFrameNumber {
+		public override _GetBusMicroFrameNumber GetBusMicroFrameNumber {
 			get { return getBusMicroFrameNumber; }
 		}
 
-		public override GetIOUSBLibVersion GetIOUSBLibVersion {
+		public override _GetIOUSBLibVersion GetIOUSBLibVersion {
 			get { return getIOUSBLibVersion; }
 		}
 	}
@@ -939,9 +1006,9 @@ namespace MonoMac.IOKit.USB
 	[StructLayout (LayoutKind.Sequential)]
 	class IOUSBDeviceInterface300 : IOUSBDeviceInterface245
 	{
-		GetBusFrameNumberWithTime getBusFrameNumberWithTime;
+		_GetBusFrameNumberWithTime getBusFrameNumberWithTime;
 
-		public override GetBusFrameNumberWithTime GetBusFrameNumberWithTime {
+		public override _GetBusFrameNumberWithTime GetBusFrameNumberWithTime {
 			get { return getBusFrameNumberWithTime; }
 		}
 	}
@@ -950,24 +1017,24 @@ namespace MonoMac.IOKit.USB
 	[StructLayout (LayoutKind.Sequential)]
 	class IOUSBDeviceInterface320 : IOUSBDeviceInterface300
 	{
-		GetUSBDeviceInformation getUSBDeviceInformation;
-		RequestExtraPower requestExtraPower;
-		ReturnExtraPower returnExtraPower;
-		GetExtraPowerAllocated getExtraPowerAllocated;
+		_GetUSBDeviceInformation getUSBDeviceInformation;
+		_RequestExtraPower requestExtraPower;
+		_ReturnExtraPower returnExtraPower;
+		_GetExtraPowerAllocated getExtraPowerAllocated;
 
-		public override GetUSBDeviceInformation GetUSBDeviceInformation {
+		public override _GetUSBDeviceInformation GetUSBDeviceInformation {
 			get { return getUSBDeviceInformation; }
 		}
 
-		public override RequestExtraPower RequestExtraPower {
+		public override _RequestExtraPower RequestExtraPower {
 			get { return requestExtraPower; }
 		}
 
-		public override ReturnExtraPower ReturnExtraPower {
+		public override _ReturnExtraPower ReturnExtraPower {
 			get { return returnExtraPower; }
 		}
 
-		public override GetExtraPowerAllocated GetExtraPowerAllocated {
+		public override _GetExtraPowerAllocated GetExtraPowerAllocated {
 			get { return getExtraPowerAllocated; }
 		}
 	}
@@ -976,95 +1043,11 @@ namespace MonoMac.IOKit.USB
 	[StructLayout (LayoutKind.Sequential)]
 	class IOUSBDeviceInterface550 : IOUSBDeviceInterface320
 	{
-		GetBandwidthAvailableForDevice getBandwidthAvailableForDevice;
+		_GetBandwidthAvailableForDevice getBandwidthAvailableForDevice;
 		
-		public override GetBandwidthAvailableForDevice GetBandwidthAvailableForDevice {
+		public override _GetBandwidthAvailableForDevice GetBandwidthAvailableForDevice {
 			get { return getBandwidthAvailableForDevice; }
 		}
 	}
-
-	delegate IOReturn CreateDeviceAsyncEventSource (IntPtr self, out CFRunLoopSourceRef source);
-
-	delegate CFRunLoopSourceRef GetDeviceAsyncEventSource (IntPtr self);
-
-	delegate IOReturn CreateDeviceAsyncPort (IntPtr self, out mach_port_t port); 
-
-	delegate mach_port_t GetDeviceAsyncPort (IntPtr self);
-
-	delegate IOReturn USBDeviceOpen (IntPtr self);
-
-	delegate IOReturn USBDeviceClose (IntPtr self);
-
-	delegate IOReturn GetDeviceClass (IntPtr self, out UInt8 devClass);
-
-	delegate IOReturn GetDeviceSubClass (IntPtr self, out UInt8 devSubClass);
-
-	delegate IOReturn GetDeviceProtocol (IntPtr self, out UInt8 devProtocol);
-
-	delegate IOReturn GetDeviceVendor (IntPtr self, out UInt16 devVendor);
-
-	delegate IOReturn GetDeviceProduct (IntPtr self, out UInt16 devProduct);
-
-	delegate IOReturn GetDeviceReleaseNumber (IntPtr self, out UInt16 devRelNum);
-
-	delegate IOReturn GetDeviceAddress (IntPtr self, out USBDeviceAddress addr);
-
-	delegate IOReturn GetDeviceBusPowerAvailable (IntPtr self, out UInt32 powerAvailable);
-
-	delegate IOReturn GetDeviceSpeed (IntPtr self, out UInt8 devSpeed);
-
-	delegate IOReturn GetNumberOfConfigurations (IntPtr self, out UInt8 numConfig);
-
-	delegate IOReturn GetLocationID (IntPtr self, out UInt32 locationID);
-
-	delegate IOReturn GetConfigurationDescriptorPtr (IntPtr self, UInt8 configIndex, out IOUSBConfigurationDescriptorPtr desc);
-
-	delegate IOReturn GetConfiguration (IntPtr self, out UInt8 configNum);
-
-	delegate IOReturn SetConfiguration (IntPtr self, UInt8 configNum);
-
-	delegate IOReturn GetBusFrameNumber (IntPtr self, out UInt64 frame, out AbsoluteTime atTime);
-
-	delegate IOReturn ResetDevice (IntPtr self);
-
-	delegate IOReturn DeviceRequest (IntPtr self, ref IOUSBDevRequest req);
-
-	delegate IOReturn DeviceRequestAsync (IntPtr self, [MarshalAs (UnmanagedType.LPStruct)] IOUSBDevRequest req, IOAsyncCallback1 callback, IntPtr refCon);
-
-	delegate IOReturn CreateInterfaceIterator (IntPtr self, [MarshalAs (UnmanagedType.LPStruct)] IOUSBFindInterfaceRequest req, out io_iterator_t iter);
-
-	delegate IOReturn USBDeviceOpenSeize (IntPtr self);
-
-	delegate IOReturn DeviceRequestTO (IntPtr self, ref IOUSBDevRequestTO req);
-
-	delegate IOReturn DeviceRequestAsyncTO (IntPtr self, [MarshalAs (UnmanagedType.LPStruct)] IOUSBDevRequestTO req, IOAsyncCallback1 callback, IntPtr refCon);
-
-	delegate IOReturn USBDeviceSuspend (IntPtr self, Boolean suspend);
-
-	delegate IOReturn USBDeviceAbortPipeZero (IntPtr self);
-
-	delegate IOReturn USBGetManufacturerStringIndex (IntPtr self, out UInt8 msi);
-
-	delegate IOReturn USBGetProductStringIndex (IntPtr self, out UInt8 psi);
-
-	delegate IOReturn USBGetSerialNumberStringIndex (IntPtr self, out UInt8 snsi);
-
-	delegate IOReturn USBDeviceReEnumerate (IntPtr self, UInt32 options);
-
-	delegate IOReturn GetBusMicroFrameNumber (IntPtr self, out UInt64 microFrame, out AbsoluteTime atTime);
-
-	delegate IOReturn GetIOUSBLibVersion (IntPtr self, out NumVersion ioUSBLibVersion, out NumVersion usbFamilyVersion);
-
-	delegate IOReturn GetBusFrameNumberWithTime (IntPtr self, out UInt64 frame, out AbsoluteTime atTime);
-
-	delegate IOReturn GetUSBDeviceInformation (IntPtr self, out UInt32 info);
-
-	delegate IOReturn RequestExtraPower (IntPtr self, UInt32 type, UInt32 requestedPower, out UInt32 powerAvailable);
-
-	delegate IOReturn ReturnExtraPower (IntPtr self, UInt32 type, UInt32 powerReturned);
-
-	delegate IOReturn GetExtraPowerAllocated (IntPtr self, UInt32 type, out UInt32 powerAllocated);
-
-	delegate IOReturn GetBandwidthAvailableForDevice (IntPtr self, out UInt32 bandwidth);
 }
 
