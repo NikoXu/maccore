@@ -24,14 +24,22 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 using System;
+using System.Collections;
 
 namespace MonoMac.Foundation {
 	public class NSErrorException : Exception {
 		NSError error;
 
 		public NSErrorException (NSError error)
+			: base (error.LocalizedDescription,
+			        error.UserInfo == null
+			        	? null
+			        	: error.UserInfo.ContainsKey (NSError.UnderlyingErrorKey)
+			        		? new NSErrorException ((NSError)error.UserInfo[NSError.UnderlyingErrorKey])
+			        		: null)
 		{
 			this.error = error;
+			HResult = error.Code;
 		}
 		
 		public NSError Error
@@ -44,14 +52,11 @@ namespace MonoMac.Foundation {
 			get { return error.Domain; }
 		}
 
-		public int Code
+		public override IDictionary Data
 		{
-			get { return error.Code; }
+			get { return error.UserInfo; }
 		}
 
-		public NSDictionary UserInfo
-		{
-			get {return error.UserInfo; }
-		}
+
 	}
 }
