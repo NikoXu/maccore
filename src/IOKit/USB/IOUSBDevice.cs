@@ -426,9 +426,9 @@ namespace MonoMac.IOKit.USB
 			IOAsyncCallback1 callback = (refCon, callbackResult, arg0) => {
 				callbackHandle.Free ();
 				if (callbackResult == IOReturn.Success)
-				completionSource.TrySetResult ((int)arg0);
+					completionSource.TrySetResult ((int)arg0);
 				else
-				completionSource.TrySetException (new IOReturnException (callbackResult));
+					completionSource.TrySetException (callbackResult.ToNSErrorException ());
 			};
 			callbackHandle = GCHandle.Alloc (callback, GCHandleType.Pinned);
 			var result = Interface.DeviceRequestAsync (InterfaceRef, request, callback, IntPtr.Zero);
@@ -471,7 +471,7 @@ namespace MonoMac.IOKit.USB
 				if (callbackResult == IOReturn.Success)
 					completionSource.TrySetResult ((int)arg0);
 				else
-					completionSource.TrySetException (new IOReturnException (callbackResult));
+					completionSource.TrySetException (callbackResult.ToNSErrorException ());
 			};
 			callbackHandle = GCHandle.Alloc (callback, GCHandleType.Pinned);
 			var result = Interface.DeviceRequestAsyncTO (InterfaceRef, request, callback, IntPtr.Zero);

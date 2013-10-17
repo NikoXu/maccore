@@ -479,7 +479,7 @@ namespace MonoMac.IOKit.USB
 					if (callbackResult == IOReturn.Success)
 					completionSource.TrySetResult ((int)arg0);
 					else
-					completionSource.TrySetException (new IOReturnException (callbackResult));
+					completionSource.TrySetException (callbackResult.ToNSErrorException ());
 				};
 				callbackHandle = GCHandle.Alloc (callback, GCHandleType.Pinned);
 				var result = instance.Interface.ControlRequestAsync (
@@ -576,7 +576,7 @@ namespace MonoMac.IOKit.USB
 						Array.Resize<byte> (ref buffer, (int)arg0);
 						completionSource.TrySetResult (buffer);
 					} else
-						completionSource.TrySetException (new IOReturnException (callbackResult));
+						completionSource.TrySetException (callbackResult.ToNSErrorException ());
 				};
 				callbackHandle = GCHandle.Alloc (callback, GCHandleType.Pinned);
 				var result = instance.Interface.ReadPipeAsync (
@@ -596,7 +596,7 @@ namespace MonoMac.IOKit.USB
 					if (callbackResult == IOReturn.Success)
 					completionSource.TrySetResult ((int)arg0);
 					else
-					completionSource.TrySetException (new IOReturnException (callbackResult));
+					completionSource.TrySetException (callbackResult.ToNSErrorException ());
 				};
 				callbackHandle = GCHandle.Alloc (callback, GCHandleType.Pinned);
 				var result = instance.Interface.WritePipeAsync (
@@ -626,7 +626,7 @@ namespace MonoMac.IOKit.USB
 					if (callbackResult == IOReturn.Success)
 					completionSource.TrySetResult ((int)arg0);
 					else
-					completionSource.TrySetException (new IOReturnException (callbackResult));
+					completionSource.TrySetException (callbackResult.ToNSErrorException ());
 				};
 				callbackHandle = GCHandle.Alloc (callback, GCHandleType.Pinned);
 				var result = instance.Interface.ControlRequestAsyncTO (
@@ -673,7 +673,7 @@ namespace MonoMac.IOKit.USB
 						Array.Resize<byte> (ref buffer, (int)arg0);
 						completionSource.TrySetResult (buffer);
 					} else
-						completionSource.TrySetException (new IOReturnException (callbackResult));
+						completionSource.TrySetException (callbackResult.ToNSErrorException ());
 				};
 				callbackHandle = GCHandle.Alloc (callback, GCHandleType.Pinned);
 				var result = instance.Interface.ReadPipeAsyncTO (
@@ -695,7 +695,7 @@ namespace MonoMac.IOKit.USB
 					if (callbackResult == IOReturn.Success)
 					completionSource.TrySetResult ((int)arg0);
 					else
-					completionSource.TrySetException (new IOReturnException (callbackResult));
+					completionSource.TrySetException (callbackResult.ToNSErrorException ());
 				};
 				callbackHandle = GCHandle.Alloc (callback, GCHandleType.Pinned);
 				var result = instance.Interface.WritePipeAsyncTO (
@@ -994,7 +994,7 @@ namespace MonoMac.IOKit.USB
 					var result = instance.instance.Interface.WriteStreamsPipeTO (
 						instance.instance.InterfaceRef, instance.pipeIndex, id,
 						buffer2, (uint)count, (uint)this.WriteTimeout,
-						(uint)this.WriteTimeout);
+						 (uint)this.WriteTimeout);
 					IOObject.ThrowIfError (result);
 				}
 

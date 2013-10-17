@@ -63,7 +63,7 @@ namespace MonoMac.IOBluetooth
 			dataHandle.Free ();
 			if (result != IOReturn.Success) {
 				completionSourceHandle.Free ();
-				throw new IOReturnException (result);
+				throw result.ToNSErrorException ();
 			}
 			return completionSource.Task;
 		}
@@ -97,7 +97,7 @@ namespace MonoMac.IOBluetooth
 //				if (error == IOReturn.Success)
 //					completionSource.TrySetResult (rfcommChannel);
 //				else
-//					completionSource.TrySetException (new IOReturnException (error));
+//					completionSource.TrySetException (error.ToNSErrorException ());
 //			}
 
 		//
@@ -259,7 +259,7 @@ namespace MonoMac.IOBluetooth
 				if (error == IOReturn.Success)
 					completionSource.TrySetResult (rfcommChannel);
 				else
-					completionSource.TrySetException (new IOReturnException (error));
+					completionSource.TrySetException (error.ToNSErrorException ());
 			}
 
 			internal EventHandler queueSpaceBecameAvailable;

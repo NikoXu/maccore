@@ -137,7 +137,7 @@ namespace MonoMac.IOBluetooth
 				if (e.Result == IOReturn.Success)
 					taskCompletionSource.TrySetResult (channel);
 				else
-					taskCompletionSource.TrySetException (new IOReturnException (e.Result));
+					taskCompletionSource.TrySetException (e.Result.ToNSErrorException ());
 			};
 			rfcommChannel.Opened += handler;
 			return taskCompletionSource.Task;
@@ -353,7 +353,7 @@ namespace MonoMac.IOBluetooth
 				if (status == IOReturn.Success)
 					device.connectionTaskCompletionSource.TrySetResult (device);
 				else
-					device.connectionTaskCompletionSource.TrySetException (new IOReturnException (status));
+					device.connectionTaskCompletionSource.TrySetException (status.ToNSErrorException ());
 				device.connectionTaskCompletionSource = null;
 			}
 		}

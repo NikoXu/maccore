@@ -189,7 +189,7 @@ namespace MonoMac.IOKit
 		internal static void ThrowIfError (IOReturn result)
 		{
 			if (result != IOReturn.Success)
-				throw new IOReturnException (result);
+				throw result.ToNSErrorException ();
 		}
 
 		internal static T MarshalNativeObject<T> (IntPtr handle, bool owns) where T : IOObject

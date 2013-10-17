@@ -67,7 +67,7 @@ namespace MonoMac.IOKit
 			IntPtr masterPort;
 			var error = NewIOMasterPort (bootstrapPort, out masterPort);
 			if (error != IOReturn.Success)
-				throw new IOReturnException (error);
+				throw error.ToNSErrorException ();
 			Handle = masterPort;
 		}
 
