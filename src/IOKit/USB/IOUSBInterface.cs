@@ -464,8 +464,8 @@ namespace MonoMac.IOKit.USB
 			void SendControlRequest (ref IOUSBDeviceRequest request)
 			{
 				ThrowIfDisposed ();
-				var result = instance.Interface.ControlRequest
-					(instance.InterfaceRef, pipeIndex, ref request);
+				var result = instance.Interface.ControlRequest (
+					instance.InterfaceRef, pipeIndex, ref request);
 				IOObject.ThrowIfError (result);
 			}
 
@@ -482,9 +482,9 @@ namespace MonoMac.IOKit.USB
 					completionSource.TrySetException (new IOReturnException (callbackResult));
 				};
 				callbackHandle = GCHandle.Alloc (callback, GCHandleType.Pinned);
-				var result = instance.Interface.ControlRequestAsync
-					(instance.InterfaceRef, pipeIndex,
-					 request, callback, IntPtr.Zero);
+				var result = instance.Interface.ControlRequestAsync (
+					instance.InterfaceRef, pipeIndex,
+					request, callback, IntPtr.Zero);
 				IOObject.ThrowIfError (result);
 				return completionSource.Task;
 			}
@@ -494,10 +494,10 @@ namespace MonoMac.IOKit.USB
 					ThrowIfDisposed ();
 					byte direction, number, transferType, interval;
 					ushort maxPacketSize;
-					var result = instance.Interface.GetPipeProperties
-						(instance.InterfaceRef, pipeIndex,
-						 out direction, out number, out transferType,
-						 out maxPacketSize, out interval);
+					var result = instance.Interface.GetPipeProperties (
+						instance.InterfaceRef, pipeIndex,
+						out direction, out number, out transferType,
+						out maxPacketSize, out interval);
 					IOObject.ThrowIfError (result);
 					return new PipeProperties () {
 						Direction = (EndpointDirection)direction,
@@ -512,8 +512,8 @@ namespace MonoMac.IOKit.USB
 			public byte Status {
 				get {
 					ThrowIfDisposed ();
-					var result = instance.Interface.GetPipeStatus
-						(instance.InterfaceRef, pipeIndex);
+					var result = instance.Interface.GetPipeStatus (
+						instance.InterfaceRef, pipeIndex);
 					// TODO: create enum for common return values.
 					IOObject.ThrowIfError (result);
 					return 0;
@@ -523,24 +523,24 @@ namespace MonoMac.IOKit.USB
 			public void Abort ()
 			{
 				ThrowIfDisposed ();
-				var result = instance.Interface.AbortPipe
-					(instance.InterfaceRef, pipeIndex);
+				var result = instance.Interface.AbortPipe (
+					instance.InterfaceRef, pipeIndex);
 				IOObject.ThrowIfError (result);
 			}
 
 			public void Reset ()
 			{
 				ThrowIfDisposed ();
-				var result = instance.Interface.ResetPipe
-					(instance.InterfaceRef, pipeIndex);
+				var result = instance.Interface.ResetPipe (
+					instance.InterfaceRef, pipeIndex);
 				IOObject.ThrowIfError (result);
 			}
 
 			public void ClearStall ()
 			{
 				ThrowIfDisposed ();
-				var result = instance.Interface.ClearPipeStall
-					(instance.InterfaceRef, pipeIndex);
+				var result = instance.Interface.ClearPipeStall (
+					instance.InterfaceRef, pipeIndex);
 				IOObject.ThrowIfError (result);
 			}
 
@@ -548,8 +548,8 @@ namespace MonoMac.IOKit.USB
 			{
 				ThrowIfDisposed ();
 				var buffer = new byte[byteCount];
-				var result = instance.Interface.ReadPipe
-					(instance.InterfaceRef, pipeIndex, buffer, ref byteCount);
+				var result = instance.Interface.ReadPipe (
+					instance.InterfaceRef, pipeIndex, buffer, ref byteCount);
 				IOObject.ThrowIfError (result);
 				return buffer;
 			}
@@ -557,8 +557,8 @@ namespace MonoMac.IOKit.USB
 			public void Write (byte[] bytes)
 			{
 				ThrowIfDisposed ();
-				var result = instance.Interface.WritePipe
-					(instance.InterfaceRef, pipeIndex, bytes, (uint)bytes.Length);
+				var result = instance.Interface.WritePipe (
+					instance.InterfaceRef, pipeIndex, bytes, (uint)bytes.Length);
 				IOObject.ThrowIfError (result);
 			}
 
@@ -579,9 +579,9 @@ namespace MonoMac.IOKit.USB
 						completionSource.TrySetException (new IOReturnException (callbackResult));
 				};
 				callbackHandle = GCHandle.Alloc (callback, GCHandleType.Pinned);
-				var result = instance.Interface.ReadPipeAsync
-					(instance.InterfaceRef, pipeIndex, buffer,
-					 (uint)byteCount, callback, IntPtr.Zero);
+				var result = instance.Interface.ReadPipeAsync (
+					instance.InterfaceRef, pipeIndex, buffer,
+					(uint)byteCount, callback, IntPtr.Zero);
 				IOObject.ThrowIfError (result);
 				return completionSource.Task;
 			}
@@ -599,9 +599,9 @@ namespace MonoMac.IOKit.USB
 					completionSource.TrySetException (new IOReturnException (callbackResult));
 				};
 				callbackHandle = GCHandle.Alloc (callback, GCHandleType.Pinned);
-				var result = instance.Interface.WritePipeAsync
-					(instance.InterfaceRef, pipeIndex, bytes,
-					 (uint)bytes.Length,callback, IntPtr.Zero);
+				var result = instance.Interface.WritePipeAsync (
+					instance.InterfaceRef, pipeIndex, bytes,
+					(uint)bytes.Length,callback, IntPtr.Zero);
 				IOObject.ThrowIfError (result);
 				return completionSource.Task;
 			}
@@ -610,8 +610,8 @@ namespace MonoMac.IOKit.USB
 			void SendControlRequest (ref IOUSBDevRequestTO request)
 			{
 				ThrowIfDisposed ();
-				var result = instance.Interface.ControlRequestTO
-					(instance.InterfaceRef, pipeIndex, ref request);
+				var result = instance.Interface.ControlRequestTO (
+					instance.InterfaceRef, pipeIndex, ref request);
 				IOObject.ThrowIfError (result);
 			}
 
@@ -629,9 +629,9 @@ namespace MonoMac.IOKit.USB
 					completionSource.TrySetException (new IOReturnException (callbackResult));
 				};
 				callbackHandle = GCHandle.Alloc (callback, GCHandleType.Pinned);
-				var result = instance.Interface.ControlRequestAsyncTO
-					(instance.InterfaceRef, pipeIndex,
-					 request, callback, IntPtr.Zero);
+				var result = instance.Interface.ControlRequestAsyncTO (
+					instance.InterfaceRef, pipeIndex,
+					request, callback, IntPtr.Zero);
 				IOObject.ThrowIfError (result);
 				return completionSource.Task;
 			}
@@ -641,9 +641,9 @@ namespace MonoMac.IOKit.USB
 			{
 				ThrowIfDisposed ();
 				var buffer = new byte[byteCount];
-				var result = instance.Interface.ReadPipeTO
-					(instance.InterfaceRef, pipeIndex, buffer,
-					 ref byteCount, noDataTimeout, completionTimeout);
+				var result = instance.Interface.ReadPipeTO (
+					instance.InterfaceRef, pipeIndex, buffer,
+					ref byteCount, noDataTimeout, completionTimeout);
 				IOObject.ThrowIfError (result);
 				return buffer;
 			}
@@ -652,9 +652,9 @@ namespace MonoMac.IOKit.USB
 			public void Write (byte[] bytes, uint noDataTimeout, uint completionTimeout)
 			{
 				ThrowIfDisposed ();
-				var result = instance.Interface.WritePipeTO
-					(instance.InterfaceRef, pipeIndex, bytes,
-					 (uint)bytes.Length, noDataTimeout, completionTimeout);
+				var result = instance.Interface.WritePipeTO (
+					instance.InterfaceRef, pipeIndex, bytes,
+					(uint)bytes.Length, noDataTimeout, completionTimeout);
 				IOObject.ThrowIfError (result);
 			}
 			
@@ -676,10 +676,10 @@ namespace MonoMac.IOKit.USB
 						completionSource.TrySetException (new IOReturnException (callbackResult));
 				};
 				callbackHandle = GCHandle.Alloc (callback, GCHandleType.Pinned);
-				var result = instance.Interface.ReadPipeAsyncTO
-					(instance.InterfaceRef, pipeIndex, buffer,
-					 byteCount, noDataTimeout,
-					 completionTimeout, callback, IntPtr.Zero);
+				var result = instance.Interface.ReadPipeAsyncTO (
+					instance.InterfaceRef, pipeIndex, buffer,
+					byteCount, noDataTimeout,
+					completionTimeout, callback, IntPtr.Zero);
 				IOObject.ThrowIfError (result);
 				return completionSource.Task;
 			}
@@ -698,10 +698,10 @@ namespace MonoMac.IOKit.USB
 					completionSource.TrySetException (new IOReturnException (callbackResult));
 				};
 				callbackHandle = GCHandle.Alloc (callback, GCHandleType.Pinned);
-				var result = instance.Interface.WritePipeAsyncTO
-					(instance.InterfaceRef, pipeIndex, bytes,
-					 noDataTimeout, completionTimeout,
-					 (uint)bytes.Length,callback, IntPtr.Zero);
+				var result = instance.Interface.WritePipeAsyncTO (
+					instance.InterfaceRef, pipeIndex, bytes,
+					noDataTimeout, completionTimeout,
+					(uint)bytes.Length,callback, IntPtr.Zero);
 				IOObject.ThrowIfError (result);
 				return completionSource.Task;
 			}
@@ -710,8 +710,8 @@ namespace MonoMac.IOKit.USB
 			public void ClearStallBothEnds ()
 			{
 				ThrowIfDisposed ();
-				var result = instance.Interface.ClearPipeStallBothEnds
-					(instance.InterfaceRef, pipeIndex);
+				var result = instance.Interface.ClearPipeStallBothEnds (
+					instance.InterfaceRef, pipeIndex);
 				IOObject.ThrowIfError (result);
 			}
 
@@ -719,8 +719,8 @@ namespace MonoMac.IOKit.USB
 			public void SetPipePolicy (ushort maxPacketSize, Interval maxInterval)
 			{
 				ThrowIfDisposed ();
-				var result = instance.Interface.SetPipePolicy
-					(instance.InterfaceRef, pipeIndex, maxPacketSize, (byte)maxInterval);
+				var result = instance.Interface.SetPipePolicy (
+					instance.InterfaceRef, pipeIndex, maxPacketSize, (byte)maxInterval);
 				IOObject.ThrowIfError (result);
 			}
 
@@ -731,11 +731,11 @@ namespace MonoMac.IOKit.USB
 					ThrowIfDisposed ();
 					byte direction, number, transferType, interval, maxBurst, mult;
 					ushort maxPacketSize, bytesPerInterval;
-					var result = instance.Interface.GetPipePropertiesV2
-						(instance.InterfaceRef, pipeIndex,
-						 out direction, out number, out transferType,
-						 out maxPacketSize, out interval,
-						 out maxBurst, out mult, out bytesPerInterval);
+					var result = instance.Interface.GetPipePropertiesV2 (
+						instance.InterfaceRef, pipeIndex,
+						out direction, out number, out transferType,
+						out maxPacketSize, out interval,
+						out maxBurst, out mult, out bytesPerInterval);
 					IOObject.ThrowIfError (result);
 					return new PipePropertiesV2 () {
 						Direction = (EndpointDirection)direction,
@@ -757,8 +757,8 @@ namespace MonoMac.IOKit.USB
 					IOUSBEndpointProperties properties = new IOUSBEndpointProperties () {
 						Version = EndpointPropertiesVersion.V3
 					};
-					var result = instance.Interface.GetPipePropertiesV3
-						(instance.InterfaceRef, pipeIndex, ref properties);
+					var result = instance.Interface.GetPipePropertiesV3 (
+						instance.InterfaceRef, pipeIndex, ref properties);
 					IOObject.ThrowIfError (result);
 					return properties;
 				}
@@ -769,8 +769,8 @@ namespace MonoMac.IOKit.USB
 				get {
 					ThrowIfDisposed ();
 					uint count;
-					var result = instance.Interface.SupportsStreams
-						(instance.InterfaceRef, pipeIndex, out count);
+					var result = instance.Interface.SupportsStreams (
+						instance.InterfaceRef, pipeIndex, out count);
 					IOObject.ThrowIfError (result);
 					return count;
 				}
@@ -781,16 +781,16 @@ namespace MonoMac.IOKit.USB
 				ThrowIfDisposed ();
 				if (count == 0)
 					throw new ArgumentOutOfRangeException ("count");
-				var result = instance.Interface.CreateStreams
-					(instance.InterfaceRef, pipeIndex, count);
+				var result = instance.Interface.CreateStreams (
+					instance.InterfaceRef, pipeIndex, count);
 				IOObject.ThrowIfError (result);
 			}
 
 			[Since (8,0)]
 			public void DisposeStreams () {
 				ThrowIfDisposed ();
-				var result = instance.Interface.CreateStreams
-					(instance.InterfaceRef, pipeIndex, 0);
+				var result = instance.Interface.CreateStreams (
+					instance.InterfaceRef, pipeIndex, 0);
 				IOObject.ThrowIfError (result);
 				if (streams.IsValueCreated)
 					foreach (var stream in Streams)
@@ -826,8 +826,8 @@ namespace MonoMac.IOKit.USB
 					get {
 						instance.ThrowIfDisposed ();
 						uint count;
-						var result = instance.instance.Interface.GetConfiguredStreams
-							(instance.instance.InterfaceRef, instance.pipeIndex, out count);
+						var result = instance.instance.Interface.GetConfiguredStreams (
+							instance.instance.InterfaceRef, instance.pipeIndex, out count);
 						IOObject.ThrowIfError (result);
 						return (int)count;
 					}
@@ -964,9 +964,9 @@ namespace MonoMac.IOKit.USB
 						Array.Copy (buffer, offset, buffer2, 0, count);
 					}
 					uint size = (uint)count;
-					var result = instance.instance.Interface.ReadStreamsPipeTO
-						(instance.instance.InterfaceRef, instance.pipeIndex, id, buffer2, ref size,
-						 (uint)this.WriteTimeout, (uint)this.WriteTimeout);
+					var result = instance.instance.Interface.ReadStreamsPipeTO (
+						instance.instance.InterfaceRef, instance.pipeIndex, id, buffer2, ref size,
+						(uint)this.WriteTimeout, (uint)this.WriteTimeout);
 					IOObject.ThrowIfError (result);
 					return (int)size;
 				}
@@ -991,10 +991,10 @@ namespace MonoMac.IOKit.USB
 						buffer2 = new byte[count];
 						Array.Copy (buffer, offset, buffer2, 0, count);
 					}
-					var result = instance.instance.Interface.WriteStreamsPipeTO
-						(instance.instance.InterfaceRef, instance.pipeIndex, id,
-						 buffer2, (uint)count, (uint)this.WriteTimeout,
-						 (uint)this.WriteTimeout);
+					var result = instance.instance.Interface.WriteStreamsPipeTO (
+						instance.instance.InterfaceRef, instance.pipeIndex, id,
+						buffer2, (uint)count, (uint)this.WriteTimeout,
+						(uint)this.WriteTimeout);
 					IOObject.ThrowIfError (result);
 				}
 

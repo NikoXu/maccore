@@ -54,9 +54,9 @@ namespace MonoMac.IOBluetooth
 		}
 
 		[Since (2,5)]
-		public IOBluetoothL2CAPChannel OpenL2CAPChannel
-			(BluetoothL2CAPPSM psm = BluetoothL2CAPPSM.None,
-			 NSObject channelDelegate = null)
+		public IOBluetoothL2CAPChannel OpenL2CAPChannel (
+			BluetoothL2CAPPSM psm = BluetoothL2CAPPSM.None,
+			NSObject channelDelegate = null)
 		{
 			IOBluetoothL2CAPChannel newChannel;
 			var result = openL2CAPChannelSync (out newChannel, psm, channelDelegate);
@@ -66,17 +66,17 @@ namespace MonoMac.IOBluetooth
 		}
 
 		[Since (2,5)]
-		public IOBluetoothL2CAPChannel OpenL2CAPChannel
-			(BluetoothL2CAPPSM psm,
-			 IOBluetoothL2CAPChannelDelegate channelDelegate)
+		public IOBluetoothL2CAPChannel OpenL2CAPChannel (
+			BluetoothL2CAPPSM psm,
+			IOBluetoothL2CAPChannelDelegate channelDelegate)
 		{
 			return OpenL2CAPChannel (psm, (NSObject)channelDelegate);
 		}
 
 		[Since (2,5)]
-		public IOBluetoothL2CAPChannel OpenL2CAPChannelAsync
-			(BluetoothL2CAPPSM psm = BluetoothL2CAPPSM.None,
-			 NSObject channelDelegate = null)
+		public IOBluetoothL2CAPChannel OpenL2CAPChannelAsync (
+			BluetoothL2CAPPSM psm = BluetoothL2CAPPSM.None,
+			NSObject channelDelegate = null)
 		{
 			IOBluetoothL2CAPChannel newChannel;
 			var result = openL2CAPChannelAsync (out newChannel, psm, channelDelegate);
@@ -86,9 +86,9 @@ namespace MonoMac.IOBluetooth
 		}
 
 		[Since (2,5)]
-		public IOBluetoothL2CAPChannel OpenL2CAPChannelAsync
-			(BluetoothL2CAPPSM psm,
-			 IOBluetoothL2CAPChannelDelegate channelDelegate)
+		public IOBluetoothL2CAPChannel OpenL2CAPChannelAsync (
+			BluetoothL2CAPPSM psm,
+			IOBluetoothL2CAPChannelDelegate channelDelegate)
 		{
 			return OpenL2CAPChannelAsync (psm, (NSObject)channelDelegate);
 		}
@@ -103,8 +103,8 @@ namespace MonoMac.IOBluetooth
 		}
 
 		[Since (2,5)]
-		public IOBluetoothRFCOMMChannel OpenRFCOMMChannel
-			(byte channelID, NSObject channelDelegate = null)
+		public IOBluetoothRFCOMMChannel OpenRFCOMMChannel (
+			byte channelID, NSObject channelDelegate = null)
 		{
 			IOBluetoothRFCOMMChannel rfcommChannel;
 			var result = openRFCOMMChannelSync (out rfcommChannel, channelID, channelDelegate);
@@ -114,15 +114,15 @@ namespace MonoMac.IOBluetooth
 		}
 
 		[Since (2,5)]
-		public IOBluetoothRFCOMMChannel OpenRFCOMMChannel
-			(byte channelID, IOBluetoothRFCOMMChannelDelegate channelDelegate)
+		public IOBluetoothRFCOMMChannel OpenRFCOMMChannel (
+			byte channelID, IOBluetoothRFCOMMChannelDelegate channelDelegate)
 		{
 			return OpenRFCOMMChannel (channelID, channelDelegate);
 		}
 
 		[Since (2,5)]
-		public Task<IOBluetoothRFCOMMChannel> OpenRFCOMMChannelAsync
-			(byte channelID)
+		public Task<IOBluetoothRFCOMMChannel> OpenRFCOMMChannelAsync (
+			byte channelID)
 		{
 			TaskCompletionSource<IOBluetoothRFCOMMChannel> taskCompletionSource =
 				new TaskCompletionSource<IOBluetoothRFCOMMChannel> ();
@@ -144,8 +144,8 @@ namespace MonoMac.IOBluetooth
 		}
 
 		[Since (2,5)]
-		public IOBluetoothRFCOMMChannel OpenRFCOMMChannelAsync
-			(byte channelID, NSObject channelDelegate)
+		public IOBluetoothRFCOMMChannel OpenRFCOMMChannelAsync (
+			byte channelID, NSObject channelDelegate)
 		{
 			IOBluetoothRFCOMMChannel rfcommChannel;
 			var result = openRFCOMMChannelAsync (out rfcommChannel, channelID, channelDelegate);
@@ -155,8 +155,8 @@ namespace MonoMac.IOBluetooth
 		}
 
 		[Since (2,5)]
-		public IOBluetoothRFCOMMChannel OpenRFCOMMChannelAsync
-			(byte channelID, IOBluetoothRFCOMMChannelDelegate channelDelegate)
+		public IOBluetoothRFCOMMChannel OpenRFCOMMChannelAsync (
+			byte channelID, IOBluetoothRFCOMMChannelDelegate channelDelegate)
 		{
 			return OpenRFCOMMChannelAsync (channelID, channelDelegate);
 		}
@@ -278,10 +278,10 @@ namespace MonoMac.IOBluetooth
 		}
 
 		[Since (6,0)]
-		public IOBluetoothL2CAPChannel OpenL2CAPChannel
-			(BluetoothL2CAPPSM psm,
-			 NSDictionary channelConfiguration,
-			 NSObject channelDelegate = null)
+		public IOBluetoothL2CAPChannel OpenL2CAPChannel (
+			BluetoothL2CAPPSM psm,
+			NSDictionary channelConfiguration,
+			NSObject channelDelegate = null)
 		{
 			IOBluetoothL2CAPChannel newChannel;
 			var result = openL2CAPChannelSync (out newChannel, psm, channelConfiguration, channelDelegate);
@@ -290,19 +290,19 @@ namespace MonoMac.IOBluetooth
 		}
 
 		[Since (6,0)]
-		public IOBluetoothL2CAPChannel OpenL2CAPChannel
-			(BluetoothL2CAPPSM psm,
-			 NSDictionary channelConfiguration,
-			 IOBluetoothL2CAPChannelDelegate channelDelegate)
+		public IOBluetoothL2CAPChannel OpenL2CAPChannel (
+			BluetoothL2CAPPSM psm,
+			NSDictionary channelConfiguration,
+			IOBluetoothL2CAPChannelDelegate channelDelegate)
 		{
 			return OpenL2CAPChannel (psm, channelConfiguration, (NSObject)channelDelegate);
 		}
 
 		[Since (6,0)]
-		public IOBluetoothL2CAPChannel OpenL2CAPChannelAsync
-			(BluetoothL2CAPPSM psm,
-			 NSDictionary channelConfiguration,
-			 NSObject channelDelegate = null)
+		public IOBluetoothL2CAPChannel OpenL2CAPChannelAsync (
+			BluetoothL2CAPPSM psm,
+			NSDictionary channelConfiguration,
+			NSObject channelDelegate = null)
 		{
 			IOBluetoothL2CAPChannel newChannel;
 			var result = openL2CAPChannelAsync (out newChannel, psm, channelConfiguration, channelDelegate);
@@ -311,10 +311,10 @@ namespace MonoMac.IOBluetooth
 		}
 
 		[Since (6,0)]
-		public IOBluetoothL2CAPChannel OpenL2CAPChannelAsync
-			(BluetoothL2CAPPSM psm,
-			 NSDictionary channelConfiguration,
-			 IOBluetoothL2CAPChannelDelegate channelDelegate)
+		public IOBluetoothL2CAPChannel OpenL2CAPChannelAsync (
+			BluetoothL2CAPPSM psm,
+			NSDictionary channelConfiguration,
+			IOBluetoothL2CAPChannelDelegate channelDelegate)
 		{
 			return OpenL2CAPChannelAsync (psm, channelConfiguration, (NSObject)channelDelegate);
 		}
