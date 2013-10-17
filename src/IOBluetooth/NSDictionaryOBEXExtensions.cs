@@ -27,6 +27,7 @@
 using System;
 using System.Runtime.InteropServices;
 using MonoMac.Foundation;
+using MonoMac.IOKit;
 using MonoMac.ObjCRuntime;
 
 namespace MonoMac.IOBluetooth
@@ -42,17 +43,17 @@ namespace MonoMac.IOBluetooth
 			return result;
 		}
 
-		public static OBEXError AddTargetHeader (this NSMutableDictionary dictionary, byte[] data)
+		public static IOReturn AddTargetHeader (this NSMutableDictionary dictionary, byte[] data)
 		{
 			return AddHeader (dictionary, data, addTargetHeader);
 		}
 
-		public static OBEXError AddHTTPHeader (this NSMutableDictionary dictionary, byte[] data)
+		public static IOReturn AddHTTPHeader (this NSMutableDictionary dictionary, byte[] data)
 		{
 			return AddHeader (dictionary, data, addHTTPHeader);
 		}
 
-		public static OBEXError AddBodyHeader (this NSMutableDictionary dictionary, byte[] data, bool isEndOfBody)
+		public static IOReturn AddBodyHeader (this NSMutableDictionary dictionary, byte[] data, bool isEndOfBody)
 		{	if (dictionary == null)
 				throw new ArgumentNullException ("dictionary");
 			if (data == null)
@@ -64,47 +65,47 @@ namespace MonoMac.IOBluetooth
 			return result;
 		}
 
-		public static OBEXError AddWhoHeader (this NSMutableDictionary dictionary, byte[] data)
+		public static IOReturn AddWhoHeader (this NSMutableDictionary dictionary, byte[] data)
 		{
 			return AddHeader (dictionary, data, addWhoHeader);
 		}
 
-		public static OBEXError AddConnectionIDHeader (this NSMutableDictionary dictionary, byte[] data)
+		public static IOReturn AddConnectionIDHeader (this NSMutableDictionary dictionary, byte[] data)
 		{
 			return AddHeader (dictionary, data, addConnectionIDHeader);
 		}
 
-		public static OBEXError AddApplicationParameterHeader (this NSMutableDictionary dictionary, byte[] data)
+		public static IOReturn AddApplicationParameterHeader (this NSMutableDictionary dictionary, byte[] data)
 		{
 			return AddHeader (dictionary, data, addApplicationParameterHeader);
 		}
 
-		public static OBEXError AddByteSequenceHeader (this NSMutableDictionary dictionary, byte[] data)
+		public static IOReturn AddByteSequenceHeader (this NSMutableDictionary dictionary, byte[] data)
 		{
 			return AddHeader (dictionary, data, addByteSequenceHeader);
 		}
 
-		public static OBEXError AddObjectClassHeader (this NSMutableDictionary dictionary, byte[] data)
+		public static IOReturn AddObjectClassHeader (this NSMutableDictionary dictionary, byte[] data)
 		{
 			return AddHeader (dictionary, data, addObjectClassHeader);
 		}
 
-		public static OBEXError AddAuthorizationChallengeHeader (this NSMutableDictionary dictionary, byte[] data)
+		public static IOReturn AddAuthorizationChallengeHeader (this NSMutableDictionary dictionary, byte[] data)
 		{
 			return AddHeader (dictionary, data, addAuthorizationChallengeHeader);
 		}
 
-		public static OBEXError AddAuthorizationResponseHeader (this NSMutableDictionary dictionary, byte[] data)
+		public static IOReturn AddAuthorizationResponseHeader (this NSMutableDictionary dictionary, byte[] data)
 		{
 			return AddHeader (dictionary, data, addAuthorizationResponseHeader);
 		}
 
-		public static OBEXError AddTimeISOHeader (this NSMutableDictionary dictionary, byte[] data)
+		public static IOReturn AddTimeISOHeader (this NSMutableDictionary dictionary, byte[] data)
 		{
 			return AddHeader (dictionary, data, addTimeISOHeader);
 		}
 
-		public static OBEXError AddTime4ByteHeader (this NSMutableDictionary dictionary, byte[] time4Byte)
+		public static IOReturn AddTime4ByteHeader (this NSMutableDictionary dictionary, byte[] time4Byte)
 		{
 			if (time4Byte == null)
 				throw new ArgumentNullException ("time4Byte");
@@ -113,12 +114,12 @@ namespace MonoMac.IOBluetooth
 			return AddTime4ByteHeader (dictionary, BitConverter.ToUInt32 (time4Byte, 0));
 		}
 
-		public static OBEXError AddUserDefinedHeader (this NSMutableDictionary dictionary, byte[] data)
+		public static IOReturn AddUserDefinedHeader (this NSMutableDictionary dictionary, byte[] data)
 		{
 			return AddHeader (dictionary, data, addUserDefinedHeader);
 		}
 
-		public static OBEXError AddImageDescriptorHeader (this NSMutableDictionary dictionary, byte[] data)
+		public static IOReturn AddImageDescriptorHeader (this NSMutableDictionary dictionary, byte[] data)
 		{
 			return AddHeader (dictionary, data, addImageDescriptorHeader);
 		}
@@ -133,7 +134,7 @@ namespace MonoMac.IOBluetooth
 			return result;
 		}
 
-		static OBEXError AddHeader (NSMutableDictionary dictionary, byte[] data, Func<NSMutableDictionary, IntPtr, uint, OBEXError> method)
+		static IOReturn AddHeader (NSMutableDictionary dictionary, byte[] data, Func<NSMutableDictionary, IntPtr, uint, IOReturn> method)
 		{
 			if (dictionary == null)
 				throw new ArgumentNullException ("dictionary");

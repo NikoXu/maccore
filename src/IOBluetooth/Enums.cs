@@ -725,51 +725,6 @@ namespace MonoMac.IOBluetooth
 	}
 
 	/// <summary>
-	/// Codes for OBEX errors. If the return value was not in the following range, then it is most likely resulting
-	/// from kernel code/IOKit, and you should consult IOReturn.h for those codes.
-	/// </summary>
-	public enum OBEXError : int
-	{
-		/// <summary>
-		/// Minimum value in OBEX error range.
-		/// </summary>
-		ErrorRangeMin					= -21850,
-
-		/// <summary>
-		/// Maximum value in OBEX error range.
-		/// </summary>
-		ErrorRangeMax					= -21899,
-		
-		Success                      = 0,			// Success at whatever you were attempting.
-		GeneralError                 = -21850,		// Catch all for misc. errors.
-		NoResourcesError             = -21851,		// An allocation failed, etc.
-		UnsupportedError             = -21852,		// operation or item is not supported.
-		InternalError                = -21853,		// A problem has occurred in our internal code.
-		BadArgumentError             = -21854,		// A bad argument was passed to an OBEX function.
-		TimeoutError                 = -21855,		// timeout error
-		BadRequestError              = -21856,		// bad request error
-		CancelledError               = -21857,
-		ForbiddenError               = -21858,		// operation was not allowed on remote device (wrong permissions, etc.).
-		
-		UnauthorizedError            = -21859,		// Unauthorized
-		NotAcceptableError           = -21860,		// Not Acceptable
-		ConflictError                = -21861,		// Conflict
-		MethodNotAllowedError        = -21862,		// Method not allowed
-		NotFoundError                = -21863,		// File/Folder not found
-		NotImplementedError          = -21864,		// Not Implemented
-		PreconditionFailedError      = -21865,		// Precondition failed
-			
-		SessionBusyError             = -21875,		// Session is busy with a command already.
-		SessionNotConnectedError     = -21876,		// Session does not have an open connection.
-		SessionBadRequestError       = -21877,		// Whatever you are trying to do is invalid (trying to send more data than the max packet size supports, e.g.).
-		SessionBadResponseError      = -21878,		// The OBEX Server/client you are talking to has sent us a bad response (e.g. when a Connect Command was sent, we got back "0xA0", which is not correct).
-		SessionNoTransportError      = -21879,		// The underlying transport (Bluetooth, etc.) is not open/available.
-		SessionTransportDiedError    = -21880,		// The underlying transport connection (Bluetooth, etc.) died.
-		SessionTimeoutError          = -21881,		// Timeout occurred performing an operation.
-		SessionAlreadyConnectedError = -21882		// Connection over OBEX already established (returned from OBEXConnect).
-	}
-
-	/// <summary>
 	/// When a new session event occurs, your selector (or C callback) will be given an OBEXSessionEvent pointer,
 	/// and in it will be a 'type' field with one of the following types in it. Based on that type, you can then
 	/// read the corresponding field in the union to get out interesting data for that event type. For example,

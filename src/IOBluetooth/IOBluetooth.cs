@@ -36,6 +36,7 @@ using BluetoothHCILinkQuality = System.Byte;
 using BluetoothHCIRSSIValue = System.SByte;
 using IOItemCount = System.UInt32;
 using OBEXConstants = System.Byte;
+using OBEXError = MonoMac.IOKit.IOReturn;
 using OBEXFlags = System.Byte;
 using OBEXMaxPacketLength = System.UInt32;
 using OBEXOpCode = System.Byte;

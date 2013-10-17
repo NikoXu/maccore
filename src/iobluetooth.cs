@@ -54,6 +54,7 @@ using IOBluetoothSDPDataElementRef = System.IntPtr;
 using IOBluetoothSDPServiceRecordRef = System.IntPtr;
 using IOBluetoothSDPUUIDRef = System.IntPtr;
 using OBEXConstants = System.Byte;
+using OBEXError = MonoMac.IOKit.IOReturn;
 using OBEXFlags = System.Byte;
 using OBEXMaxPacketLength = System.UInt32;
 using OBEXOpCode = System.Byte;

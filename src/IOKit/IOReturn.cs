@@ -137,6 +137,35 @@ namespace MonoMac.IOKit
 		IOBluetoothNoHCIController            = IOKit.sys_iokit | IOKit.sub_iokit_bluetooth | 3,
 		IOBluetoothHCIPowerStatesNotSupported = IOKit.sys_iokit | IOKit.sub_iokit_bluetooth | 4,
 
+		/* from OBEX.h */
+
+		OBEXGeneralError                 = -21850,
+		OBEXNoResourcesError             = -21851,
+		OBEXUnsupportedError             = -21852,
+		OBEXInternalError                = -21853,
+		OBEXBadArgumentError             = -21854,
+		OBEXTimeoutError                 = -21855,
+		OBEXBadRequestError              = -21856,
+		OBEXCancelledError               = -21857,
+		OBEXForbiddenError               = -21858,
+
+		OBEXUnauthorizedError            = -21859,
+		OBEXNotAcceptableError           = -21860,
+		OBEXConflictError                = -21861,
+		OBEXMethodNotAllowedError        = -21862,
+		OBEXNotFoundError                = -21863,
+		OBEXNotImplementedError          = -21864,
+		OBEXPreconditionFailedError      = -21865,
+
+		OBEXSessionBusyError             = -21875,
+		OBEXSessionNotConnectedError     = -21876,
+		OBEXSessionBadRequestError       = -21877,
+		OBEXSessionBadResponseError      = -21878,
+		OBEXSessionNoTransportError      = -21879,
+		OBEXSessionTransportDiedError    = -21880,
+		OBEXSessionTimeoutError          = -21881,
+		OBEXSessionAlreadyConnectedError = -21882,
+
 		/* from mach/kern_return.h */
 
 		KernInvalidAddress         = 1,
