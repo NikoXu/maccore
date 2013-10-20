@@ -132,8 +132,8 @@ namespace MonoMac.IOBluetooth
 
 		[Static]
 		[Since (7,0)]
-		[Export ("deviceWithAddress:")]
-		IOBluetoothDevice GetDeviceWithAddress (BluetoothDeviceAddress address);
+		[Export ("deviceWithAddress:"), Internal]
+		IOBluetoothDevice getDeviceWithAddress (/*BluetoothDeviceAddress*/ IntPtr address);
 
 //		[Static]
 //		[Export ("withAddress:")]

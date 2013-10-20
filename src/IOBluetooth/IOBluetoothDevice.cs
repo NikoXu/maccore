@@ -49,6 +49,17 @@ namespace MonoMac.IOBluetooth
 			registerForConnectNotifications (connectNotificationObserver, new Selector (onConnectNotificationSelector));
 		}
 
+		public static IOBluetoothDevice GetDeviceWithAddress (BluetoothDeviceAddress address)
+		{
+			var addressPtr = Marshal.AllocHGlobal (Marshal.SizeOf (address));
+			try {
+				Marshal.StructureToPtr (address, addressPtr, false);
+				return getDeviceWithAddress (addressPtr);
+			} finally {
+				Marshal.FreeHGlobal (addressPtr);
+			}
+		}
+
 		DeviceAsyncCallbacks AyncCallbacks {
 			get { return ayncCallbacks.Value; }
 		}
