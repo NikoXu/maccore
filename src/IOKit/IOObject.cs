@@ -43,10 +43,13 @@ namespace MonoMac.IOKit
 {
 	public class IOObject : INativeObject, IDisposable
 	{
+		static Dictionary<IntPtr, WeakReference> objectMap;
+		static object lockObj = new object ();
 		static Dictionary<Type, Func<IntPtr, bool, object>> constructorCache;
 
 		static IOObject ()
 		{
+			objectMap = new Dictionary<CFStringRef, WeakReference> ();
 			constructorCache = new Dictionary<Type, Func<IntPtr, bool, object>> ();
 		}
 
@@ -57,11 +60,29 @@ namespace MonoMac.IOKit
 			if (!owns)
 				IOObjectRetain (handle);
 			Handle = handle;
+			Register ();
 		}
 
 		~IOObject ()
 		{
 			Dispose (false);
+		}
+
+		void Register ()
+		{
+			if (Handle == IntPtr.Zero)
+				throw new InvalidOperationException ("Invalid Handle.");
+			lock (lockObj) {
+				if (objectMap.ContainsKey (Handle) && objectMap [Handle].IsAlive)
+					throw new InvalidOperationException ("Object is alread registered.");
+				objectMap [Handle] = new WeakReference (this);
+			}
+		}
+
+		void Unregister ()
+		{
+			lock (lockObj)
+				objectMap.Remove (Handle);
 		}
 
 		#region INativeObject implementation
@@ -194,6 +215,10 @@ namespace MonoMac.IOKit
 
 		internal static T MarshalNativeObject<T> (IntPtr handle, bool owns) where T : IOObject
 		{
+			lock (lockObj) {
+				if (objectMap.ContainsKey (handle) && objectMap [handle].IsAlive)
+					return (T)objectMap [handle].Target;
+			}
 			if (!constructorCache.ContainsKey (typeof(T))) {
 				var constructorInfo = typeof(T).GetConstructor (BindingFlags.Instance | BindingFlags.NonPublic, null,
 				                                                new Type[] { typeof(IntPtr), typeof(bool) }, null);
@@ -222,6 +247,7 @@ namespace MonoMac.IOKit
 
 		protected virtual void Dispose (bool disposing)
 		{
+			Unregister ();
 			if (Handle != IntPtr.Zero) {
 				IOObjectRelease (Handle);
 				Handle = IntPtr.Zero;

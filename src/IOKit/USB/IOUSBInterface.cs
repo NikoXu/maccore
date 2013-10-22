@@ -51,7 +51,6 @@ namespace MonoMac.IOKit.USB
 		internal IOUSBInterface (IntPtr handle, bool owns) : base (handle, owns)
 		{
 			using (var pluginInterface = IOCFPlugin.CreateInterfaceForService<IOUSBInterfaceUserClientType> (this)) {
-
 				var bundleVersion = IOUSB.BundleVersion;
 				if (bundleVersion >= new Version ("5.5.0"))
 					@interface = pluginInterface.QueryInterface<IOUSBInterfaceInterface550> ();
@@ -89,8 +88,8 @@ namespace MonoMac.IOKit.USB
 			if (pipes.IsValueCreated) {
 				foreach (var pipe in pipes.Value)
 					pipe.Dispose ();
-				pipes = null;
 			}
+			pipes = null;
 			@interface = null;
 			base.Dispose (disposing);
 		}
@@ -238,7 +237,7 @@ namespace MonoMac.IOKit.USB
 				IntPtr deviceRef;
 				var result = Interface.GetDevice (InterfaceRef, out deviceRef);
 				IOObject.ThrowIfError (result);
-				return new IOUSBDevice (deviceRef, true);
+				return MarshalNativeObject<IOUSBDevice> (deviceRef, false);
 			}
 		}
 
@@ -509,14 +508,11 @@ namespace MonoMac.IOKit.USB
 				}
 			}
 
-			public byte Status {
+			public IOReturn Status {
 				get {
 					ThrowIfDisposed ();
-					var result = instance.Interface.GetPipeStatus (
+					return instance.Interface.GetPipeStatus (
 						instance.InterfaceRef, pipeIndex);
-					// TODO: create enum for common return values.
-					IOObject.ThrowIfError (result);
-					return 0;
 				}
 			}
 
@@ -544,13 +540,15 @@ namespace MonoMac.IOKit.USB
 				IOObject.ThrowIfError (result);
 			}
 
-			public byte[] Read (uint byteCount)
+			public byte[] Read (int byteCount)
 			{
 				ThrowIfDisposed ();
 				var buffer = new byte[byteCount];
+				var size = (uint)byteCount;
 				var result = instance.Interface.ReadPipe (
-					instance.InterfaceRef, pipeIndex, buffer, ref byteCount);
+					instance.InterfaceRef, pipeIndex, buffer, ref size);
 				IOObject.ThrowIfError (result);
+				Array.Resize (ref buffer, (int)size);
 				return buffer;
 			}
 
@@ -594,9 +592,9 @@ namespace MonoMac.IOKit.USB
 				IOAsyncCallback1 callback = (refCon, callbackResult, arg0) => {
 					callbackHandle.Free ();
 					if (callbackResult == IOReturn.Success)
-					completionSource.TrySetResult ((int)arg0);
+						completionSource.TrySetResult ((int)arg0);
 					else
-					completionSource.TrySetException (callbackResult.ToNSErrorException ());
+						completionSource.TrySetException (callbackResult.ToNSErrorException ());
 				};
 				callbackHandle = GCHandle.Alloc (callback, GCHandleType.Pinned);
 				var result = instance.Interface.WritePipeAsync (

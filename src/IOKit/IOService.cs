@@ -110,7 +110,7 @@ namespace MonoMac.IOKit
 			var notificationTypeString = notificationType.GetKey ();
 			IOServiceMatchingCallback nativeCallback = (refCon, iteratorRef) =>
 			{
-				var iterator = new IOIterator<T> (iteratorRef, false);
+				var iterator = MarshalNativeObject<IOIterator<T>> (iteratorRef, false);
 				callback.Invoke (iterator);
 			};
 			callbackStore.Add (nativeCallback);
