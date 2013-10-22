@@ -58,8 +58,9 @@ namespace MonoMac.IOBluetooth
 			var dataHandle = GCHandle.Alloc (data, GCHandleType.Pinned);
 			var dataPtr = Marshal.UnsafeAddrOfPinnedArrayElement (data, 0);
 			var completionSource = new TaskCompletionSource<IOBluetoothRFCOMMChannel> ();
-			var completionSourceHandle = GCHandle.Alloc (data, GCHandleType.Pinned);
-			var result = writeAsync (dataPtr, (ushort)data.Length, completionSourceHandle.AddrOfPinnedObject ());
+			var completionSourceHandle = GCHandle.Alloc (completionSource);
+			var completionSourcePtr = GCHandle.ToIntPtr (completionSourceHandle);
+			var result = writeAsync (dataPtr, (ushort)data.Length, completionSourcePtr);
 			dataHandle.Free ();
 			if (result != IOReturn.Success) {
 				completionSourceHandle.Free ();
@@ -88,17 +89,6 @@ namespace MonoMac.IOBluetooth
 			var result = sendRemoteLineStatus (lineStatus);
 			IOObject.ThrowIfError (result);
 		}
-
-//			public override void WriteCompleted (IOBluetoothRFCOMMChannel rfcommChannel, IntPtr refcon, IOReturn error)
-//			{
-//				var completionSourceHandle = GCHandle.FromIntPtr (refcon);
-//				var completionSource = (TaskCompletionSource<IOBluetoothRFCOMMChannel>)completionSourceHandle.Target;
-//				completionSourceHandle.Free ();
-//				if (error == IOReturn.Success)
-//					completionSource.TrySetResult (rfcommChannel);
-//				else
-//					completionSource.TrySetException (error.ToNSErrorException ());
-//			}
 
 		//
 		// Events and properties from the delegate
