@@ -3274,7 +3274,7 @@ namespace MonoMac.Foundation
 		void RemoveAllActions (NSObject target);
 
 		[Export ("registerUndoWithTarget:selector:object:")]
-		void RegisterUndoWithTarget (NSObject target, Selector selector, NSObject anObject);
+		void RegisterUndoWithTarget (NSObject target, Selector selector, NSObject @object);
 
 		[Export ("prepareWithInvocationTarget:")]
 		NSObject PrepareWithInvocationTarget (NSObject target);
@@ -3286,7 +3286,7 @@ namespace MonoMac.Foundation
 		string RedoActionName { get; }
 
 		[Export ("setActionName:")]
-		void SetActionname (string actionName);
+		void SetActionName (string actionName);
 
 		[Export ("undoMenuItemTitle")]
 		string UndoMenuItemTitle { get; }
@@ -3295,10 +3295,10 @@ namespace MonoMac.Foundation
 		string RedoMenuItemTitle { get; }
 
 		[Export ("undoMenuTitleForUndoActionName:")]
-		string UndoMenuTitleForUndoActionName (string name);
+		string GetUndoMenuTitleForUndoActionName (string name);
 
 		[Export ("redoMenuTitleForUndoActionName:")]
-		string RedoMenuTitleForUndoActionName (string name);
+		string GetRedoMenuTitleForUndoActionName (string name);
 
 		[Field ("NSUndoManagerCheckpointNotification")]
 		[Notification]
