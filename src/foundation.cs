@@ -2366,8 +2366,9 @@ namespace MonoMac.Foundation
 	
 	[BaseType (typeof (NSObject), Name="NSUUID")]
 	public interface NSUuid {
-		[Export ("initWithUUIDString:")]
-		IntPtr Constructor (string str);
+		// bound manually
+		//[Export ("initWithUUIDString:")]
+		//IntPtr Constructor (string str);
 
 		// bound manually to keep the managed/native signatures identical
 		//[Export ("initWithUUIDBytes:"), Internal]
@@ -2377,7 +2378,7 @@ namespace MonoMac.Foundation
 		void GetUuidBytes (IntPtr uuid);
 
 		[Export ("UUIDString")]
-		string AsString ();
+		string StringValue { get; }
 	}
 
 	[BaseType (typeof (NSObject))]
