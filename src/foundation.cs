@@ -3278,7 +3278,7 @@ namespace MonoMac.Foundation
 		void RegisterUndoWithTarget (NSObject target, Selector selector, NSObject @object);
 
 		[Export ("prepareWithInvocationTarget:")]
-		NSObject PrepareWithInvocationTarget (NSObject target);
+		IntPtr PrepareWithInvocationTarget (NSObject target);
 
 		[Export ("undoActionName")]
 		string UndoActionName { get; }
