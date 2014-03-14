@@ -128,7 +128,7 @@ namespace MonoMac.IOBluetooth
 		public IOBluetoothRFCOMMChannel OpenRFCOMMChannel (
 			byte channelID, IOBluetoothRFCOMMChannelDelegate channelDelegate)
 		{
-			return OpenRFCOMMChannel (channelID, channelDelegate);
+			return OpenRFCOMMChannel (channelID, (NSObject)channelDelegate);
 		}
 
 		[Since (2,5)]
