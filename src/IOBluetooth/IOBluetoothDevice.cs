@@ -169,7 +169,7 @@ namespace MonoMac.IOBluetooth
 		public IOBluetoothRFCOMMChannel OpenRFCOMMChannelAsync (
 			byte channelID, IOBluetoothRFCOMMChannelDelegate channelDelegate)
 		{
-			return OpenRFCOMMChannelAsync (channelID, channelDelegate);
+			return OpenRFCOMMChannelAsync (channelID, (NSObject)channelDelegate);
 		}
 
 		public BluetoothDeviceAddress Address {
