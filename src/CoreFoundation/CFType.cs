@@ -11,6 +11,8 @@ using System.Reflection;
 namespace MonoMac.CoreFoundation {
 	public abstract class CFType : INativeObject, IDisposable
 	{
+		protected static readonly IntPtr NULL = IntPtr.Zero;
+
 		static object lockObject = new object ();
 		static Dictionary<IntPtr, WeakReference> objectMap =
 			new Dictionary<IntPtr, WeakReference> ();

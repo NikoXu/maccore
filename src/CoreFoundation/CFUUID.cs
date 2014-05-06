@@ -45,8 +45,6 @@ namespace MonoMac.CoreFoundation
 	/// </summary>
 	public class CFUUID : CFType
 	{
-		static readonly IntPtr NULL = IntPtr.Zero;
-
 		bool isConstant = false;
 		Lazy<string> stringValue;
 		Lazy<CFUUIDBytes> bytes;
@@ -156,8 +154,6 @@ namespace MonoMac.CoreFoundation
 		{
 			Dispose (false);
 		}
-
-		public IntPtr Handle { get; private set; }
 
 		public CFUUIDBytes Bytes { get { return bytes.Value; } }
 

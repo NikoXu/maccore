@@ -6400,7 +6400,12 @@ namespace MonoMac.Foundation
 		[Export ("presentedSubitemAtURL:didResolveConflictVersion:")]
 		void PresentedSubitemResolvedConflictVersion (NSUrl url, NSFileVersion version);
 	}
-		
+
+	[BaseType (typeof (NSObject))]
+	interface NSFileSecurity {
+		// This is toll-free bridged to CFFileSecurity and has no obj-c methods or properties itself.
+	}
+
 	[BaseType (typeof (NSObject))]
 	// Objective-C exception thrown.  Name: NSGenericException Reason: -[NSFileVersion init]: You have to use one of the factory methods to instantiate NSFileVersion.
 	[DisableDefaultCtor]
