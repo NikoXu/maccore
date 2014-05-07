@@ -620,14 +620,14 @@ namespace MonoMac.Foundation
 
 		[Export ("dataWithContentsOfURL:options:error:")]
 		[Static]
-		NSData FromUrl (NSUrl url, NSDataReadingOptions mask, out NSError error);
+		NSData TryFromUrl (NSUrl url, NSDataReadingOptions mask, out NSError error);
 
 		[Export ("dataWithContentsOfFile:")][Static]
 		NSData FromFile (string path);
 		
 		[Export ("dataWithContentsOfFile:options:error:")]
 		[Static]
-		NSData FromFile (string path, NSDataReadingOptions mask, out NSError error);
+		NSData TryFromFile (string path, NSDataReadingOptions mask, out NSError error);
 
 		[Export ("dataWithData:")]
 		[Static]
@@ -945,15 +945,15 @@ namespace MonoMac.Foundation
 
 		[Static]
 		[Export ("fileHandleForReadingFromURL:error:")]
-		NSFileHandle OpenReadUrl (NSUrl url, out NSError error);
+		NSFileHandle TryOpenReadUrl (NSUrl url, out NSError error);
 
 		[Static]
 		[Export ("fileHandleForWritingToURL:error:")]
-		NSFileHandle OpenWriteUrl (NSUrl url, out NSError error);
+		NSFileHandle TryOpenWriteUrl (NSUrl url, out NSError error);
 
 		[Static]
 		[Export ("fileHandleForUpdatingURL:error:")]
-		NSFileHandle OpenUpdateUrl (NSUrl url, out NSError error);
+		NSFileHandle TryOpenUpdateUrl (NSUrl url, out NSError error);
 		
 		[Export ("readInBackgroundAndNotifyForModes:")]
 		void ReadInBackground (NSString [] notifyRunLoopModes);
@@ -1505,6 +1505,12 @@ namespace MonoMac.Foundation
 		[Export ("distantFuture")]
 		[Static]
 		NSDate DistantFuture { get; }
+
+		[Export ("isEqualToDate:")]
+		bool Equals (NSDate anotherDate);
+
+		[Export ("compare:")]
+		int CompareTo (NSDate anotherDate);
 
 		[Export ("dateByAddingTimeInterval:")]
 		NSDate AddSeconds (double seconds);
@@ -2586,15 +2592,15 @@ namespace MonoMac.Foundation
 		
 		[Export("bookmarkDataWithContentsOfURL:error:")]
 		[Static]
-		NSData GetBookmarkData (NSUrl bookmarkFileUrl, out NSError error);
+		NSData TryGetBookmarkData (NSUrl bookmarkFileUrl, out NSError error);
 
 		[Export("URLByResolvingBookmarkData:options:relativeToURL:bookmarkDataIsStale:error:")]
 		[Static]
-		NSUrl FromBookmarkData (NSData data, NSUrlBookmarkResolutionOptions options, [NullAllowed] NSUrl relativeToUrl, out bool isStale, out NSError error);
+		NSUrl TryFromBookmarkData (NSData data, NSUrlBookmarkResolutionOptions options, [NullAllowed] NSUrl relativeToUrl, out bool isStale, out NSError error);
 
 		[Export("writeBookmarkData:toURL:options:error:")]
 		[Static]
-		bool WriteBookmarkData (NSData data, NSUrl bookmarkFileUrl, NSUrlBookmarkCreationOptions options, out NSError error);
+		bool TryWriteBookmarkData (NSData data, NSUrl bookmarkFileUrl, NSUrlBookmarkCreationOptions options, out NSError error);
 
 		[Export("startAccessingSecurityScopedResource")]
 		bool StartAccessingSecurityScopedResource();
@@ -2606,18 +2612,18 @@ namespace MonoMac.Foundation
 		NSUrl FilePathUrl { get; }
 
 		[Export("fileReferenceURL")]
-		NSUrl FileReferenceUrl { get; }		
+		NSUrl FileReferenceUrl { get; }
 
 #endif
 
-		[Export ("getResourceValue:forKey:error:"), Internal]
-		bool GetResourceValue (out NSObject value, string key, out NSError error);
+		[Export ("getResourceValue:forKey:error:")]
+		bool TryGetResourceValue ([ReturnValue]out NSObject value, string key, out NSError error);
 
 		[Export ("resourceValuesForKeys:error:")]
-		NSDictionary GetResourceValues (NSString [] keys, out NSError error);
+		NSDictionary TryGetResourceValues (NSString [] keys, out NSError error);
 
-		[Export ("setResourceValue:forKey:error:"), Internal]
-		bool SetResourceValue (NSObject value, string key, out NSError error);
+		[Export ("setResourceValue:forKey:error:")]
+		bool TrySetResourceValue (NSObject value, string key, out NSError error);
 		
 		//[Export ("port")]
 		//NSNumber Port { get;}
@@ -2938,7 +2944,7 @@ namespace MonoMac.Foundation
 		NSString IsExcludedFromBackupKey { get; }
 
 		[Export ("bookmarkDataWithOptions:includingResourceValuesForKeys:relativeToURL:error:")]
-		NSData CreateBookmarkData (NSUrlBookmarkCreationOptions options, string [] resourceValues, [NullAllowed] NSUrl relativeUrl, out NSError error);
+		NSData TryCreateBookmarkData (NSUrlBookmarkCreationOptions options, string [] resourceValues, [NullAllowed] NSUrl relativeUrl, out NSError error);
 
 		[Export ("initByResolvingBookmarkData:options:relativeToURL:bookmarkDataIsStale:error:")]
 		IntPtr Constructor (NSData bookmarkData, NSUrlBookmarkResolutionOptions resolutionOptions, [NullAllowed] NSUrl relativeUrl, out bool bookmarkIsStale, out NSError error);
@@ -4816,19 +4822,20 @@ namespace MonoMac.Foundation
 
 		[Static]
 		[Export ("dataWithJSONObject:options:error:")]
-		NSData Serialize (NSObject obj, NSJsonWritingOptions opt, out NSError error);
+		NSData TrySerialize (NSObject obj, NSJsonWritingOptions opt, out NSError error);
 
 		[Static]
 		[Export ("JSONObjectWithData:options:error:")]
-		NSObject Deserialize (NSData data, NSJsonReadingOptions opt, NSError error);
+		NSObject TryDeserialize (NSData data, NSJsonReadingOptions opt, out NSError error);
 
 		[Static]
 		[Export ("writeJSONObject:toStream:options:error:")]
-		int Serialize (NSObject obj, NSOutputStream stream, NSJsonWritingOptions opt, out NSError error);
+		[return: ErrorValue("0")]
+		int TrySerialize (NSObject obj, NSOutputStream stream, NSJsonWritingOptions opt, out NSError error);
 
 		[Static]
 		[Export ("JSONObjectWithStream:options:error:")]
-		NSObject Deserialize (NSInputStream stream, NSJsonReadingOptions opt, out NSError error);
+		NSObject TryDeserialize (NSInputStream stream, NSJsonReadingOptions opt, out NSError error);
 
 	}
 	
@@ -5953,7 +5960,7 @@ namespace MonoMac.Foundation
 		void CoordinateWriteWrite (NSUrl writingURL, NSFileCoordinatorWritingOptions writingOptions, NSUrl writingURL2, NSFileCoordinatorWritingOptions writingOptions2, out NSError error, /* non null */ NSFileCoordinatorWorkerRW writeWriteWorker);
 
 		[Export ("prepareForReadingItemsAtURLs:options:writingItemsAtURLs:options:error:byAccessor:")]
-		void CoordinateBatc (NSUrl [] readingURLs, NSFileCoordinatorReadingOptions readingOptions, NSUrl [] writingURLs, NSFileCoordinatorWritingOptions writingOptions, out NSError error, /* non null */ NSAction batchHandler);
+		void CoordinateBatch (NSUrl [] readingURLs, NSFileCoordinatorReadingOptions readingOptions, NSUrl [] writingURLs, NSFileCoordinatorWritingOptions writingOptions, out NSError error, /* non null */ NSAction batchHandler);
 
 		[Export ("itemAtURL:didMoveToURL:")]
 		void ItemMoved (NSUrl fromUrl, NSUrl toUrl);
@@ -6086,16 +6093,16 @@ namespace MonoMac.Foundation
 		NSFileManagerDelegate Delegate { get; set; }
 
 		[Export ("setAttributes:ofItemAtPath:error:")]
-		bool SetAttributes (NSDictionary attributes, string path, out NSError error);
+		bool TrySetAttributes (NSDictionary attributes, string path, out NSError error);
 
 		[Export ("createDirectoryAtPath:withIntermediateDirectories:attributes:error:")]
-		bool CreateDirectory (string path, bool createIntermediates, [NullAllowed] NSDictionary attributes, out NSError error);
+		bool TryCreateDirectory (string path, bool createIntermediates, [NullAllowed] NSDictionary attributes, out NSError error);
 
 		[Export ("contentsOfDirectoryAtPath:error:")]
-		string[] GetDirectoryContent (string path, out NSError error);
+		string[] TryGetDirectoryContent (string path, out NSError error);
 
 		[Export ("subpathsOfDirectoryAtPath:error:")]
-		string[] GetDirectoryContentRecursive (string path, out NSError error);
+		string[] TryGetDirectoryContentRecursive (string path, out NSError error);
 
 		[Export ("attributesOfItemAtPath:error:")][Internal]
 		NSDictionary _GetAttributes (string path, out NSError error);
@@ -6104,22 +6111,22 @@ namespace MonoMac.Foundation
 		NSDictionary _GetFileSystemAttributes (String path, out NSError error);
 
 		[Export ("createSymbolicLinkAtPath:withDestinationPath:error:")]
-		bool CreateSymbolicLink (string path, string destPath, out NSError error);
+		bool TryCreateSymbolicLink (string path, string destPath, out NSError error);
 
 		[Export ("destinationOfSymbolicLinkAtPath:error:")]
-		string GetSymbolicLinkDestination (string path, out NSError error);
+		string TryGetSymbolicLinkDestination (string path, out NSError error);
 
 		[Export ("copyItemAtPath:toPath:error:")]
-		bool Copy (string srcPath, string dstPath, out NSError error);
+		bool TryCopy (string srcPath, string dstPath, out NSError error);
 
 		[Export ("moveItemAtPath:toPath:error:")]
-		bool Move (string srcPath, string dstPath, out NSError error);
+		bool TryMove (string srcPath, string dstPath, out NSError error);
 
 		[Export ("linkItemAtPath:toPath:error:")]
-		bool Link (string srcPath, string dstPath, out NSError error);
+		bool TryLink (string srcPath, string dstPath, out NSError error);
 
 		[Export ("removeItemAtPath:error:")]
-		bool Remove ([NullAllowed] string path, out NSError error);
+		bool TryRemove ([NullAllowed] string path, out NSError error);
 
 #if DEPRECATED
 		// These are not available on iOS, and deprecated on OSX.
@@ -6182,31 +6189,32 @@ namespace MonoMac.Foundation
 
 		[Since (4,0)]
 		[Export ("contentsOfDirectoryAtURL:includingPropertiesForKeys:options:error:")]
-		NSUrl[] GetDirectoryContent (NSUrl url, NSArray properties, NSDirectoryEnumerationOptions options, out NSError error);
+		NSUrl[] TryGetDirectoryContent (NSUrl url, NSArray properties, NSDirectoryEnumerationOptions options, out NSError error);
 
 		[Since (4,0)]
 		[Export ("copyItemAtURL:toURL:error:")]
-		bool Copy (NSUrl srcUrl, NSUrl dstUrl, out NSError error);
+		bool TryCopy (NSUrl srcUrl, NSUrl dstUrl, out NSError error);
 
 		[Since (4,0)]
 		[Export ("moveItemAtURL:toURL:error:")]
-		bool Move (NSUrl srcUrl, NSUrl dstUrl, out NSError error);
+		bool TryMove (NSUrl srcUrl, NSUrl dstUrl, out NSError error);
 
 		[Since (4,0)]
 		[Export ("linkItemAtURL:toURL:error:")]
-		bool Link (NSUrl srcUrl, NSUrl dstUrl, out NSError error);
+		bool TryLink (NSUrl srcUrl, NSUrl dstUrl, out NSError error);
 
 		[Since (4,0)]
 		[Export ("removeItemAtURL:error:")]
-		bool Remove ([NullAllowed] NSUrl url, out NSError error);
+		bool TryRemove ([NullAllowed] NSUrl url, out NSError error);
 
 		[Since (4,0)]
 		[Export ("enumeratorAtURL:includingPropertiesForKeys:options:errorHandler:")]
-		NSDirectoryEnumerator GetEnumerator (NSUrl url, [NullAllowed] NSArray properties, NSDirectoryEnumerationOptions options, [NullAllowed] NSEnumerateErrorHandler handler);
+		NSDirectoryEnumerator GetEnumerator (NSUrl url, [NullAllowed] NSArray properties, NSDirectoryEnumerationOptions options,
+			[NullAllowed] NSEnumerateErrorHandler handler);
 
 		[Since (4,0)]
 		[Export ("URLForDirectory:inDomain:appropriateForURL:create:error:")]
-		NSUrl GetUrl (NSSearchPathDirectory directory, NSSearchPathDomain domain, [NullAllowed] NSUrl url, bool shouldCreate, out NSError error);
+		NSUrl TryGetUrl (NSSearchPathDirectory directory, NSSearchPathDomain domain, [NullAllowed] NSUrl url, bool shouldCreate, out NSError error);
 
 		[Since (4,0)]
 		[Export ("URLsForDirectory:inDomains:")]
@@ -6214,7 +6222,8 @@ namespace MonoMac.Foundation
 
 		[Since (4,0)]
 		[Export ("replaceItemAtURL:withItemAtURL:backupItemName:options:resultingItemURL:error:")]
-		bool Replace (NSUrl originalItem, NSUrl newItem, [NullAllowed] string backupItemName, NSFileManagerItemReplacementOptions options, out NSUrl resultingURL, out NSError error);
+		bool TryReplace (NSUrl originalItem, NSUrl newItem, [NullAllowed] string backupItemName, NSFileManagerItemReplacementOptions options,
+			[ReturnValue] out NSUrl resultingURL, out NSError error);
 
 		[Since (4,0)]
 		[Export ("mountedVolumeURLsIncludingResourceValuesForKeys:options:")]
@@ -6231,35 +6240,35 @@ namespace MonoMac.Foundation
 
 		[Since (5,0)]
 		[Export ("createDirectoryAtURL:withIntermediateDirectories:attributes:error:")]
-		bool CreateDirectory (NSUrl url, bool createIntermediates, [NullAllowed] NSDictionary attributes, out NSError error);
+		bool TryCreateDirectory (NSUrl url, bool createIntermediates, [NullAllowed] NSDictionary attributes, out NSError error);
 
 		[Since (5,0)]
-                [Export ("createSymbolicLinkAtURL:withDestinationURL:error:")]
-                bool CreateSymbolicLink (NSUrl url, NSUrl destURL, out NSError error);
+		[Export ("createSymbolicLinkAtURL:withDestinationURL:error:")]
+		bool TryCreateSymbolicLink (NSUrl url, NSUrl destURL, out NSError error);
 
 		[Since (5,0)]
-                [Export ("setUbiquitous:itemAtURL:destinationURL:error:")]
-                bool SetUbiquitous (bool flag, NSUrl url, NSUrl destinationUrl, out NSError error);
+		[Export ("setUbiquitous:itemAtURL:destinationURL:error:")]
+		bool TrySetUbiquitous (bool flag, NSUrl url, NSUrl destinationUrl, out NSError error);
 
 		[Since (5,0)]
-                [Export ("isUbiquitousItemAtURL:")]
-                bool IsUbiquitous (NSUrl url);
+		[Export ("isUbiquitousItemAtURL:")]
+		bool IsUbiquitous (NSUrl url);
 
 		[Since (5,0)]
-                [Export ("startDownloadingUbiquitousItemAtURL:error:")]
-                bool StartDownloadingUbiquitous (NSUrl url, out NSError error);
+		[Export ("startDownloadingUbiquitousItemAtURL:error:")]
+		bool TryStartDownloadingUbiquitous (NSUrl url, out NSError error);
 
 		[Since (5,0)]
-                [Export ("evictUbiquitousItemAtURL:error:")]
-                bool EvictUbiquitous (NSUrl url, out NSError error);
+		[Export ("evictUbiquitousItemAtURL:error:")]
+		bool TryEvictUbiquitous (NSUrl url, out NSError error);
 
 		[Since (5,0)]
-                [Export ("URLForUbiquityContainerIdentifier:")]
-                NSUrl GetUrlForUbiquityContainer ([NullAllowed] string containerIdentifier);
+		[Export ("URLForUbiquityContainerIdentifier:")]
+		NSUrl GetUrlForUbiquityContainer ([NullAllowed] string containerIdentifier);
 
 		[Since (5,0)]
-                [Export ("URLForPublishingUbiquitousItemAtURL:expirationDate:error:")]
-                NSUrl GetUrlForPublishingUbiquitousItem (NSUrl url, out NSDate expirationDate, out NSError error);
+		[Export ("URLForPublishingUbiquitousItemAtURL:expirationDate:error:")]
+		NSUrl TryGetUrlForPublishingUbiquitousItem (NSUrl url, out NSDate expirationDate, out NSError error);
 
 		[Since (6,0)]
 		[MountainLion]
@@ -6461,14 +6470,14 @@ namespace MonoMac.Foundation
 #endif
 
 		[Export ("replaceItemAtURL:options:error:")]
-		NSUrl ReplaceItem (NSUrl url, NSFileVersionReplacingOptions options, out NSError error);
+		NSUrl TryReplaceItem (NSUrl url, NSFileVersionReplacingOptions options, out NSError error);
 
 		[Export ("removeAndReturnError:")]
-		bool Remove (out NSError outError);
+		bool TryRemove (out NSError outError);
 
 		[Static]
 		[Export ("removeOtherVersionsOfItemAtURL:error:")]
-		bool RemoveOtherVersions (NSUrl url, out NSError outError);
+		bool TryRemoveOtherVersions (NSUrl url, out NSError outError);
 	}
 
 	[BaseType (typeof (NSObject))]
@@ -6502,10 +6511,10 @@ namespace MonoMac.Foundation
 		bool MatchesContentsOfURL (NSUrl url);
 
 		[Export ("readFromURL:options:error:")]
-		bool Read (NSUrl url, NSFileWrapperReadingOptions options, out NSError outError);
+		bool TryRead (NSUrl url, NSFileWrapperReadingOptions options, out NSError outError);
 
 		[Export ("writeToURL:options:originalContentsURL:error:")]
-		bool Write (NSUrl url, NSFileWrapperWritingOptions options, NSUrl originalContentsURL, out NSError outError);
+		bool TryWrite (NSUrl url, NSFileWrapperWritingOptions options, NSUrl originalContentsURL, out NSError outError);
 
 		[Export ("serializedRepresentation")]
 		NSData GetSerializedRepresentation ();
@@ -6772,19 +6781,20 @@ namespace MonoMac.Foundation
 	[DisableDefaultCtor]
 	public interface NSPropertyListSerialization {
 		[Static, Export ("dataWithPropertyList:format:options:error:")]
-		NSData DataWithPropertyList (NSObject plist, NSPropertyListFormat format,
+		NSData TryGetDataWithPropertyList (NSObject plist, NSPropertyListFormat format,
 			NSPropertyListWriteOptions options, out NSError error);
 
 		[Static, Export ("writePropertyList:toStream:format:options:error:")]
-		int WritePropertyList (NSObject plist, NSOutputStream stream, NSPropertyListFormat format,
+		[return: ErrorValue ("0")]
+		int TryWritePropertyList (NSObject plist, NSOutputStream stream, NSPropertyListFormat format,
 			NSPropertyListWriteOptions options, out NSError error);
 
 		[Static, Export ("propertyListWithData:options:format:error:")]
-		NSObject PropertyListWithData (NSData data, NSPropertyListReadOptions options,
+		NSObject TryGetPropertyListWithData (NSData data, NSPropertyListReadOptions options,
 			ref NSPropertyListFormat format, out NSError error);
 
 		[Static, Export ("propertyListWithStream:options:format:error:")]
-		NSObject PropertyListWithStream (NSInputStream stream, NSPropertyListReadOptions options,
+		NSObject TryGetPropertyListWithStream (NSInputStream stream, NSPropertyListReadOptions options,
 			ref NSPropertyListFormat format, out NSError error);
 
 		[Static, Export ("propertyList:isValidForFormat:")]

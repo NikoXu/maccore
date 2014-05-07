@@ -77,27 +77,5 @@ namespace MonoMac.Foundation {
 		{
 			return AbsoluteString ?? base.ToString ();
 		}
-
-		public bool TryGetResource (string key, out NSObject value, out NSError error)
-		{
-			return GetResourceValue (out value, key, out error);
-		}
-
-		public bool TryGetResource (string key, out NSObject value)
-		{
-			NSError error;
-			return GetResourceValue (out value, key, out error);
-		}
-
-		public bool SetResource (string key, NSObject value, out NSError error)
-		{
-			return SetResourceValue (value, key, out error);
-		}
-
-		public bool SetResource (string key, NSObject value)
-		{
-			NSError error;
-			return SetResourceValue (value, key, out error);
-		}
 	}
 }

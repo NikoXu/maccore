@@ -32,24 +32,24 @@ namespace MonoMac.Foundation
 {
 	public partial class NSPropertyListSerialization
 	{
-		public static NSData DataWithPropertyList (NSObject plist, NSPropertyListFormat format, out NSError error)
+		public static NSData TryGetDataWithPropertyList (NSObject plist, NSPropertyListFormat format, out NSError error)
 		{
-			return DataWithPropertyList (plist, format, NSPropertyListWriteOptions.Immutable, out error);
+			return TryGetDataWithPropertyList (plist, format, NSPropertyListWriteOptions.Immutable, out error);
 		}
 
-		public static int WritePropertyList (NSObject plist, NSOutputStream stream, NSPropertyListFormat format, out NSError error)
+		public static int TryWritePropertyList (NSObject plist, NSOutputStream stream, NSPropertyListFormat format, out NSError error)
 		{
-			return WritePropertyList (plist, stream, format, NSPropertyListWriteOptions.Immutable, out error);
+			return TryWritePropertyList (plist, stream, format, NSPropertyListWriteOptions.Immutable, out error);
 		}
 
-		public static NSObject PropertyListWithData (NSData data, ref NSPropertyListFormat format, out NSError error)
+		public static NSObject TryGetPropertyListWithData (NSData data, ref NSPropertyListFormat format, out NSError error)
 		{
-			return PropertyListWithData (data, NSPropertyListReadOptions.Immutable, ref format, out error);
+			return TryGetPropertyListWithData (data, NSPropertyListReadOptions.Immutable, ref format, out error);
 		}
 
-		public static NSObject PropertyListWithStream (NSInputStream stream, ref NSPropertyListFormat format, out NSError error)
+		public static NSObject TryGetPropertyListWithStream (NSInputStream stream, ref NSPropertyListFormat format, out NSError error)
 		{
-			return PropertyListWithStream (stream, NSPropertyListReadOptions.Immutable, ref format, out error);
+			return TryGetPropertyListWithStream (stream, NSPropertyListReadOptions.Immutable, ref format, out error);
 		}
 	}
 }

@@ -226,37 +226,34 @@ namespace MonoMac.Foundation {
 		{
 			return attr.dict;
 		}
-		
-	}		
+	}
 	
 	public partial class NSFileManager {
-		public bool SetAttributes (NSFileAttributes attributes, string path, out NSError error)
+		public bool TrySetAttributes (NSFileAttributes attributes, string path, out NSError error)
 		{
 			if (attributes == null)
 				throw new ArgumentNullException ("attributes");
-			return SetAttributes (attributes.ToDictionary (), path, out error);
+			return TrySetAttributes (attributes.ToDictionary (), path, out error);
 		}
 
-		public bool SetAttributes (NSFileAttributes attributes, string path)
+		public void SetAttributes (NSFileAttributes attributes, string path)
 		{
-			NSError ignore;
 			if (attributes == null)
 				throw new ArgumentNullException ("attributes");
-
-			return SetAttributes (attributes.ToDictionary (), path, out ignore);
+			SetAttributes (attributes.ToDictionary (), path);
 		}
 
-		public bool CreateDirectory (string path, bool createIntermediates, NSFileAttributes attributes, out NSError error)
+		public bool TryCreateDirectory (string path, bool createIntermediates, NSFileAttributes attributes, out NSError error)
 		{
 			var dict = attributes == null ? null : attributes.ToDictionary ();
-			return CreateDirectory (path, createIntermediates, dict, out error);
+			return TryCreateDirectory (path, createIntermediates, dict, out error);
 		}
 
-		public bool CreateDirectory (string path, bool createIntermediates, NSFileAttributes attributes)
+		public bool TryCreateDirectory (string path, bool createIntermediates, NSFileAttributes attributes)
 		{
 			NSError error;
 			var dict = attributes == null ? null : attributes.ToDictionary ();
-			return CreateDirectory (path, createIntermediates, dict, out error);
+			return TryCreateDirectory (path, createIntermediates, dict, out error);
 		}
 
 		public bool CreateFile (string path, NSData data, NSFileAttributes attributes)
@@ -265,7 +262,7 @@ namespace MonoMac.Foundation {
 			return CreateFile (path, data, dict);
 		}
 		
-		public NSFileAttributes GetAttributes (string path, out NSError error)
+		public NSFileAttributes TryGetAttributes (string path, out NSError error)
 		{
 			return NSFileAttributes.FromDict (_GetAttributes (path, out error));
 		}
@@ -273,18 +270,24 @@ namespace MonoMac.Foundation {
 		public NSFileAttributes GetAttributes (string path)
 		{
 			NSError error;
-			return NSFileAttributes.FromDict (_GetAttributes (path, out error));
+			var result = NSFileAttributes.FromDict (_GetAttributes (path, out error));
+			if (result == null)
+				throw new NSErrorException (error);
+			return result;
+		}
+
+		public NSFileSystemAttributes TryGetFileSystemAttributes (string path, out NSError error)
+		{
+			return NSFileSystemAttributes.FromDict (_GetFileSystemAttributes (path, out error));
 		}
 
 		public NSFileSystemAttributes GetFileSystemAttributes (string path)
 		{
 			NSError error;
-			return NSFileSystemAttributes.FromDict (_GetFileSystemAttributes (path, out error));
-		}
-
-		public NSFileSystemAttributes GetFileSystemAttributes (string path, out NSError error)
-		{
-			return NSFileSystemAttributes.FromDict (_GetFileSystemAttributes (path, out error));
+			var result = TryGetFileSystemAttributes (path, out error);
+			if (result == null)
+				throw new NSErrorException (error);
+			return result;
 		}
 
 		public string CurrentDirectory {

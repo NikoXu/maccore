@@ -702,6 +702,21 @@ public class AsyncAttribute : Attribute {
 	public string ResultTypeName { get; set; }
 }
 
+// Return value that indicates an error return by a Try method
+public class ErrorValueAttribute : Attribute {
+	public ErrorValueAttribute (string value)
+	{
+		this.Value = value;
+	}
+
+	public string Value { get; private set; }
+}
+
+// Indicates that an out parameter should be the return parameter
+// Used by Try methods for now
+public class ReturnValueAttribute : Attribute {
+}
+
 //
 // Used to encapsulate flags about types in either the parameter or the return value
 // For now, it only supports the [PlainString] attribute on strings.
@@ -2236,7 +2251,7 @@ public class Generator {
 			return RemoveArity (tname) + "<" + string.Join (", ", targs.Select (l => FormatType (usedIn, l)).ToArray ()) + ">";
 		}
 
-		return tname;
+		return tname.Replace ("&", "");
 	}
 
 	static string RemoveArity (string typeName)
@@ -2267,8 +2282,6 @@ public class Generator {
 		ctor = mi.Name == "Constructor";
 		string name =  ctor ? mi.DeclaringType.Name : is_async ? GetAsyncName (mi) : mi.Name;
 
-		if (mi.Name == "AutocapitalizationType"){
-		}
 		if (!ctor && !is_async){
 			sb.Append (FormatType (mi.DeclaringType, mi.ReturnType));
 			sb.Append (" ");
@@ -2691,7 +2704,8 @@ public class Generator {
 	// The NullAllowed can be applied on a property, to avoid the ugly syntax, we allow it on the property
 	// So we need to pass this as `null_allowed_override',   This should only be used by setters.
 	//
-	public void GenerateMethodBody (Type type, MemberInformation minfo, MethodInfo mi, string sel, bool null_allowed_override, string var_name, BodyOption body_options, PropertyInfo propInfo = null, bool is_appearance = false, Type category_type = null)
+	public void GenerateMethodBody (Type type, MemberInformation minfo, MethodInfo mi, string sel, bool null_allowed_override,
+		string var_name, BodyOption body_options, PropertyInfo propInfo = null, bool is_appearance = false, Type category_type = null)
 	{
 		CurrentMethod = String.Format ("{0}.{1}", type.Name, mi.Name);
 
@@ -3145,7 +3159,7 @@ public class Generator {
 			}
 			indent--;
 			print ("}\n");
-			return;			
+			return;	
 		}
 
 		if (pi.CanRead){
@@ -3231,7 +3245,7 @@ public class Generator {
 #if !MONOMAC
 							print ("\tif (!IsNewRefcountEnabled ())");
 #endif
-							print ("\t\t{0} = value;", var_name);									
+							print ("\t\t{0} = value;", var_name);
 						} else {
 #if !MONOMAC
 							print ("\tMarkDirty ();");
@@ -3425,12 +3439,10 @@ public class Generator {
 		PrintMethodAttributes (mi);
 		PrintPlatformAttributes (mi);
 
-		var mod = minfo.GetVisibility ();
-
 		bool ctor;
 		print_generated_code ();
 		print ("{0} {1}{2}{3}",
-		       mod,
+		       minfo.GetVisibility (),
 		       minfo.GetModifiers (),
 		       MakeSignature (mi, out ctor, category_extension_type),
 		       minfo.is_abstract ? ";" : "");
@@ -3473,8 +3485,112 @@ public class Generator {
 		if (mi.IsDefined (typeof (AsyncAttribute), false))
 			GenerateAsyncMethod (type, mi, category_extension_type);
 
+		var errorParameter = mi.GetParameters ().Where (pi => pi.IsOut && pi.ParameterType.Name == "NSError&").SingleOrDefault ();
+		if (mi.Name.StartsWith ("Try") && errorParameter != null)
+			GenerateTryWrapper (minfo, mi, errorParameter);
 	}
-	
+
+	void GenerateTryWrapper (MemberInformation minfo, MethodInfo mi, ParameterInfo errorParameter)
+	{
+		var returnsObject = mi.ReturnType != typeof(bool);
+		var returnType = mi.ReturnType;
+		var returnParameter = (ParameterInfo)null;
+		if (!returnsObject) {
+			foreach (var pi in mi.GetParameters ()) {
+				if (HasAttribute (pi, typeof(ReturnValueAttribute))) {
+					if (!pi.IsOut)
+						throw new BindingException (1099, "Parameters with RerturnValue attribute must be declared as 'out'");
+					returnsObject = true;
+					returnType = pi.ParameterType;
+					returnParameter = pi;
+					break;
+				}
+			}
+		}
+
+		PrintMethodAttributes (mi);
+
+		print_generated_code ();
+
+		StringBuilder sb = new StringBuilder ();
+		string name =  mi.Name.Substring (3);
+		var parameters = mi.GetParameters ().Except (new [] { errorParameter, returnParameter }).ToArray ();
+		sb.Append (returnsObject ? FormatType (mi.DeclaringType, returnType) : "void");
+		sb.Append (" ");
+		sb.Append (name);
+		sb.Append (" (");
+
+		bool comma = false;
+		foreach (var pi in parameters){
+			if (comma)
+				sb.Append (", ");
+			comma = true;
+
+			// Format nicely the type, as succinctly as possible
+			Type parType = pi.ParameterType;
+			if (parType.IsByRef){
+				string reftype = HasAttribute (pi, typeof (OutAttribute)) ? "out " : "ref ";
+				sb.Append (reftype);
+				parType = parType.GetElementType ();
+			}
+			sb.Append (FormatType (mi.DeclaringType, parType));
+			sb.Append (" ");
+			if (keywords.Contains (pi.Name))
+				sb.Append ("@");
+			sb.Append (pi.Name);
+		}
+		sb.Append (")");
+
+		print ("{0} {1}{2}",
+			minfo.GetVisibility (),
+			minfo.GetModifiers ().Replace ("virtual ", "").Replace ("override ", ""),
+			sb.ToString ());
+
+		sb.Clear ();
+		sb.Append (mi.Name);
+		sb.Append (" (");
+		comma = false;
+		foreach (var pi in mi.GetParameters ()) {
+			if (comma)
+				sb.Append (", ");
+			comma = true;
+
+			Type parType = pi.ParameterType;
+			if (parType.IsByRef){
+				string reftype = HasAttribute (pi, typeof (OutAttribute)) ? "out " : "ref ";
+				sb.Append (reftype);
+				parType = parType.GetElementType ();
+			}
+			if (keywords.Contains (pi.Name))
+				sb.Append ("@");
+			sb.Append (pi.Name);
+		}
+		sb.Append (")");
+
+		print ("{");
+		indent++;
+
+		print ("NSError {0};", errorParameter.Name);
+		if (returnParameter != null)
+			print ("{0} {1};", FormatType (mi.DeclaringType, returnType), returnParameter.Name);
+		if (returnsObject && returnParameter == null) {
+			print ("var result = {0};", sb.ToString ());
+			string errorValue = "null";
+			if (HasAttribute(mi.ReturnTypeCustomAttributes, typeof(ErrorValueAttribute))) {
+				var errorValueAttr = GetAttribute<ErrorValueAttribute> (mi.ReturnTypeCustomAttributes);
+				errorValue = errorValueAttr.Value;
+			}
+			print ("if (result == {0})", errorValue);
+		} else {
+			print ("if (!{0})", sb.ToString ());
+		}
+		print ("\tthrow new NSErrorException ({0});", errorParameter.Name);
+		if (returnsObject)
+			print ("return {0};", returnParameter == null ? "result" : returnParameter.Name);
+		indent--;
+		print ("}\n");
+	}
+
 	public string GetGeneratedTypeName (Type type)
 	{
 		object [] bindOnType = type.GetCustomAttributes (typeof (BindAttribute), true);
