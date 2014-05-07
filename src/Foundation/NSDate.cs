@@ -34,7 +34,7 @@ using MonoMac.ObjCRuntime;
 
 namespace MonoMac.Foundation {
 
-	public partial class NSDate {
+	public partial class NSDate : IComparable<NSDate>, IEquatable<NSDate>, IEquatable<DateTime> {
 		const long NSDATE_TICKS = 631139040000000000;
 		
 		public static implicit operator DateTime (NSDate d)
@@ -54,6 +54,24 @@ namespace MonoMac.Foundation {
 		public static implicit operator NSDate (DateTime dt)
 		{
 			return FromTimeIntervalSinceReferenceDate ((dt.ToUniversalTime ().Ticks - NSDATE_TICKS) / TimeSpan.TicksPerSecond);
+		}
+
+		public bool Equals (DateTime anotherDate)
+		{
+			return Equals ((NSDate)anotherDate);
+		}
+
+		public override bool Equals (object obj)
+		{
+			var anotherDate = obj as NSDate;
+			if (anotherDate != null)
+				return Equals (obj as NSDate);
+			return false;
+		}
+
+		public override int GetHashCode ()
+		{
+			return (int)SecondsSinceReferenceDate;
 		}
 
 		public override string ToString ()
