@@ -80,7 +80,8 @@ namespace MonoMac.CoreFoundation {
 
 		public static CFAllocator Default {
 			get {
-				return Default_cf ?? (Default_cf = new CFAllocator (default_ptr)); 
+				// default_ptr is always NULL
+				return Default_cf ?? (Default_cf = new CFAllocator (default_ptr, true)); 
 			}
 		}
 
