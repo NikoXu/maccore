@@ -78,6 +78,8 @@ namespace MonoMac.CoreFoundation {
 
 		public static T GetCFObject<T> (IntPtr handle) where T : CFType
 		{
+			if (handle == IntPtr.Zero)
+				return null;
 			lock (lockObject) {
 				WeakReference reference;
 				if (objectMap.TryGetValue (handle, out reference) && reference.IsAlive)
