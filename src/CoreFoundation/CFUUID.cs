@@ -155,6 +155,19 @@ namespace MonoMac.CoreFoundation
 			Dispose (false);
 		}
 
+		protected override void Dispose (bool disposing)
+		{
+			if (isConstant) {
+				if (Handle != IntPtr.Zero) {
+					// constant references are not to be released.
+					Unregister ();
+					Handle = IntPtr.Zero;
+				}
+				return;
+			}
+			base.Dispose (disposing);
+		}
+
 		public CFUUIDBytes Bytes { get { return bytes.Value; } }
 
 		public static uint TypeID {
