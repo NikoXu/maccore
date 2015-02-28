@@ -78,10 +78,10 @@ namespace MonoMac.IOKit
 		internal static IOService GetMatchingService (IntPtr masterPortRef, IntPtr matchingDictionary)
 		{
 			CFType.Retain (matchingDictionary);
-			var service = IOServiceGetMatchingService (masterPortRef, matchingDictionary);
-			if (service == IntPtr.Zero)
+			var serviceRef = IOServiceGetMatchingService (masterPortRef, matchingDictionary);
+			if (serviceRef == IntPtr.Zero)
 				return null;
-			return new IOService (service, true);
+			return IOObject.MarshalNativeObject<IOService> (serviceRef, true);
 		}
 
 		[DllImport (Constants.IOKitLibrary)]

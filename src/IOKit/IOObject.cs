@@ -105,14 +105,18 @@ namespace MonoMac.IOKit
 		[DllImport (Constants.IOKitLibrary)]
 		extern static CFStringRef IOObjectCopyClass (io_object_t obj);
 
+		static string GetClassName (IntPtr handle) {
+			var classNameRef = IOObjectCopyClass (handle);
+			var className = new CFString (classNameRef);
+			CFType.Release (classNameRef);
+			return className.ToString ();
+		}
+
 		[Since (4,0)]
 		public string ClassName {
 			get {
 				ThrowIfDisposed ();
-				var classNameRef = IOObjectCopyClass (Handle);
-				var className = new CFString (classNameRef);
-				CFType.Release (classNameRef);
-				return className.ToString ();
+				return GetClassName (Handle);
 			}
 		}
 
@@ -202,8 +206,6 @@ namespace MonoMac.IOKit
 
 		public T Cast<T> () where T : IOObject
 		{
-			if (!ConformsTo (typeof(T).Name))
-				throw new InvalidCastException ();
 			return MarshalNativeObject<T> (Handle, false);
 		}
 
@@ -215,18 +217,26 @@ namespace MonoMac.IOKit
 
 		internal static T MarshalNativeObject<T> (IntPtr handle, bool owns) where T : IOObject
 		{
+			if (handle == IntPtr.Zero)
+				return null;
+			if (!IOObjectConformsTo (handle, typeof(T).Name))
+				throw new InvalidCastException ();
 			lock (lockObj) {
 				if (objectMap.ContainsKey (handle) && objectMap [handle].IsAlive)
 					return (T)objectMap [handle].Target;
 			}
-			if (!constructorCache.ContainsKey (typeof(T))) {
-				var constructorInfo = typeof(T).GetConstructor (BindingFlags.Instance | BindingFlags.NonPublic, null,
-				                                                new Type[] { typeof(IntPtr), typeof(bool) }, null);
+			var className = string.Format ("MonoMac.IOKit.{0}", GetClassName (handle));
+			var type = Type.GetType (className);
+			if (type == null)
+				throw new Exception (string.Format ("Unknown type '{0}'.", className));
+			if (!constructorCache.ContainsKey (type)) {
+				var constructorInfo = type.GetConstructor (BindingFlags.Instance | BindingFlags.NonPublic, null,
+				                                           new Type[] { typeof(IntPtr), typeof(bool) }, null);
 				if (constructorInfo == null)
-					throw new ArgumentException (string.Format ("Type '{0}' does not contain a constructor 'T(IntPtr, bool)'", typeof(T).Name));
-				constructorCache.Add (typeof(T), (handle2, owns2) => (T)constructorInfo.Invoke (new object [] { handle2, owns2 }));
+					throw new ArgumentException (string.Format ("Type '{0}' does not contain a constructor 'T(IntPtr, bool)'", type.Name));
+				constructorCache.Add (type, (handle2, owns2) => (T)constructorInfo.Invoke (new object [] { handle2, owns2 }));
 			}
-			return (T)constructorCache [typeof(T)].Invoke (handle, owns);
+			return (T)constructorCache [type].Invoke (handle, owns);
 		}
 
 		public event EventHandler Disposing;
