@@ -202,7 +202,7 @@ namespace MonoMac.IOKit
 		{
 			ThrowIfDisposed ();
 			CFMutableDictionaryRef propertiesRef;
-			var result = IORegistryEntryCreateCFProperties (Handle, out propertiesRef, CFAllocator.Default.Handle, 0);
+			var result = IORegistryEntryCreateCFProperties (Handle, out propertiesRef, IntPtr.Zero, 0);
 			ThrowIfError (result);
 			var dict = new NSMutableDictionary (propertiesRef);
 			CFType.Release (propertiesRef);
@@ -217,7 +217,7 @@ namespace MonoMac.IOKit
 		{
 			ThrowIfDisposed ();
 			var keyAsCFString = new CFString (key);
-			return IORegistryEntryCreateCFProperty (Handle, keyAsCFString.Handle, CFAllocator.Default.Handle, 0);
+			return IORegistryEntryCreateCFProperty (Handle, keyAsCFString.Handle, IntPtr.Zero, 0);
 		}
 
 //		[DllImport (Constants.IOKitLibrary)]
