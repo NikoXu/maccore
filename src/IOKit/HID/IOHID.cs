@@ -35,7 +35,7 @@ using IOHIDValueRef = System.IntPtr;
 using uint32_t = System.UInt32;
 using uint8_t = System.Byte;
 
-namespace MonoMac.IOKit.HID
+namespace MonoMac.IOKit
 {
 	public static class IOHID
 	{

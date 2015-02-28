@@ -41,7 +41,7 @@ using io_service_t = System.IntPtr;
 using mach_port_t = System.IntPtr;
 using System.Threading.Tasks;
 
-namespace MonoMac.IOKit.USB
+namespace MonoMac.IOKit
 {
 	public class IOUSBInterface : IOUSBNub
 	{

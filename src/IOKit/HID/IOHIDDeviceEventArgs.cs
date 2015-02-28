@@ -27,7 +27,7 @@
 using System;
 using MonoMac.IOKit;
 
-namespace MonoMac.IOKit.HID
+namespace MonoMac.IOKit
 {
 	public class IOHIDDeviceEventArgs : IOReturnEventArgs
 	{

@@ -29,7 +29,7 @@ using MonoMac.CoreFoundation;
 using MonoMac.Foundation;
 using MonoMac.ObjCRuntime;
 
-namespace MonoMac.IOKit.USB
+namespace MonoMac.IOKit
 {
 
 	public static class IOUSB

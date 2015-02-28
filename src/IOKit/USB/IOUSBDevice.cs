@@ -44,7 +44,7 @@ using USBDeviceAddress = System.UInt16;
 using io_iterator_t = System.IntPtr;
 using mach_port_t = System.IntPtr;
 
-namespace MonoMac.IOKit.USB
+namespace MonoMac.IOKit
 {
 	public class IOUSBDevice : IOUSBNub
 	{

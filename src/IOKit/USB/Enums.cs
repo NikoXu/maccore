@@ -25,7 +25,7 @@
 // THE SOFTWARE.
 using System;
 
-namespace MonoMac.IOKit.USB
+namespace MonoMac.IOKit
 {
 	public enum EndpointTransferType : byte
 	{

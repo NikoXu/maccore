@@ -46,7 +46,7 @@ using CFArrayRef = System.IntPtr;
 using CFSetRef = System.IntPtr;
 using System.Linq;
 
-namespace MonoMac.IOKit.HID
+namespace MonoMac.IOKit
 {
 	[Since (5,0)]
 	public class IOHIDManager : CFType

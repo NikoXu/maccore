@@ -42,7 +42,7 @@ using IOHIDElementCookie = System.UInt32;
 using IOHIDElementRef = System.IntPtr;
 using uint32_t = System.UInt32;
 
-namespace MonoMac.IOKit.HID
+namespace MonoMac.IOKit
 {
 	[Since (5,0)]
 	public class IOHIDElement : CFType

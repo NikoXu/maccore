@@ -51,7 +51,7 @@ using io_service_t = System.IntPtr;
 using uint32_t = System.UInt32;
 using uint8_t = System.Byte;
 
-namespace MonoMac.IOKit.HID
+namespace MonoMac.IOKit
 {
 	[Since (5,0)]
 	public class IOHIDDevice : CFType

@@ -30,7 +30,7 @@ using System.Runtime.InteropServices;
 using UInt8 = System.Byte;
 using MonoMac.CoreFoundation;
 
-namespace MonoMac.IOKit.USB
+namespace MonoMac.IOKit
 {
 	public class IOUSBNub : IOService
 	{
