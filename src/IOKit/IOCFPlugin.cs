@@ -128,8 +128,8 @@ namespace MonoMac.IOKit
 			int score;
 			var pluginType = typeof(T2).GetUuid ();
 			var interfaceType = typeof(T).GetUuid ();
-			var result = IOCreatePlugInInterfaceForService (service.Handle, pluginType.Handle, interfaceType.Handle,
-			                                                out interfaceRefRef, out score);
+			var result = IOCFPluginStatic.IOCreatePlugInInterfaceForService (service.Handle, pluginType.Handle,
+				interfaceType.Handle, out interfaceRefRef, out score);
 			IOObject.ThrowIfError (result);
 			return new IOCFPlugin<T2> (interfaceRefRef);
 		}
@@ -171,7 +171,7 @@ namespace MonoMac.IOKit
 		protected void Dispose (bool disposing)
 		{
 			if (Handle != IntPtr.Zero) {
-				IODestroyPlugInInterface (Handle);
+				IOCFPluginStatic.IODestroyPlugInInterface (Handle);
 				Handle = IntPtr.Zero;
 			}
 		}
@@ -185,16 +185,6 @@ namespace MonoMac.IOKit
 		}
 
 		#endregion
-
-		[DllImport (Constants.IOKitLibrary)]
-		extern static kern_return_t IOCreatePlugInInterfaceForService (io_service_t service,
-		                                                               CFUUIDRef pluginType,
-		                                                               CFUUIDRef interfaceType,
-		                                                               out IOCFPlugInInterfaceRefRef theInterface,
-		                                                               out SInt32 theScore);
-
-		[DllImport (Constants.IOKitLibrary)]
-		extern static kern_return_t IODestroyPlugInInterface (IOCFPlugInInterfaceRefRef @interface);
 	}
 
 	[Guid ("C244E858-109C-11D4-91D4-0050E4C6426F")]
@@ -215,6 +205,21 @@ namespace MonoMac.IOKit
 		                                io_service_t service);
 
 		public delegate IOReturn Stop (IntPtr thisPointer);
-	} 
+	}
+
+	static class IOCFPluginStatic {
+		// Have to put DllImports in separate class becuase compiler does not want them
+		// in a generic type.
+
+		[DllImport (Constants.IOKitLibrary)]
+		public extern static kern_return_t IOCreatePlugInInterfaceForService (io_service_t service,
+			CFUUIDRef pluginType,
+			CFUUIDRef interfaceType,
+			out IOCFPlugInInterfaceRefRef theInterface,
+			out SInt32 theScore);
+
+		[DllImport (Constants.IOKitLibrary)]
+		public extern static kern_return_t IODestroyPlugInInterface (IOCFPlugInInterfaceRefRef @interface);
+	}
 }
 

@@ -47,27 +47,18 @@ namespace MonoMac.IOKit
 
 		public T Current { get; private set; }
 
-		[DllImport (Constants.IOKitLibrary)]
-		extern static io_object_t IOIteratorNext (io_iterator_t iterator);
-
-		[DllImport (Constants.IOKitLibrary)]
-		extern static boolean_t IOIteratorIsValid (io_iterator_t iterator);
-
 		public bool MoveNext ()
 		{
-			var nextObject = IOIteratorNext (Handle);
+			var nextObject = IOIteratorStatic.IOIteratorNext (Handle);
 			Current = (nextObject == IntPtr.Zero) ? null : IOObject.MarshalNativeObject<T> (nextObject, true);
-			if (!IOIteratorIsValid (Handle))
+			if (!IOIteratorStatic.IOIteratorIsValid (Handle))
 				throw new InvalidOperationException ();
 			return Current != null;
 		}
 
-		[DllImport (Constants.IOKitLibrary)]
-		extern static void IOIteratorReset (io_iterator_t iterator);
-
 		public void Reset ()
 		{
-			IOIteratorReset (Handle);
+			IOIteratorStatic.IOIteratorReset (Handle);
 		}
 
 		#endregion
@@ -81,6 +72,20 @@ namespace MonoMac.IOKit
 		}
 
 		#endregion
+	}
+
+	static class IOIteratorStatic {
+		// have to put DllImport in separate class becuase compiler does not
+		// allow them in generic types.
+
+		[DllImport (Constants.IOKitLibrary)]
+		public extern static io_object_t IOIteratorNext (io_iterator_t iterator);
+
+		[DllImport (Constants.IOKitLibrary)]
+		public extern static boolean_t IOIteratorIsValid (io_iterator_t iterator);
+
+		[DllImport (Constants.IOKitLibrary)]
+		public extern static void IOIteratorReset (io_iterator_t iterator);
 	}
 }
 
