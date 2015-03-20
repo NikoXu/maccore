@@ -85,7 +85,7 @@ namespace MonoMac.IOKit
 
 		protected override void Dispose (bool disposing)
 		{
-			if (pipes.IsValueCreated) {
+			if (pipes != null && pipes.IsValueCreated) {
 				foreach (var pipe in pipes.Value)
 					pipe.Dispose ();
 			}
